@@ -407,6 +407,9 @@
               <div id="sideNavVotes" style="display: none;" onclick="switchView('VoteResults')" class="sidebar-item">
                 <i class="fa-solid fa-heart text-base text-pink-500"></i> คะแนนโหวต (Popular Vote)
               </div>
+              <div id="sideNavCeremony" style="display: none;" onclick="switchView('Ceremony')" class="sidebar-item">
+                <i class="fa-solid fa-bullhorn text-base text-amber-500"></i> 🎉 ประกาศผลรางวัล
+              </div>
               <div id="sideNavAnalytics" style="display: none;" onclick="switchView('Analytics')" class="sidebar-item">
                 <i class="fa-solid fa-chart-pie text-base text-pink-500"></i> สถิติวิเคราะห์
               </div>
@@ -1108,26 +1111,23 @@
             </div>
           </div>
 
-          <!-- 3. Top 3 Podium Showcase Header & Controls -->
-          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pt-1">
-            <div>
-              <h3 class="text-base sm:text-lg font-black text-slate-800 flex items-center gap-2">
-                <i class="fa-solid fa-trophy text-amber-500"></i> ประกาศผล 3 อันดับขวัญใจมหาชน (Top 3 Popular Vote)
-              </h3>
-              <p class="text-xs text-slate-400 mt-0.5">คลิกปุ่มหน้า Card เพื่อประกาศผลทีละอันดับบนเวที หรือคลิกปุ่มด้านขวาเพื่อเปิด/ซ่อนทั้งหมด</p>
+          <!-- Quick link to Award Ceremony View -->
+          <div class="glass-card p-4 sm:p-5 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-3 bg-gradient-to-r from-amber-500/10 via-pink-500/10 to-purple-500/10 border border-amber-300/60 shadow-sm">
+            <div class="flex items-center gap-3.5">
+              <div class="w-11 h-11 rounded-2xl bg-gradient-to-tr from-amber-500 via-pink-500 to-purple-600 text-white flex items-center justify-center text-lg shadow-md shrink-0">
+                <i class="fa-solid fa-bullhorn"></i>
+              </div>
+              <div>
+                <h4 class="text-sm font-black text-slate-800 flex items-center gap-1.5">
+                  <span>🎉 เวทีประกาศผลรางวัลอย่างเป็นทางการ</span>
+                  <span class="px-2 py-0.5 rounded-md bg-amber-100 text-amber-800 text-[10px] font-bold">Admin Only</span>
+                </h4>
+                <p class="text-xs text-slate-500 mt-0.5">ระบบได้รวมเวทีประกาศผลรางวัล 3 อันดับขวัญใจมหาชน และการแข่งขันคะแนนรวม ไว้ในแท็บ "🎉 ประกาศผลรางวัล" บน Sidebar แล้ว</p>
+              </div>
             </div>
-            <div class="flex items-center gap-2 flex-wrap self-start sm:self-auto">
-              <button type="button" onclick="revealAllPodium()" class="px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 via-pink-500 to-rose-500 hover:from-amber-600 hover:to-rose-600 text-white font-bold text-xs shadow-sm flex items-center gap-1.5 transition-all cursor-pointer active:scale-95" title="เปิดเผยผลทั้ง 3 อันดับทันที">
-                <i class="fa-solid fa-eye text-xs"></i> เปิดเผยทั้ง 3 อันดับ
-              </button>
-              <button type="button" onclick="resetPodiumReveal()" class="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs border border-slate-200 flex items-center gap-1.5 transition-all cursor-pointer active:scale-95" title="ซ่อนผล Top 3 ทั้งหมดเพื่อเริ่มพิธีประกาศผลใหม่">
-                <i class="fa-solid fa-lock text-xs"></i> ซ่อนผล Top 3 ทั้งหมด
-              </button>
-            </div>
-          </div>
-
-          <div id="votePodiumContainer" class="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <!-- Dynamically rendered top 3 cards -->
+            <button type="button" onclick="switchView('Ceremony')" class="px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 via-pink-500 to-rose-500 hover:from-amber-600 hover:to-rose-600 text-white font-bold text-xs shadow-md shadow-pink-500/20 flex items-center gap-2 cursor-pointer transition-all active:scale-95 whitespace-nowrap">
+              <i class="fa-solid fa-trophy"></i> ไปที่หน้าประกาศผลรางวัล
+            </button>
           </div>
 
           <!-- 4. Full Live Ranking Table with Progress Bars -->
@@ -1205,6 +1205,90 @@
 
         </div>
 
+        <!-- ================= VIEW: CEREMONY (AWARD CEREMONY) ================= -->
+        <div id="viewCeremony" style="display: none;" class="space-y-6 fade-in">
+          <!-- 1. Header Banner -->
+          <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-gradient-to-r from-amber-500 via-orange-500 to-purple-600 rounded-3xl p-6 sm:p-8 text-white shadow-xl relative overflow-hidden">
+            <div class="absolute -right-10 -bottom-10 w-48 h-48 bg-white/10 rounded-full blur-2xl pointer-events-none"></div>
+            <div class="relative z-10">
+              <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/20 backdrop-blur-md text-white text-xs font-bold mb-2">
+                <i class="fa-solid fa-bullhorn text-amber-200"></i> เวทีประกาศผลรางวัลอย่างเป็นทางการ
+              </div>
+              <h2 class="text-2xl sm:text-3xl font-black tracking-tight flex items-center gap-2.5">
+                🎉 พิธีประกาศผลรางวัล (Award Ceremony)
+              </h2>
+              <p class="text-white/90 text-xs sm:text-sm mt-1 max-w-xl">
+                เวทีประกาศผลรางวัลบนเวที ออกแบบสำหรับฉายขึ้นจอโปรเจกเตอร์และเปิดเผยผลทีละอันดับเพื่อสร้างความตื่นเต้น
+              </p>
+            </div>
+            <div class="relative z-10 flex items-center gap-2 self-start md:self-auto flex-wrap">
+              <button type="button" onclick="loadAppData()" class="px-4 py-2.5 rounded-2xl bg-white/20 hover:bg-white/30 backdrop-blur-md text-white font-bold text-xs flex items-center gap-2 transition-all cursor-pointer shadow-sm active:scale-95">
+                <i class="fa-solid fa-rotate text-sm"></i> อัปเดตคะแนนล่าสุด
+              </button>
+            </div>
+          </div>
+
+          <!-- 2. Ceremony Category Switcher Tabs -->
+          <div class="glass-card p-2 rounded-2xl flex flex-wrap gap-2 border border-slate-200/80 shadow-sm bg-white/80">
+            <button id="tabBtnCeremonyOverall" type="button" onclick="switchCeremonyTab('overall')" class="flex-1 min-w-[200px] py-3 px-5 rounded-xl font-black text-sm flex items-center justify-center gap-2.5 transition-all cursor-pointer shadow-md bg-gradient-to-r from-amber-500 to-yellow-600 text-white">
+              <i class="fa-solid fa-trophy text-amber-200 text-base"></i>
+              <span>🏆 รางวัลการแข่งขันคะแนนรวม (Overall Awards)</span>
+            </button>
+            <button id="tabBtnCeremonyPopular" type="button" onclick="switchCeremonyTab('popular')" class="flex-1 min-w-[200px] py-3 px-5 rounded-xl font-black text-sm flex items-center justify-center gap-2.5 transition-all cursor-pointer text-slate-600 hover:bg-pink-50 hover:text-pink-600">
+              <i class="fa-solid fa-heart text-pink-500 text-base"></i>
+              <span>❤️ รางวัลขวัญใจมหาชน (Popular Vote)</span>
+            </button>
+          </div>
+
+          <!-- 3. Section 1: Overall Competition Awards (การแข่งขันคะแนนรวม) -->
+          <div id="ceremonyOverallSection" class="space-y-5">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pt-1">
+              <div>
+                <h3 class="text-base sm:text-lg font-black text-slate-800 flex items-center gap-2">
+                  <i class="fa-solid fa-trophy text-amber-500"></i> 3 อันดับคะแนนรวมสูงสุด (Top 3 Overall Champions)
+                </h3>
+                <p class="text-xs text-slate-400 mt-0.5">คำนวณจากคะแนนรวมทุกภารกิจ (RC + กิจกรรมฐาน + Quiz + คะแนนพิเศษ) คลิกประกาศผลทีละอันดับบนเวที</p>
+              </div>
+              <div class="flex items-center gap-2 flex-wrap self-start sm:self-auto">
+                <button type="button" onclick="revealAllOverallPodium()" class="px-3.5 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-600 hover:from-amber-600 hover:to-yellow-700 text-white font-bold text-xs shadow-sm flex items-center gap-1.5 transition-all cursor-pointer active:scale-95" title="เปิดเผยผลทั้ง 3 อันดับทันที">
+                  <i class="fa-solid fa-eye text-xs"></i> เปิดเผยทั้ง 3 อันดับ
+                </button>
+                <button type="button" onclick="resetOverallPodiumReveal()" class="px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs border border-slate-200 flex items-center gap-1.5 transition-all cursor-pointer active:scale-95" title="ซ่อนผล Top 3 ทั้งหมดเพื่อเริ่มพิธีประกาศผลใหม่">
+                  <i class="fa-solid fa-lock text-xs"></i> ซ่อนผล Top 3 ทั้งหมด
+                </button>
+              </div>
+            </div>
+
+            <div id="ceremonyOverallContainer" class="grid grid-cols-1 md:grid-cols-3 gap-5">
+              <!-- Dynamically rendered top 3 overall cards -->
+            </div>
+          </div>
+
+          <!-- 4. Section 2: Popular Vote Awards (ขวัญใจมหาชน) -->
+          <div id="ceremonyPopularSection" style="display: none;" class="space-y-5">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pt-1">
+              <div>
+                <h3 class="text-base sm:text-lg font-black text-slate-800 flex items-center gap-2">
+                  <i class="fa-solid fa-heart text-pink-500"></i> 3 อันดับขวัญใจมหาชน (Top 3 Popular Vote)
+                </h3>
+                <p class="text-xs text-slate-400 mt-0.5">คำนวณจากจำนวนคะแนนโหวตความนิยมที่ได้รับจากผู้เข้าร่วมกิจกรรมทั้งหมด</p>
+              </div>
+              <div class="flex items-center gap-2 flex-wrap self-start sm:self-auto">
+                <button type="button" onclick="revealAllPopularPodium()" class="px-3.5 py-2 rounded-xl bg-gradient-to-r from-pink-500 via-rose-500 to-purple-600 hover:from-pink-600 hover:to-rose-600 text-white font-bold text-xs shadow-sm flex items-center gap-1.5 transition-all cursor-pointer active:scale-95" title="เปิดเผยผลทั้ง 3 อันดับทันที">
+                  <i class="fa-solid fa-eye text-xs"></i> เปิดเผยทั้ง 3 อันดับ
+                </button>
+                <button type="button" onclick="resetPopularPodiumReveal()" class="px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs border border-slate-200 flex items-center gap-1.5 transition-all cursor-pointer active:scale-95" title="ซ่อนผล Top 3 ทั้งหมดเพื่อเริ่มพิธีประกาศผลใหม่">
+                  <i class="fa-solid fa-lock text-xs"></i> ซ่อนผล Top 3 ทั้งหมด
+                </button>
+              </div>
+            </div>
+
+            <div id="ceremonyPopularContainer" class="grid grid-cols-1 md:grid-cols-3 gap-5">
+              <!-- Dynamically rendered top 3 popular vote cards -->
+            </div>
+          </div>
+        </div>
+
       </main>
     </div>
   </div>
@@ -1252,8 +1336,8 @@
         </h3>
 
         <!-- Votes Count Pill -->
-        <div class="py-2 px-6 rounded-full bg-gradient-to-r from-pink-500 to-rose-500 text-white font-black text-sm shadow-lg shadow-pink-500/30 flex items-center justify-center gap-2 mb-6">
-          <i class="fa-solid fa-heart text-rose-200"></i>
+        <div id="celebrationPillWrapper" class="py-2 px-6 rounded-full bg-gradient-to-r from-pink-500 to-rose-500 text-white font-black text-sm shadow-lg shadow-pink-500/30 flex items-center justify-center gap-2 mb-6">
+          <i id="celebrationPillIcon" class="fa-solid fa-heart text-rose-200"></i>
           <span id="celebrationVoteCount">0 คะแนน (0.0%)</span>
         </div>
 
@@ -1809,6 +1893,8 @@
     var currentActiveViewName = 'UserDashboard';
     var currentActiveFilterCat = '';
     var revealedPodiumRanks = { 1: false, 2: false, 3: false };
+    var revealedOverallPodiumRanks = { 1: false, 2: false, 3: false };
+    var activeCeremonyTab = 'overall';
     var isLiveRankingTableVisible = false;
     var analyticsMatrixCategory = 'Base';
     var chartTop5Instance = null;
@@ -2491,6 +2577,7 @@
       var navAdminBase = document.getElementById('sideNavAdminBase');
       var navAdminQuiz = document.getElementById('sideNavAdminQuiz');
       var navVotes = document.getElementById('sideNavVotes');
+      var navCeremony = document.getElementById('sideNavCeremony');
       var navAnalytics = document.getElementById('sideNavAnalytics');
 
       var mobileNav = document.getElementById('mobileNavLinks');
@@ -2524,6 +2611,7 @@
         if (navAdminBase) navAdminBase.style.display = 'flex';
         if (navAdminQuiz) navAdminQuiz.style.display = 'flex';
         if (navVotes) navVotes.style.display = 'flex';
+        if (navCeremony) navCeremony.style.display = 'flex';
         if (navAnalytics) navAnalytics.style.display = 'flex';
 
         linksHTML = '<div class="space-y-4">' +
@@ -2545,6 +2633,7 @@
           '<button onclick="switchView(\'AdminActivitiesBase\'); closeMobileSidebar();" class="w-full text-left py-2 px-3 rounded-xl font-semibold text-xs text-slate-700 hover:bg-purple-50 hover:text-purple-700 flex items-center gap-2.5"><i class="fa-solid fa-cubes text-sm text-purple-500"></i> จัดการกิจกรรมฐาน</button>' +
           '<button onclick="switchView(\'AdminActivitiesQuiz\'); closeMobileSidebar();" class="w-full text-left py-2 px-3 rounded-xl font-semibold text-xs text-slate-700 hover:bg-purple-50 hover:text-purple-700 flex items-center gap-2.5"><i class="fa-solid fa-gamepad text-sm text-emerald-500"></i> จัดการเกมส์คำถาม</button>' +
           '<button onclick="switchView(\'VoteResults\'); closeMobileSidebar();" class="w-full text-left py-2 px-3 rounded-xl font-semibold text-xs text-slate-700 hover:bg-pink-50 hover:text-pink-700 flex items-center gap-2.5"><i class="fa-solid fa-heart text-sm text-pink-500"></i> คะแนนโหวต (Popular Vote)</button>' +
+          '<button onclick="switchView(\'Ceremony\'); closeMobileSidebar();" class="w-full text-left py-2 px-3 rounded-xl font-semibold text-xs text-slate-700 hover:bg-amber-50 hover:text-amber-700 flex items-center gap-2.5"><i class="fa-solid fa-bullhorn text-sm text-amber-500"></i> 🎉 ประกาศผลรางวัล</button>' +
           '<button onclick="switchView(\'Analytics\'); closeMobileSidebar();" class="w-full text-left py-2 px-3 rounded-xl font-semibold text-xs text-slate-700 hover:bg-purple-50 hover:text-purple-700 flex items-center gap-2.5"><i class="fa-solid fa-chart-pie text-sm text-pink-500"></i> สถิติวิเคราะห์</button>' +
           '</div></div>' +
           '</div>';
@@ -2566,6 +2655,7 @@
         if (navAdminBase) navAdminBase.style.display = 'none';
         if (navAdminQuiz) navAdminQuiz.style.display = 'none';
         if (navVotes) navVotes.style.display = 'none';
+        if (navCeremony) navCeremony.style.display = 'none';
         if (navAnalytics) navAnalytics.style.display = 'none';
 
         linksHTML = '<div class="space-y-4">' +
@@ -2594,6 +2684,7 @@
         if (navAdminBase) navAdminBase.style.display = 'none';
         if (navAdminQuiz) navAdminQuiz.style.display = 'none';
         if (navVotes) navVotes.style.display = 'none';
+        if (navCeremony) navCeremony.style.display = 'none';
         if (navAnalytics) navAnalytics.style.display = 'none';
 
         linksHTML = '<div class="space-y-4">' +
@@ -2635,7 +2726,7 @@
     }
 
     function hideAllViews() {
-      var views = ['viewLogin', 'viewUserDashboard', 'viewUserMissions', 'viewLeaderboard', 'viewGrading', 'viewAdminActivities', 'viewAdminUsers', 'viewAnalytics', 'viewUserHistory', 'viewVoteResults'];
+      var views = ['viewLogin', 'viewUserDashboard', 'viewUserMissions', 'viewLeaderboard', 'viewGrading', 'viewAdminActivities', 'viewAdminUsers', 'viewAnalytics', 'viewUserHistory', 'viewVoteResults', 'viewCeremony'];
       views.forEach(function(v) {
         var el = document.getElementById(v);
         if (el) el.style.display = 'none';
@@ -2673,7 +2764,7 @@
       }
 
       // Strict Role Authorization Guards
-      if ((viewName === 'VoteResults' && (isVotesHidden && (!currentUser || currentUser.role !== 'Admin'))) || viewName === 'AdminUsers' || viewName === 'AdminActivitiesRC' || viewName === 'AdminActivitiesBase' || viewName === 'AdminActivitiesQuiz' || viewName === 'AdminActivities' || viewName === 'Analytics') {
+      if ((viewName === 'VoteResults' && (isVotesHidden && (!currentUser || currentUser.role !== 'Admin'))) || viewName === 'AdminUsers' || viewName === 'AdminActivitiesRC' || viewName === 'AdminActivitiesBase' || viewName === 'AdminActivitiesQuiz' || viewName === 'AdminActivities' || viewName === 'Analytics' || viewName === 'Ceremony') {
         if (!currentUser || currentUser.role !== 'Admin') {
           switchView('UserDashboard');
           return;
@@ -2769,6 +2860,9 @@
       } else if (viewName === 'Analytics') {
         updateActiveSidebarItem('sideNavAnalytics');
         renderAnalyticsCharts();
+      } else if (viewName === 'Ceremony') {
+        updateActiveSidebarItem('sideNavCeremony');
+        renderCeremonyView();
       }
     }
 
@@ -2821,6 +2915,8 @@
                   renderGradingList();
                 } else if (currentActiveViewName === 'VoteResults') {
                   renderVoteResults();
+                } else if (currentActiveViewName === 'Ceremony') {
+                  renderCeremonyView();
                 } else {
                   renderUserDashboard();
                   renderAdminUsersTable();
@@ -6188,6 +6284,445 @@
 
 
     // =========================================================================
+    // SECTION: AWARD CEREMONY CONTROLLERS & PODIUM REVEALS (ADMIN ONLY)
+    // =========================================================================
+    function switchCeremonyTab(tab) {
+      activeCeremonyTab = tab;
+      var btnOverall = document.getElementById('tabBtnCeremonyOverall');
+      var btnPopular = document.getElementById('tabBtnCeremonyPopular');
+      var secOverall = document.getElementById('ceremonyOverallSection');
+      var secPopular = document.getElementById('ceremonyPopularSection');
+
+      if (tab === 'overall') {
+        if (btnOverall) {
+          btnOverall.className = 'flex-1 min-w-[200px] py-3 px-5 rounded-xl font-black text-sm flex items-center justify-center gap-2.5 transition-all cursor-pointer shadow-md bg-gradient-to-r from-amber-500 to-yellow-600 text-white';
+        }
+        if (btnPopular) {
+          btnPopular.className = 'flex-1 min-w-[200px] py-3 px-5 rounded-xl font-black text-sm flex items-center justify-center gap-2.5 transition-all cursor-pointer text-slate-600 hover:bg-pink-50 hover:text-pink-600';
+        }
+        if (secOverall) secOverall.style.display = 'block';
+        if (secPopular) secPopular.style.display = 'none';
+      } else {
+        if (btnOverall) {
+          btnOverall.className = 'flex-1 min-w-[200px] py-3 px-5 rounded-xl font-black text-sm flex items-center justify-center gap-2.5 transition-all cursor-pointer text-slate-600 hover:bg-amber-50 hover:text-amber-600';
+        }
+        if (btnPopular) {
+          btnPopular.className = 'flex-1 min-w-[200px] py-3 px-5 rounded-xl font-black text-sm flex items-center justify-center gap-2.5 transition-all cursor-pointer shadow-md bg-gradient-to-r from-pink-500 via-rose-500 to-purple-600 text-white';
+        }
+        if (secOverall) secOverall.style.display = 'none';
+        if (secPopular) secPopular.style.display = 'block';
+      }
+
+      renderCeremonyView();
+    }
+    window.switchCeremonyTab = switchCeremonyTab;
+
+    function renderCeremonyView() {
+      if (!currentUser || currentUser.role !== 'Admin') return;
+      renderCeremonyOverallPodium();
+      renderCeremonyPopularPodium();
+    }
+    window.renderCeremonyView = renderCeremonyView;
+
+    // Overall Competition Awards (การแข่งขันคะแนนรวม)
+    function renderCeremonyOverallPodium() {
+      var container = document.getElementById('ceremonyOverallContainer');
+      if (!container) return;
+
+      var competitors = usersData.filter(function(u) { return u.role === 'User'; });
+      var leaderboardData = competitors.map(function(comp) {
+        var mySubs = submissionsData.filter(function(s) { return s.username === comp.username && s.status === 'passed'; });
+        var rcScore = mySubs.filter(function(s) { return s.category === 'RC'; }).reduce(function(a, b) { return a + Number(b.score || 0); }, 0);
+        var baseScore = mySubs.filter(function(s) { return s.category === 'Base'; }).reduce(function(a, b) { return a + Number(b.score || 0); }, 0);
+        var quizScore = mySubs.filter(function(s) { return s.category === 'Quiz'; }).reduce(function(a, b) { return a + Number(b.score || 0); }, 0);
+        var bonusScore = Number(comp.bonusPoints || 0);
+        var totalNetScore = rcScore + baseScore + quizScore + bonusScore;
+        return {
+          user: comp,
+          totalNetScore: totalNetScore
+        };
+      });
+
+      leaderboardData.sort(function(a, b) {
+        return b.totalNetScore - a.totalNetScore;
+      });
+
+      var top3 = leaderboardData.slice(0, 3);
+      var medalIcons = [
+        '<span class="w-9 h-9 rounded-full bg-amber-400 text-amber-900 font-black text-sm flex items-center justify-center shadow-md border-2 border-white"><i class="fa-solid fa-trophy mr-0.5"></i>1</span>',
+        '<span class="w-9 h-9 rounded-full bg-slate-300 text-slate-800 font-black text-sm flex items-center justify-center shadow-md border-2 border-white"><i class="fa-solid fa-medal mr-0.5"></i>2</span>',
+        '<span class="w-9 h-9 rounded-full bg-amber-700 text-amber-100 font-black text-sm flex items-center justify-center shadow-md border-2 border-white"><i class="fa-solid fa-award mr-0.5"></i>3</span>'
+      ];
+
+      var podiumGradients = [
+        'bg-gradient-to-b from-amber-50 to-white border-amber-300 shadow-amber-200/50',
+        'bg-gradient-to-b from-slate-50 to-white border-slate-300 shadow-slate-200/50',
+        'bg-gradient-to-b from-orange-50 to-white border-orange-300 shadow-orange-200/50'
+      ];
+
+      var rankBtnTitles = {
+        1: '🥇 ประกาศผลอันดับที่ 1 (ชนะเลิศคะแนนรวม)',
+        2: '🥈 ประกาศผลอันดับที่ 2 (รองชนะเลิศอันดับ 1)',
+        3: '🥉 ประกาศผลอันดับที่ 3 (รองชนะเลิศอันดับ 2)'
+      };
+
+      var rankBtnColors = {
+        1: 'bg-gradient-to-r from-amber-500 via-yellow-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white shadow-amber-500/30 border-amber-300',
+        2: 'bg-gradient-to-r from-slate-500 via-slate-600 to-slate-700 hover:from-slate-600 hover:to-slate-800 text-white shadow-slate-500/30 border-slate-300',
+        3: 'bg-gradient-to-r from-orange-600 via-amber-600 to-orange-700 hover:from-orange-700 hover:to-amber-800 text-white shadow-orange-500/30 border-orange-300'
+      };
+
+      var mysteryBoxes = {
+        1: 'bg-gradient-to-tr from-amber-100 via-yellow-50 to-amber-200 text-amber-800 border-amber-300',
+        2: 'bg-gradient-to-tr from-slate-100 via-gray-50 to-slate-200 text-slate-700 border-slate-300',
+        3: 'bg-gradient-to-tr from-orange-100 via-amber-50 to-orange-200 text-orange-800 border-orange-300'
+      };
+
+      if (top3.length === 0) {
+        container.innerHTML = '<div class="col-span-3 text-center py-12 text-slate-400 glass-card rounded-3xl">ยังไม่มีข้อมูลผู้เข้าแข่งขัน</div>';
+        return;
+      }
+
+      container.innerHTML = top3.map(function(t, idx) {
+        var rank = idx + 1;
+        var isRevealed = !!revealedOverallPodiumRanks[rank];
+
+        if (!isRevealed) {
+          // Mystery / Locked State
+          return '<div class="glass-card p-6 rounded-3xl border-2 ' + podiumGradients[idx] + ' flex flex-col justify-between relative shadow-lg text-center">' +
+            '<div class="absolute top-4 left-4 z-10">' + medalIcons[idx] + '</div>' +
+            '<div class="flex flex-col items-center w-full">' +
+              '<div class="w-full h-40 sm:h-44 rounded-2xl overflow-hidden shadow-inner border-2 border-dashed mb-3 relative flex flex-col items-center justify-center ' + mysteryBoxes[rank] + '">' +
+                '<div class="w-14 h-14 rounded-2xl bg-white/80 shadow-sm flex items-center justify-center text-3xl font-black mb-1.5 animate-pulse text-amber-700">' +
+                  '?' +
+                '</div>' +
+                '<span class="text-xs font-black tracking-wider uppercase">รอการประกาศผล...</span>' +
+              '</div>' +
+              '<h4 class="text-base font-black text-slate-400">??? (ยังไม่เปิดเผย)</h4>' +
+            '</div>' +
+            '<div class="mt-4">' +
+              '<button type="button" onclick="revealOverallPodiumRank(' + rank + ')" class="w-full py-3 px-4 rounded-2xl font-black text-xs shadow-lg transition-all cursor-pointer active:scale-95 flex items-center justify-center gap-2 border ' + rankBtnColors[rank] + '">' +
+                '<i class="fa-solid fa-sparkles"></i> ' + rankBtnTitles[rank] +
+              '</button>' +
+            '</div>' +
+          '</div>';
+        } else {
+          // Revealed State: Shows Team Photo, Team Name, Score (STRICTLY NO CAR CODE, NO COLOR!)
+          var formattedScore = Number(t.totalNetScore || 0).toLocaleString('th-TH');
+          return '<div class="glass-card p-6 rounded-3xl border-2 ' + podiumGradients[idx] + ' flex flex-col justify-between relative shadow-lg text-center group">' +
+            '<div class="absolute top-4 left-4 z-10">' + medalIcons[idx] + '</div>' +
+            '<div class="flex flex-col items-center w-full">' +
+              '<div class="w-full h-40 sm:h-44 rounded-2xl overflow-hidden shadow-sm border border-slate-100 mb-3 relative group cursor-pointer" onclick="openImageModal(\'' + escapeHTML(t.user.profileUrl) + '\', \'' + escapeHTML(t.user.name) + '\')">' +
+                '<img src="' + escapeHTML(t.user.profileUrl) + '" class="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-300" alt="Team Picture">' +
+                '<div class="absolute inset-0 bg-black/25 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">' +
+                  '<i class="fa-solid fa-magnifying-glass-plus text-white text-xl"></i>' +
+                '</div>' +
+              '</div>' +
+              '<h4 class="text-base sm:text-lg font-black text-slate-800 line-clamp-1 mt-1">' + escapeHTML(t.user.name) + '</h4>' +
+            '</div>' +
+            '<div class="mt-4 flex flex-col gap-2.5">' +
+              '<div class="py-2 px-4 rounded-full bg-gradient-to-r from-amber-500 to-yellow-600 text-white font-black text-xs shadow-md shadow-amber-500/20 flex items-center justify-center gap-1.5">' +
+                '<i class="fa-solid fa-trophy text-amber-200"></i> คะแนนรวม ' + formattedScore + ' คะแนน' +
+              '</div>' +
+              '<button type="button" onclick="showOverallCelebrationModal(' + rank + ')" class="text-xs font-bold text-slate-500 hover:text-amber-600 flex items-center justify-center gap-1.5 py-1 cursor-pointer transition-colors">' +
+                '<i class="fa-solid fa-trophy text-amber-500"></i> ดูหน้าต่างยินดี' +
+              '</button>' +
+            '</div>' +
+          '</div>';
+        }
+      }).join('');
+    }
+    window.renderCeremonyOverallPodium = renderCeremonyOverallPodium;
+
+    function revealOverallPodiumRank(rank) {
+      revealedOverallPodiumRanks[rank] = true;
+      renderCeremonyOverallPodium();
+      showOverallCelebrationModal(rank);
+    }
+    window.revealOverallPodiumRank = revealOverallPodiumRank;
+
+    function revealAllOverallPodium() {
+      revealedOverallPodiumRanks = { 1: true, 2: true, 3: true };
+      renderCeremonyOverallPodium();
+      Swal.fire({
+        toast: true,
+        position: 'top-end',
+        icon: 'success',
+        title: '🎉 เปิดเผยผลคะแนนรวมทั้ง 3 อันดับเรียบร้อยแล้ว',
+        showConfirmButton: false,
+        timer: 2000
+      });
+    }
+    window.revealAllOverallPodium = revealAllOverallPodium;
+
+    function resetOverallPodiumReveal() {
+      revealedOverallPodiumRanks = { 1: false, 2: false, 3: false };
+      renderCeremonyOverallPodium();
+      Swal.fire({
+        toast: true,
+        position: 'top-end',
+        icon: 'info',
+        title: '🔒 ซ่อนผล Top 3 คะแนนรวมทั้งหมด เพื่อเริ่มพิธีใหม่',
+        showConfirmButton: false,
+        timer: 2000
+      });
+    }
+    window.resetOverallPodiumReveal = resetOverallPodiumReveal;
+
+    // Popular Vote Awards in Ceremony View
+    function renderCeremonyPopularPodium() {
+      var container = document.getElementById('ceremonyPopularContainer');
+      if (!container) return;
+
+      var competitors = usersData.filter(function(u) { return u.role === 'User'; });
+      var totalVotes = votesData.length;
+      var voteTallies = competitors.map(function(comp) {
+        var carVotes = votesData.filter(function(v) { return v.targetUsername === comp.username; });
+        return {
+          user: comp,
+          votesCount: carVotes.length,
+          percentage: totalVotes > 0 ? ((carVotes.length / totalVotes) * 100).toFixed(1) : '0.0'
+        };
+      });
+      voteTallies.sort(function(a, b) { return b.votesCount - a.votesCount; });
+
+      var top3 = voteTallies.slice(0, 3);
+      var medalIcons = [
+        '<span class="w-9 h-9 rounded-full bg-amber-400 text-amber-900 font-black text-sm flex items-center justify-center shadow-md border-2 border-white"><i class="fa-solid fa-trophy mr-0.5"></i>1</span>',
+        '<span class="w-9 h-9 rounded-full bg-slate-300 text-slate-800 font-black text-sm flex items-center justify-center shadow-md border-2 border-white"><i class="fa-solid fa-medal mr-0.5"></i>2</span>',
+        '<span class="w-9 h-9 rounded-full bg-amber-700 text-amber-100 font-black text-sm flex items-center justify-center shadow-md border-2 border-white"><i class="fa-solid fa-award mr-0.5"></i>3</span>'
+      ];
+
+      var podiumGradients = [
+        'bg-gradient-to-b from-amber-50 to-white border-amber-300 shadow-amber-200/50',
+        'bg-gradient-to-b from-slate-50 to-white border-slate-300 shadow-slate-200/50',
+        'bg-gradient-to-b from-orange-50 to-white border-orange-300 shadow-orange-200/50'
+      ];
+
+      var rankBtnTitles = {
+        1: '🥇 ประกาศผลอันดับที่ 1 (ชนะเลิศขวัญใจมหาชน)',
+        2: '🥈 ประกาศผลอันดับที่ 2 (รองชนะเลิศอันดับ 1)',
+        3: '🥉 ประกาศผลอันดับที่ 3 (รองชนะเลิศอันดับ 2)'
+      };
+
+      var rankBtnColors = {
+        1: 'bg-gradient-to-r from-amber-500 via-yellow-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white shadow-amber-500/30 border-amber-300',
+        2: 'bg-gradient-to-r from-slate-500 via-slate-600 to-slate-700 hover:from-slate-600 hover:to-slate-800 text-white shadow-slate-500/30 border-slate-300',
+        3: 'bg-gradient-to-r from-orange-600 via-amber-600 to-orange-700 hover:from-orange-700 hover:to-amber-800 text-white shadow-orange-500/30 border-orange-300'
+      };
+
+      var mysteryBoxes = {
+        1: 'bg-gradient-to-tr from-amber-100 via-yellow-50 to-amber-200 text-amber-800 border-amber-300',
+        2: 'bg-gradient-to-tr from-slate-100 via-gray-50 to-slate-200 text-slate-700 border-slate-300',
+        3: 'bg-gradient-to-tr from-orange-100 via-amber-50 to-orange-200 text-orange-800 border-orange-300'
+      };
+
+      if (top3.length === 0) {
+        container.innerHTML = '<div class="col-span-3 text-center py-12 text-slate-400 glass-card rounded-3xl">ยังไม่มีข้อมูลผู้เข้าแข่งขัน</div>';
+        return;
+      }
+
+      container.innerHTML = top3.map(function(t, idx) {
+        var rank = idx + 1;
+        var isRevealed = !!revealedPodiumRanks[rank];
+
+        if (!isRevealed) {
+          // Mystery / Locked State
+          return '<div class="glass-card p-6 rounded-3xl border-2 ' + podiumGradients[idx] + ' flex flex-col justify-between relative shadow-lg text-center">' +
+            '<div class="absolute top-4 left-4 z-10">' + medalIcons[idx] + '</div>' +
+            '<div class="flex flex-col items-center w-full">' +
+              '<div class="w-full h-40 sm:h-44 rounded-2xl overflow-hidden shadow-inner border-2 border-dashed mb-3 relative flex flex-col items-center justify-center ' + mysteryBoxes[rank] + '">' +
+                '<div class="w-14 h-14 rounded-2xl bg-white/80 shadow-sm flex items-center justify-center text-3xl font-black mb-1.5 animate-pulse text-amber-700">' +
+                  '?' +
+                '</div>' +
+                '<span class="text-xs font-black tracking-wider uppercase">รอการประกาศผล...</span>' +
+              '</div>' +
+              '<h4 class="text-base font-black text-slate-400">??? (ยังไม่เปิดเผย)</h4>' +
+            '</div>' +
+            '<div class="mt-4">' +
+              '<button type="button" onclick="revealPopularPodiumRank(' + rank + ')" class="w-full py-3 px-4 rounded-2xl font-black text-xs shadow-lg transition-all cursor-pointer active:scale-95 flex items-center justify-center gap-2 border ' + rankBtnColors[rank] + '">' +
+                '<i class="fa-solid fa-sparkles"></i> ' + rankBtnTitles[rank] +
+              '</button>' +
+            '</div>' +
+          '</div>';
+        } else {
+          // Revealed State: Shows Team Photo, Team Name, Score (STRICTLY NO CAR CODE, NO COLOR!)
+          return '<div class="glass-card p-6 rounded-3xl border-2 ' + podiumGradients[idx] + ' flex flex-col justify-between relative shadow-lg text-center group">' +
+            '<div class="absolute top-4 left-4 z-10">' + medalIcons[idx] + '</div>' +
+            '<div class="flex flex-col items-center w-full">' +
+              '<div class="w-full h-40 sm:h-44 rounded-2xl overflow-hidden shadow-sm border border-slate-100 mb-3 relative group cursor-pointer" onclick="openImageModal(\'' + escapeHTML(t.user.profileUrl) + '\', \'' + escapeHTML(t.user.name) + '\')">' +
+                '<img src="' + escapeHTML(t.user.profileUrl) + '" class="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-300" alt="Team Picture">' +
+                '<div class="absolute inset-0 bg-black/25 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">' +
+                  '<i class="fa-solid fa-magnifying-glass-plus text-white text-xl"></i>' +
+                '</div>' +
+              '</div>' +
+              '<h4 class="text-base sm:text-lg font-black text-slate-800 line-clamp-1 mt-1">' + escapeHTML(t.user.name) + '</h4>' +
+            '</div>' +
+            '<div class="mt-4 flex flex-col gap-2.5">' +
+              '<div class="py-2 px-4 rounded-full bg-gradient-to-r from-pink-500 to-rose-500 text-white font-black text-xs shadow-md shadow-pink-500/20 flex items-center justify-center gap-1.5">' +
+                '<i class="fa-solid fa-heart text-rose-200"></i> ' + t.votesCount + ' คะแนน (' + t.percentage + '%)' +
+              '</div>' +
+              '<button type="button" onclick="showCelebrationModal(' + rank + ')" class="text-xs font-bold text-slate-500 hover:text-pink-600 flex items-center justify-center gap-1.5 py-1 cursor-pointer transition-colors">' +
+                '<i class="fa-solid fa-trophy text-amber-500"></i> ดูหน้าต่างยินดี' +
+              '</button>' +
+            '</div>' +
+          '</div>';
+        }
+      }).join('');
+    }
+    window.renderCeremonyPopularPodium = renderCeremonyPopularPodium;
+
+    function revealPopularPodiumRank(rank) {
+      revealedPodiumRanks[rank] = true;
+      renderCeremonyPopularPodium();
+      if (typeof renderVoteResults === 'function') renderVoteResults();
+      showCelebrationModal(rank);
+    }
+    window.revealPopularPodiumRank = revealPopularPodiumRank;
+
+    function revealAllPopularPodium() {
+      revealedPodiumRanks = { 1: true, 2: true, 3: true };
+      renderCeremonyPopularPodium();
+      if (typeof renderVoteResults === 'function') renderVoteResults();
+      Swal.fire({
+        toast: true,
+        position: 'top-end',
+        icon: 'success',
+        title: '🎉 เปิดเผยผลขวัญใจมหาชนทั้ง 3 อันดับเรียบร้อยแล้ว',
+        showConfirmButton: false,
+        timer: 2000
+      });
+    }
+    window.revealAllPopularPodium = revealAllPopularPodium;
+
+    function resetPopularPodiumReveal() {
+      revealedPodiumRanks = { 1: false, 2: false, 3: false };
+      renderCeremonyPopularPodium();
+      if (typeof renderVoteResults === 'function') renderVoteResults();
+      Swal.fire({
+        toast: true,
+        position: 'top-end',
+        icon: 'info',
+        title: '🔒 ซ่อนผล Top 3 ขวัญใจมหาชนทั้งหมด เพื่อเริ่มพิธีใหม่',
+        showConfirmButton: false,
+        timer: 2000
+      });
+    }
+    window.resetPopularPodiumReveal = resetPopularPodiumReveal;
+
+    // Show Celebration Modal for Overall Competition Award (การแข่งขันคะแนนรวม)
+    function showOverallCelebrationModal(rank) {
+      var competitors = usersData.filter(function(u) { return u.role === 'User'; });
+      var leaderboardData = competitors.map(function(comp) {
+        var mySubs = submissionsData.filter(function(s) { return s.username === comp.username && s.status === 'passed'; });
+        var rcScore = mySubs.filter(function(s) { return s.category === 'RC'; }).reduce(function(a, b) { return a + Number(b.score || 0); }, 0);
+        var baseScore = mySubs.filter(function(s) { return s.category === 'Base'; }).reduce(function(a, b) { return a + Number(b.score || 0); }, 0);
+        var quizScore = mySubs.filter(function(s) { return s.category === 'Quiz'; }).reduce(function(a, b) { return a + Number(b.score || 0); }, 0);
+        var bonusScore = Number(comp.bonusPoints || 0);
+        var totalNetScore = rcScore + baseScore + quizScore + bonusScore;
+        return {
+          user: comp,
+          totalNetScore: totalNetScore
+        };
+      });
+      leaderboardData.sort(function(a, b) { return b.totalNetScore - a.totalNetScore; });
+
+      var targetItem = leaderboardData[rank - 1];
+      if (!targetItem) {
+        Swal.fire('ไม่มีข้อมูล', 'ยังไม่มีข้อมูลผู้ได้รับคะแนนรวมในอันดับที่ ' + rank, 'info');
+        return;
+      }
+
+      var modal = document.getElementById('voteCelebrationModal');
+      if (!modal) return;
+
+      var titles = {
+        1: '🏆 รางวัลชนะเลิศการแข่งขันคะแนนรวม',
+        2: '🥈 รางวัลรองชนะเลิศอันดับ 1 การแข่งขันคะแนนรวม',
+        3: '🥉 รางวัลรองชนะเลิศอันดับ 2 การแข่งขันคะแนนรวม'
+      };
+      var badges = {
+        1: '🏆 ชนะเลิศอันดับ 1 (Overall Champion)',
+        2: '🥈 รองชนะเลิศอันดับ 1',
+        3: '🥉 รองชนะเลิศอันดับ 2'
+      };
+      var badgeStyles = {
+        1: 'bg-amber-100 text-amber-800 border-amber-300',
+        2: 'bg-slate-100 text-slate-800 border-slate-300',
+        3: 'bg-orange-100 text-orange-800 border-orange-300'
+      };
+      var medalIcons = {
+        1: '<i class="fa-solid fa-trophy text-amber-900"></i>',
+        2: '<i class="fa-solid fa-medal text-slate-800"></i>',
+        3: '<i class="fa-solid fa-award text-orange-900"></i>'
+      };
+      var iconGradients = {
+        1: 'from-amber-400 via-amber-300 to-yellow-200 border-amber-400 shadow-amber-500/40',
+        2: 'from-slate-300 via-slate-200 to-gray-100 border-slate-300 shadow-slate-500/30',
+        3: 'from-amber-600 via-orange-400 to-amber-300 border-orange-400 shadow-orange-500/30'
+      };
+
+      var badgeEl = document.getElementById('celebrationRankBadge');
+      if (badgeEl) {
+        badgeEl.innerText = badges[rank] || ('อันดับที่ ' + rank);
+        badgeEl.className = 'px-4 py-1 rounded-full text-xs font-black tracking-wider uppercase border mb-2 shadow-sm ' + (badgeStyles[rank] || '');
+      }
+
+      var titleEl = document.getElementById('celebrationTitle');
+      if (titleEl) {
+        titleEl.innerText = titles[rank] || ('ประกาศผลคะแนนรวมอันดับที่ ' + rank);
+      }
+
+      var iconWrapper = document.getElementById('celebrationMedalIconWrapper');
+      if (iconWrapper) {
+        iconWrapper.className = 'w-20 h-20 sm:w-24 sm:h-24 rounded-3xl bg-gradient-to-tr p-1 shadow-xl mb-3 flex items-center justify-center border-2 ' + (iconGradients[rank] || '');
+      }
+      var iconEl = document.getElementById('celebrationMedalIcon');
+      if (iconEl) {
+        iconEl.innerHTML = medalIcons[rank] || '<i class="fa-solid fa-trophy"></i>';
+      }
+
+      var teamImg = document.getElementById('celebrationTeamImg');
+      if (teamImg) {
+        teamImg.src = targetItem.user.profileUrl || 'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&w=400&q=80';
+      }
+
+      // Set Team Name ONLY (STRICTLY NO CAR CODE, NO CAR COLOR as requested!)
+      var teamNameEl = document.getElementById('celebrationTeamName');
+      if (teamNameEl) {
+        teamNameEl.innerText = targetItem.user.name;
+      }
+
+      // Set Score Pill with Total Score
+      var pillWrapper = document.getElementById('celebrationPillWrapper');
+      if (pillWrapper) {
+        pillWrapper.className = 'py-2 px-6 rounded-full bg-gradient-to-r from-amber-500 to-yellow-600 text-white font-black text-sm shadow-lg shadow-amber-500/30 flex items-center justify-center gap-2 mb-6';
+      }
+      var pillIcon = document.getElementById('celebrationPillIcon');
+      if (pillIcon) {
+        pillIcon.className = 'fa-solid fa-trophy text-amber-200';
+      }
+      var voteCountEl = document.getElementById('celebrationVoteCount');
+      if (voteCountEl) {
+        voteCountEl.innerText = 'ได้รับคะแนนรวม ' + Number(targetItem.totalNetScore || 0).toLocaleString('th-TH') + ' คะแนน';
+      }
+
+      modal.style.display = 'flex';
+
+      try {
+        if (typeof confetti === 'function') {
+          confetti({
+            particleCount: 120,
+            spread: 80,
+            origin: { y: 0.6 }
+          });
+        }
+      } catch (e) {}
+    }
+    window.showOverallCelebrationModal = showOverallCelebrationModal;
+
+
+    // =========================================================================
     // POPULAR VOTE CEREMONY & CELEBRATION FUNCTIONS
     // =========================================================================
     function revealPodiumRank(rank) {
@@ -6318,9 +6853,18 @@
         teamNameEl.innerText = targetItem.user.name;
       }
 
+      var pillWrapper = document.getElementById('celebrationPillWrapper');
+      if (pillWrapper) {
+        pillWrapper.className = 'py-2 px-6 rounded-full bg-gradient-to-r from-pink-500 to-rose-500 text-white font-black text-sm shadow-lg shadow-pink-500/30 flex items-center justify-center gap-2 mb-6';
+      }
+      var pillIcon = document.getElementById('celebrationPillIcon');
+      if (pillIcon) {
+        pillIcon.className = 'fa-solid fa-heart text-rose-200';
+      }
+
       var voteCountEl = document.getElementById('celebrationVoteCount');
       if (voteCountEl) {
-        voteCountEl.innerText = targetItem.votesCount + ' คะแนน (' + targetItem.percentage + '%)';
+        voteCountEl.innerText = 'ได้รับคะแนนโหวต ' + targetItem.votesCount + ' คะแนน (' + targetItem.percentage + '%)';
       }
 
       modal.style.display = 'flex';
