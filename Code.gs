@@ -81,6 +81,8 @@ function handleApiRequest(action, payload) {
       return apiLogin(payload.username, payload.password);
     case 'getInitialData':
       return apiGetInitialData(payload.username, token);
+    case 'setBoobyRank':
+      return apiSetBoobyRank(payload.boobyRank, token);
     case 'setScoreVisibility':
       return apiSetScoreVisibility(payload.isScoresHidden, token);
     case 'setVotingStatus':
@@ -239,13 +241,16 @@ function getSettingsMap(ss) {
   const settings = {
     isScoresHidden: false,
     isVotingOpen: false,
-    isVotesHidden: false
+    isVotesHidden: false,
+    boobyRank: 0
   };
   for (let i = 1; i < data.length; i++) {
     const key = String(data[i][0] || '').trim();
-    const val = String(data[i][1] || '').trim().toLowerCase();
-    if (key) {
-      settings[key] = (val === 'true');
+    const val = String(data[i][1] || '').trim();
+    if (key === 'boobyRank') {
+      settings.boobyRank = parseInt(val, 10) || 0;
+    } else if (key) {
+      settings[key] = (val.toLowerCase() === 'true');
     }
   }
   return settings;
@@ -458,7 +463,8 @@ function apiLogin(username, password) {
         },
         isScoresHidden: settings.isScoresHidden,
         isVotingOpen: settings.isVotingOpen,
-        isVotesHidden: settings.isVotesHidden
+        isVotesHidden: settings.isVotesHidden,
+        boobyRank: settings.boobyRank || 0
       };
     }
   }
@@ -589,6 +595,7 @@ function apiGetInitialData(username, sessionToken) {
     isScoresHidden: settings.isScoresHidden,
     isVotingOpen: settings.isVotingOpen,
     isVotesHidden: settings.isVotesHidden,
+    boobyRank: settings.boobyRank || 0,
     votes: votes
   };
 }
@@ -596,6 +603,20 @@ function apiGetInitialData(username, sessionToken) {
 /**
  * API: Set Score Visibility Setting (Admin Only)
  */
+/**
+ * API: Set Booby Rank Setting (Admin Only)
+ */
+function apiSetBoobyRank(boobyRank, sessionToken) {
+  const auth = verifyAuth(sessionToken, ['Admin']);
+  if (!auth.success) return auth;
+
+  const rankNum = Math.max(0, parseInt(boobyRank, 10) || 0);
+  return withLock(function() {
+    setSetting('boobyRank', String(rankNum));
+    return { success: true, boobyRank: rankNum };
+  });
+}
+
 function apiSetScoreVisibility(isScoresHidden, sessionToken) {
   const auth = verifyAuth(sessionToken, ['Admin']);
   if (!auth.success) return auth;
