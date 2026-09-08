@@ -115,6 +115,8 @@ function handleApiRequest(action, payload) {
       return apiResetCompetitorProfiles(token);
     case 'uploadFileToDrive':
       return uploadFileToDrive(payload.base64Data, payload.fileName, payload.mimeType);
+    case 'uploadSolutionImage':
+      return apiUploadSolutionImage(payload.activityId, payload.imageFileObj, token);
     default:
       return { success: false, message: 'Unknown API action: ' + action };
   }
@@ -177,8 +179,8 @@ function setupDatabase() {
   // 2. Activities Sheet
   let actSheet = getOrCreateSheet(ss, SHEET_NAMES.ACTIVITIES);
   if (actSheet.getLastRow() === 0) {
-    actSheet.appendRow(['id', 'category', 'title', 'description', 'imageUrl', 'scoringType', 'maxPoints', 'autoAnswers']);
-    actSheet.getRange(1, 1, 1, 8).setFontWeight('bold').setBackground('#1e293b').setFontColor('#ffffff');
+    actSheet.appendRow(['id', 'category', 'title', 'description', 'imageUrl', 'scoringType', 'maxPoints', 'autoAnswers', 'solutionImageUrl']);
+    actSheet.getRange(1, 1, 1, 9).setFontWeight('bold').setBackground('#1e293b').setFontColor('#ffffff');
     
     // Sample Activities
     const sampleAutoAnswers = JSON.stringify({
@@ -188,9 +190,14 @@ function setupDatabase() {
       default: { answer: 'RC1', points: 10 }
     });
     
-    actSheet.appendRow(['ACT-001', 'RC', 'จุด RC 1: ป้ายหลักกิโลเมตรประวัติศาสตร์', 'ถ่ายรูปคู่กับป้ายหลักกิโลเมตรและค้นหาตัวเลขคำใบ้', 'https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?auto=format&fit=crop&w=600&q=80', 'AUTO', 10, sampleAutoAnswers]);
-    actSheet.appendRow(['ACT-002', 'Base', 'ฐานกิจกรรม 1: สานสามัคคีสร้างสิ่งประดิษฐ์', 'ประดิษฐ์แพจำลองจากอุปกรณ์ที่กำหนด แล้วถ่ายภาพส่งผลงานเข้าระบบ', 'https://images.unsplash.com/photo-1517048676732-d65bc937f952?auto=format&fit=crop&w=600&q=80', 'IMAGE', 20, '{}']);
-    actSheet.appendRow(['ACT-003', 'Quiz', 'คำถามไอคิว: ปริศนาเมืองเก่า', 'บรรยายประวัติความเป็นมาของโบราณสถานประจำเมืองอย่างย่อ', 'https://images.unsplash.com/photo-1461360370896-922624d12aa1?auto=format&fit=crop&w=600&q=80', 'MANUAL', 15, '{}']);
+    actSheet.appendRow(['ACT-001', 'RC', 'จุด RC 1: ป้ายหลักกิโลเมตรประวัติศาสตร์', 'ถ่ายรูปคู่กับป้ายหลักกิโลเมตรและค้นหาตัวเลขคำใบ้', 'https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?auto=format&fit=crop&w=600&q=80', 'AUTO', 10, sampleAutoAnswers, '']);
+    actSheet.appendRow(['ACT-002', 'Base', 'ฐานกิจกรรม 1: สานสามัคคีสร้างสิ่งประดิษฐ์', 'ประดิษฐ์แพจำลองจากอุปกรณ์ที่กำหนด แล้วถ่ายภาพส่งผลงานเข้าระบบ', 'https://images.unsplash.com/photo-1517048676732-d65bc937f952?auto=format&fit=crop&w=600&q=80', 'IMAGE', 20, '{}', '']);
+    actSheet.appendRow(['ACT-003', 'Quiz', 'คำถามไอคิว: ปริศนาเมืองเก่า', 'บรรยายประวัติความเป็นมาของโบราณสถานประจำเมืองอย่างย่อ', 'https://images.unsplash.com/photo-1461360370896-922624d12aa1?auto=format&fit=crop&w=600&q=80', 'MANUAL', 15, '{}', '']);
+  } else {
+    // Migration: Ensure column 9 exists for solutionImageUrl
+    if (actSheet.getLastColumn() < 9) {
+      actSheet.getRange(1, 9).setValue('solutionImageUrl').setFontWeight('bold').setBackground('#1e293b').setFontColor('#ffffff');
+    }
   }
   
   // 3. Submissions Sheet
@@ -489,11 +496,14 @@ function apiGetInitialData(username, sessionToken) {
   const actSheet = getOrCreateSheet(ss, SHEET_NAMES.ACTIVITIES);
   const actRaw = actSheet.getDataRange().getValues();
   const activities = [];
+  const requesterRole = currentUser ? currentUser.role : 'User';
+  const isAdmin = (requesterRole === 'Admin');
+
   for (let i = 1; i < actRaw.length; i++) {
     let autoAns = {};
     try { autoAns = JSON.parse(actRaw[i][7] || '{}'); } catch(e) {}
     
-    activities.push({
+    const actItem = {
       id: actRaw[i][0],
       category: actRaw[i][1],
       title: actRaw[i][2],
@@ -502,14 +512,22 @@ function apiGetInitialData(username, sessionToken) {
       scoringType: actRaw[i][5],
       maxPoints: Number(actRaw[i][6]) || 0,
       autoAnswers: autoAns
-    });
+    };
+
+    // Role-based security: solutionImageUrl is sent ONLY to Admin
+    if (isAdmin) {
+      actItem.solutionImageUrl = String(actRaw[i][8] || '');
+    } else {
+      actItem.solutionImageUrl = '';
+    }
+
+    activities.push(actItem);
   }
   
   // Get Submissions (Optimized for Role: Users get full details for own subs, lightweight for others)
   const subSheet = getOrCreateSheet(ss, SHEET_NAMES.SUBMISSIONS);
   const subRaw = subSheet.getDataRange().getValues();
   const submissions = [];
-  const requesterRole = currentUser ? currentUser.role : 'User';
   const isPrivileged = (requesterRole === 'Admin' || requesterRole === 'Sub-Admin');
 
   for (let i = 1; i < subRaw.length; i++) {
@@ -947,6 +965,7 @@ function apiSaveActivity(activityData, sessionToken) {
 
   const id = activityData.id || ('ACT-' + String(Date.now()).slice(-6));
   let imageUrl = activityData.imageUrl || '';
+  let solutionImageUrl = activityData.solutionImageUrl || '';
 
   // If user uploaded a new image file for activity, upload to Drive outside lock
   if (activityData.imageFileObj && activityData.imageFileObj.base64) {
@@ -956,11 +975,24 @@ function apiSaveActivity(activityData, sessionToken) {
     }
   }
 
+  // If user uploaded a new solution image file for activity, upload to Drive outside lock
+  if (activityData.solutionImageFileObj && activityData.solutionImageFileObj.base64) {
+    const uploadRes = uploadFileToDrive(activityData.solutionImageFileObj.base64, activityData.solutionImageFileObj.fileName, activityData.solutionImageFileObj.mimeType);
+    if (uploadRes.success) {
+      solutionImageUrl = uploadRes.directUrl;
+    }
+  }
+
   return withLock(function() {
     const ss = getSpreadsheet();
     const actSheet = getOrCreateSheet(ss, SHEET_NAMES.ACTIVITIES);
     const actData = actSheet.getDataRange().getValues();
     const autoAnswersStr = JSON.stringify(activityData.autoAnswers || {});
+
+    // Ensure header has 9 columns
+    if (actSheet.getLastColumn() < 9) {
+      actSheet.getRange(1, 9).setValue('solutionImageUrl').setFontWeight('bold').setBackground('#1e293b').setFontColor('#ffffff');
+    }
 
     let foundRow = -1;
     for (let i = 1; i < actData.length; i++) {
@@ -978,16 +1010,76 @@ function apiSaveActivity(activityData, sessionToken) {
       imageUrl,
       activityData.scoringType,
       Number(activityData.maxPoints) || 0,
-      autoAnswersStr
+      autoAnswersStr,
+      solutionImageUrl
     ];
 
     if (foundRow > 0) {
-      actSheet.getRange(foundRow, 1, 1, 8).setValues([rowContent]);
+      actSheet.getRange(foundRow, 1, 1, 9).setValues([rowContent]);
     } else {
       actSheet.appendRow(rowContent);
     }
 
-    return { success: true, message: 'บันทึกข้อมูลภารกิจเรียบร้อยแล้ว', activityId: id, imageUrl: imageUrl };
+    return { 
+      success: true, 
+      message: 'บันทึกข้อมูลภารกิจเรียบร้อยแล้ว', 
+      activityId: id, 
+      imageUrl: imageUrl,
+      solutionImageUrl: solutionImageUrl
+    };
+  });
+}
+
+/**
+ * API: Quick Upload Solution Image for Activity (Admin)
+ */
+function apiUploadSolutionImage(activityId, imageFileObj, sessionToken) {
+  const auth = verifyAuth(sessionToken, ['Admin']);
+  if (!auth.success) return auth;
+
+  if (!imageFileObj || !imageFileObj.base64) {
+    return { success: false, message: 'ไม่พบไฟล์รูปภาพเฉลยที่ต้องการอัปโหลด' };
+  }
+
+  const uploadRes = uploadFileToDrive(
+    imageFileObj.base64, 
+    imageFileObj.fileName || ('solution_' + activityId + '.jpg'), 
+    imageFileObj.mimeType || 'image/jpeg'
+  );
+  if (!uploadRes.success) {
+    return { success: false, message: 'ไม่สามารถอัปโหลดรูปภาพเฉลยไปยัง Google Drive ได้: ' + (uploadRes.error || '') };
+  }
+
+  const solutionUrl = uploadRes.directUrl;
+
+  return withLock(function() {
+    const ss = getSpreadsheet();
+    const actSheet = getOrCreateSheet(ss, SHEET_NAMES.ACTIVITIES);
+    const actData = actSheet.getDataRange().getValues();
+
+    if (actSheet.getLastColumn() < 9) {
+      actSheet.getRange(1, 9).setValue('solutionImageUrl').setFontWeight('bold').setBackground('#1e293b').setFontColor('#ffffff');
+    }
+
+    let foundRow = -1;
+    for (let i = 1; i < actData.length; i++) {
+      if (actData[i][0] === activityId) {
+        foundRow = i + 1;
+        break;
+      }
+    }
+
+    if (foundRow > 0) {
+      actSheet.getRange(foundRow, 9).setValue(solutionUrl);
+      return { 
+        success: true, 
+        message: 'อัปโหลดภาพเฉลยเรียบร้อยแล้ว', 
+        activityId: activityId, 
+        solutionImageUrl: solutionUrl 
+      };
+    } else {
+      return { success: false, message: 'ไม่พบรหัสภารกิจ ' + activityId };
+    }
   });
 }
 
