@@ -1652,8 +1652,8 @@
             apiLogin: function(username, password) {
               callFetch('login', { username: username, password: password });
             },
-            apiGetInitialData: function(username) {
-              callFetch('getInitialData', { username: username });
+            apiGetInitialData: function(username, token) {
+              callFetch('getInitialData', { username: username, sessionToken: token || sessionToken });
             },
             apiSetScoreVisibility: function(isScoresHidden) {
               callFetch('setScoreVisibility', { isScoresHidden: isScoresHidden });
@@ -2659,6 +2659,9 @@
         updateActiveSidebarItem('sideNavDashboard');
         if (title) title.innerHTML = '<i class="fa-solid fa-list-check text-purple-600"></i> รายการภารกิจและกิจกรรมทั้งหมด';
       }
+      if ((!activitiesData || activitiesData.length === 0) && currentUser) {
+        loadAppData();
+      }
     }
 
     function switchView(viewName, filterCategory) {
@@ -2806,8 +2809,22 @@
                 }
                 if (res.currentUser) currentUser = res.currentUser;
                 setupNavigation();
-                renderUserDashboard();
-                renderAdminUsersTable();
+                if (currentActiveViewName === 'UserMissions') {
+                  renderUserMissionsGrid();
+                } else if (currentActiveViewName === 'AdminActivities') {
+                  renderAdminActivitiesTable('', currentActiveFilterCat);
+                } else if (currentActiveViewName === 'UserHistory') {
+                  renderUserHistoryTable(submissionsData);
+                } else if (currentActiveViewName === 'Leaderboard') {
+                  renderLeaderboard();
+                } else if (currentActiveViewName === 'Grading') {
+                  renderGradingList();
+                } else if (currentActiveViewName === 'VoteResults') {
+                  renderVoteResults();
+                } else {
+                  renderUserDashboard();
+                  renderAdminUsersTable();
+                }
               } else {
                 Swal.fire('ข้อผิดพลาด', 'ไม่สามารถโหลดข้อมูลระบบได้', 'error');
               }
@@ -3100,7 +3117,18 @@
       }
 
       if (filtered.length === 0) {
-        container.innerHTML = '<div class="col-span-full text-center py-8 text-slate-400 rounded-3xl bg-white border border-slate-200">ไม่พบรายการภารกิจในหมวดหมู่นี้</div>';
+        if (!activitiesData || activitiesData.length === 0) {
+          container.innerHTML = '<div class="col-span-full text-center py-12 text-slate-500 rounded-3xl bg-white border border-slate-200 flex flex-col items-center justify-center gap-3 shadow-sm">' +
+            '<i class="fa-solid fa-arrows-rotate fa-spin text-3xl text-purple-600"></i>' +
+            '<p class="text-sm font-bold text-slate-700">กำลังเชื่อมต่อและโหลดข้อมูลภารกิจจากฐานข้อมูล...</p>' +
+            '<button onclick="loadAppData()" class="mt-1 px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs transition-all shadow-md cursor-pointer flex items-center gap-1.5"><i class="fa-solid fa-arrows-rotate"></i> โหลดข้อมูลใหม่</button>' +
+            '</div>';
+          if (currentUser) {
+            setTimeout(loadAppData, 200);
+          }
+        } else {
+          container.innerHTML = '<div class="col-span-full text-center py-8 text-slate-400 rounded-3xl bg-white border border-slate-200">ไม่พบรายการภารกิจในหมวดหมู่นี้</div>';
+        }
         return;
       }
 
@@ -5540,13 +5568,9 @@
 
     // DOM Ready listener
     document.addEventListener('DOMContentLoaded', function() {
-      if (typeof google === 'undefined' || typeof google.script === 'undefined') {
-        isMockMode = true;
-        var toggle = document.getElementById('mockModeToggle');
-        if (toggle) toggle.checked = true;
-        updateModeUI();
-      }
-      initMockDatabase();
+      // Always connect to live Google Sheets backend (via native GAS or REST API bridge)
+      isMockMode = false;
+      updateModeUI();
 
       // Reset all modals and views to default state
       hideAllViews();
@@ -6456,7 +6480,7 @@
               if (refreshIcon) refreshIcon.classList.remove('fa-spin');
               Swal.fire('ข้อผิดพลาดระบบ', err.message, 'error');
             })
-            .apiGetInitialData(currentUser.username);
+            .apiGetInitialData(currentUser.username, sessionToken);
         }
       }
     }
