@@ -3263,6 +3263,24 @@
     // =========================================================================
     // SECTION 6: APP DATA & USER DASHBOARD CONTROLLERS
     // =========================================================================
+    function showSyncSuccessToast() {
+      Swal.fire({
+        toast: true,
+        position: 'top-end',
+        icon: 'success',
+        title: '<div class="flex items-center gap-1.5 text-xs font-bold text-emerald-800"><i class="fa-solid fa-circle-check text-emerald-600 text-sm"></i> <span>ซิงค์ข้อมูลระบบล่าสุดสำเร็จ</span></div>',
+        html: '<div class="text-[11px] text-slate-500 font-medium mt-0.5">ข้อมูลระบบทั้งหมดอัปเดตเป็นปัจจุบันเรียบร้อยแล้ว ✨</div>',
+        background: 'rgba(255, 255, 255, 0.98)',
+        customClass: {
+          popup: 'rounded-2xl border border-emerald-200/90 shadow-xl backdrop-blur-xl px-4 py-3'
+        },
+        showConfirmButton: false,
+        timer: 2200,
+        timerProgressBar: true
+      });
+    }
+    window.showSyncSuccessToast = showSyncSuccessToast;
+
     function loadAppData() {
       if (!currentUser) return;
       showLoading('กำลังซิงค์ข้อมูลล่าสุด...');
@@ -3273,6 +3291,7 @@
           setupNavigation();
           renderUserDashboard();
           renderAdminUsersTable();
+          showSyncSuccessToast();
         }, 300);
       } else {
         if (typeof google !== 'undefined' && google.script && google.script.run) {
@@ -3318,6 +3337,7 @@
                   renderUserDashboard();
                   renderAdminUsersTable();
                 }
+                showSyncSuccessToast();
               } else {
                 Swal.fire('ข้อผิดพลาด', 'ไม่สามารถโหลดข้อมูลระบบได้', 'error');
               }
@@ -8185,15 +8205,7 @@
                 }
                 setupNavigation();
                 switchView(currentActiveViewName, currentActiveFilterCat);
-                Swal.fire({
-                  toast: true,
-                  position: 'top-end',
-                  icon: 'success',
-                  title: '<div class="flex items-center gap-1.5 text-xs font-bold text-indigo-700"><i class="fa-solid fa-arrows-rotate text-indigo-600"></i> รีเฟรชข้อมูลล่าสุดสำเร็จ</div>',
-                  showConfirmButton: false,
-                  timer: 1800,
-                  timerProgressBar: true
-                });
+                showSyncSuccessToast();
               } else {
                 Swal.fire('ข้อผิดพลาด', (res && res.message) || 'ไม่สามารถโหลดข้อมูลระบบได้', 'error');
               }
