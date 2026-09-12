@@ -1686,6 +1686,154 @@
     </div>
   </div>
 
+  <!-- ================= MODAL: SWAP CARS / LUCKY DRAW (Version 149) ================= -->
+  <div id="modalSwapCar" style="display: none;" class="fixed inset-0 z-50 items-center justify-center bg-slate-900/60 backdrop-blur-md p-4">
+    <div class="glass-modal max-w-lg w-full rounded-3xl p-6 relative max-h-[92vh] flex flex-col shadow-2xl border border-amber-200/50 overflow-hidden animate-fade-in">
+      
+      <!-- Modal Header -->
+      <div class="flex items-center justify-between pb-4 border-b border-slate-200 shrink-0">
+        <h3 class="text-base font-extrabold text-slate-800 flex items-center gap-2">
+          <span class="w-8 h-8 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center text-sm shadow-sm">
+            <i class="fa-solid fa-arrows-rotate"></i>
+          </span>
+          <span>สลับเบอร์รถ / จับฉลากกำหนดเบอร์รถ</span>
+        </h3>
+        <button type="button" onclick="closeSwapCarModal()" class="text-slate-400 hover:text-rose-600 text-xl w-8 h-8 rounded-full hover:bg-slate-100 flex items-center justify-center transition-all cursor-pointer">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <!-- Modal Body -->
+      <div class="flex-1 overflow-y-auto modal-body-scroll py-4 space-y-4 text-xs">
+        
+        <!-- Source Car Box (รถต้นทาง) -->
+        <div class="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/80">
+          <div class="text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1.5 flex items-center gap-1.5">
+            <i class="fa-solid fa-car text-purple-600"></i>
+            <span>1. รถต้นทาง (ทีมที่ต้องการสลับ/จับฉลาก)</span>
+          </div>
+          <div class="flex items-center gap-3">
+            <img id="swapSourceAvatar" src="" class="w-12 h-12 rounded-xl object-cover border-2 border-purple-200 shadow-sm" alt="Source Car">
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-2">
+                <span id="swapSourceUsername" class="font-mono font-bold text-sm text-purple-700">car2</span>
+                <span id="swapSourceColorBadge" class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-red-100 text-red-700">สีแดง</span>
+              </div>
+              <p id="swapSourceName" class="font-bold text-slate-800 text-xs truncate mt-0.5">ทีมสิงห์เหนือ</p>
+              <p id="swapSourceMembers" class="text-[11px] text-slate-500 truncate mt-0.5">
+                <i class="fa-solid fa-users text-emerald-600 text-[10px] mr-1"></i> 4 คน: ...
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Destination Selection & Lucky Draw Mode -->
+        <div class="p-4 rounded-2xl bg-gradient-to-br from-amber-50/80 via-orange-50/40 to-slate-50 border border-amber-200 space-y-3">
+          <div class="flex items-center justify-between flex-wrap gap-2">
+            <label class="font-black text-slate-800 flex items-center gap-1.5 text-xs">
+              <i class="fa-solid fa-arrow-right-arrow-left text-amber-600"></i>
+              <span>2. เลือกรถปลายทางที่ต้องการสลับ / ผลการจับฉลาก</span>
+            </label>
+            <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-200">2 วิธีในหน้าเดียว</span>
+          </div>
+
+          <!-- Method A: Select from Dropdown -->
+          <div>
+            <label class="block text-[11px] font-bold text-slate-700 mb-1">
+              วิธีที่ 1: เลือกเบอร์รถปลายทางด้วยตนเอง (จากการจับฉลากหน้างาน)
+            </label>
+            <select id="swapTargetSelect" onchange="onSwapTargetChange()" class="w-full px-3 py-2.5 rounded-xl glass-input text-xs font-semibold text-slate-800 border border-amber-300 focus:ring-2 focus:ring-amber-500">
+              <option value="">-- กรุณาเลือกเบอร์รถปลายทาง --</option>
+            </select>
+          </div>
+
+          <div class="relative flex py-1 items-center">
+            <div class="flex-grow border-t border-amber-200"></div>
+            <span class="flex-shrink mx-3 text-[11px] font-extrabold text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full">หรือ</span>
+            <div class="flex-grow border-t border-amber-200"></div>
+          </div>
+
+          <!-- Method B: Lucky Draw Button -->
+          <div class="text-center space-y-2">
+            <label class="block text-[11px] font-bold text-slate-700 text-left">
+              วิธีที่ 2: สุ่มจับฉลากเบอร์รถในระบบ (Lucky Draw สดๆ)
+            </label>
+            
+            <div class="flex items-center justify-between gap-2 px-1 text-[11px] text-slate-600">
+              <label class="inline-flex items-center gap-1.5 cursor-pointer">
+                <input type="checkbox" id="swapEmptyOnlyCheck" checked class="rounded text-amber-600 focus:ring-amber-500 w-3.5 h-3.5">
+                <span>สุ่มเฉพาะรถที่ยังว่าง (ยังไม่มีสมาชิก)</span>
+              </label>
+            </div>
+
+            <button type="button" id="btnLuckyDraw" onclick="startLuckyDraw()" class="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 hover:from-amber-600 hover:to-orange-600 text-white font-extrabold shadow-md shadow-amber-500/20 hover:shadow-lg transition-all flex items-center justify-center gap-2 text-xs cursor-pointer">
+              <i class="fa-solid fa-dice text-base animate-bounce"></i>
+              <span>กดปุ่มสุ่มจับฉลากเบอร์รถ (สุ่มแบบดิจิทัล)</span>
+            </button>
+
+            <!-- Lucky Draw Animation Box (Hidden initially) -->
+            <div id="luckyDrawDisplayBox" style="display: none;" class="p-4 rounded-2xl bg-slate-900 text-white shadow-xl text-center space-y-2 relative overflow-hidden border border-amber-400/50 animate-fade-in">
+              <div class="text-[10px] uppercase font-bold tracking-widest text-amber-300">
+                🎰 กำลังหมุนสุ่มเบอร์รถ...
+              </div>
+              <div id="luckyDrawNumberRoll" class="text-3xl sm:text-4xl font-black font-mono text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-yellow-200 to-orange-400 py-1 tracking-wider">
+                car--
+              </div>
+              <div id="luckyDrawTeamHint" class="text-xs text-slate-300 font-medium truncate">
+                รอผลจับฉลาก...
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Preview Box: Comparison Before & After (กล่องแสดงตัวอย่างการสลับ) -->
+        <div id="swapPreviewBox" style="display: none;" class="p-3.5 rounded-2xl bg-emerald-50/70 border border-emerald-200 space-y-2.5 animate-fade-in">
+          <div class="text-[11px] font-extrabold text-emerald-800 flex items-center justify-between">
+            <span class="flex items-center gap-1.5">
+              <i class="fa-solid fa-circle-check text-emerald-600"></i>
+              <span>ตัวอย่างผลลัพธ์หลังการสลับ</span>
+            </span>
+            <span class="text-[10px] text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full font-bold">ตรวจสอบก่อนยืนยัน</span>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+            <!-- Box A -->
+            <div class="p-2.5 rounded-xl bg-white border border-emerald-200/80 shadow-sm space-y-1">
+              <div class="flex items-center justify-between">
+                <span id="previewUserA" class="font-mono font-black text-purple-700 text-xs">car2</span>
+                <span class="text-[10px] text-slate-400">จะได้รับข้อมูลของ</span>
+              </div>
+              <div id="previewTeamA" class="font-bold text-slate-800 truncate text-[11px]">-</div>
+              <div id="previewMembersA" class="text-[10px] text-slate-500 truncate">-</div>
+            </div>
+
+            <!-- Box B -->
+            <div class="p-2.5 rounded-xl bg-white border border-emerald-200/80 shadow-sm space-y-1">
+              <div class="flex items-center justify-between">
+                <span id="previewUserB" class="font-mono font-black text-amber-700 text-xs">car15</span>
+                <span class="text-[10px] text-slate-400">จะได้รับข้อมูลของ</span>
+              </div>
+              <div id="previewTeamB" class="font-bold text-slate-800 truncate text-[11px]">-</div>
+              <div id="previewMembersB" class="text-[10px] text-slate-500 truncate">-</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Fixed Modal Footer -->
+      <div class="flex items-center justify-end gap-2.5 pt-3.5 border-t border-slate-200 shrink-0">
+        <button type="button" onclick="closeSwapCarModal()" class="px-4 py-2 rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 text-xs font-semibold cursor-pointer">ยกเลิก</button>
+        <button type="button" id="btnConfirmSwap" onclick="confirmSwapCars()" disabled class="px-5 py-2 rounded-xl bg-emerald-600 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold shadow-md hover:bg-emerald-700 transition-all text-xs flex items-center gap-1.5 cursor-pointer">
+          <i class="fa-solid fa-check"></i>
+          <span>ยืนยันการสลับเบอร์รถ</span>
+        </button>
+      </div>
+
+    </div>
+  </div>
+
   <!-- Modal: Edit Self Profile (User Self Edit) -->
   <div id="modalSelfProfile" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" style="display: none;">
     <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4 border border-purple-100 relative animate-fade-in">
@@ -1874,6 +2022,9 @@
             },
             apiDeleteUser: function(username) {
               callFetch('deleteUser', { username: username });
+            },
+            apiSwapCars: function(usernameA, usernameB) {
+              callFetch('swapCars', { usernameA: usernameA, usernameB: usernameB });
             },
             apiUpdateSelfProfile: function(username, name, profileUrl) {
               callFetch('updateSelfProfile', { username: username, name: name, profileUrl: profileUrl });
@@ -5141,7 +5292,7 @@
           '<td class="py-2.5 px-3.5 whitespace-nowrap">' + roleBadge + '</td>' +
           '<td class="py-2.5 px-3.5 text-slate-700 font-mono text-xs whitespace-nowrap">' + escapeHTML(u.carCode || '-') + '</td>' +
           '<td class="py-2.5 px-3.5 text-center whitespace-nowrap"><span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-semibold ' + getCarColorStyle(u.carColor) + ' whitespace-nowrap">' + escapeHTML(getCarColorThaiName(u.carColor)) + '</span></td>' +
-          '<td class="py-2.5 px-3.5 text-right whitespace-nowrap"><button onclick="editUser(\'' + u.username + '\')" class="px-2.5 py-1 rounded-lg bg-purple-50 text-purple-700 border border-purple-200 hover:bg-purple-600 hover:text-white transition-all text-[11px] font-semibold shadow-sm mr-1"><i class="fa-solid fa-pen"></i> แก้ไข</button><button onclick="deleteUser(\'' + u.username + '\')" class="px-2.5 py-1 rounded-lg bg-rose-50 text-rose-600 border border-rose-200 hover:bg-rose-600 hover:text-white transition-all text-[11px] font-semibold shadow-sm"><i class="fa-solid fa-trash"></i> ลบ</button></td>' +
+          '<td class="py-2.5 px-3.5 text-right whitespace-nowrap">' +(u.role === 'User' ? '<button onclick="openSwapCarModal(\'' + escapeHTML(u.username) + '\')" class="px-2.5 py-1 rounded-lg bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-600 hover:text-white transition-all text-[11px] font-semibold shadow-sm mr-1 cursor-pointer" title="สลับเบอร์รถ / จับฉลาก"><i class="fa-solid fa-arrows-rotate"></i> สลับเบอร์</button>' : '') +'<button onclick="editUser(\'' + u.username + '\')" class="px-2.5 py-1 rounded-lg bg-purple-50 text-purple-700 border border-purple-200 hover:bg-purple-600 hover:text-white transition-all text-[11px] font-semibold shadow-sm mr-1 cursor-pointer"><i class="fa-solid fa-pen"></i> แก้ไข</button><button onclick="deleteUser(\'' + u.username + '\')" class="px-2.5 py-1 rounded-lg bg-rose-50 text-rose-600 border border-rose-200 hover:bg-rose-600 hover:text-white transition-all text-[11px] font-semibold shadow-sm cursor-pointer"><i class="fa-solid fa-trash"></i> ลบ</button></td>' +
           '</tr>';
       }).join('');
     }
@@ -5154,7 +5305,8 @@
     function openUserModal(username) {
       if (username) {
         var u = usersData.find(function(x) { return x.username === username; });
-        document.getElementById('modalUserTitle').innerHTML = '<i class="fa-solid fa-user-pen text-emerald-600"></i> แก้ไขข้อมูล (' + username + ')';
+        var swapBtnHtml = (u && u.role === 'User')  ? ' <button type="button" onclick="closeUserModal(); openSwapCarModal(\'' + escapeHTML(u.username) + '\');" class="ml-auto text-[11px] bg-amber-50 text-amber-700 hover:bg-amber-600 hover:text-white border border-amber-200 px-2.5 py-1 rounded-xl font-bold transition-all flex items-center gap-1 shadow-sm cursor-pointer" title="สลับเบอร์รถกับคันอื่น"><i class="fa-solid fa-arrows-rotate"></i> สลับเบอร์รถ</button>'  : '';
+        document.getElementById('modalUserTitle').innerHTML = '<i class="fa-solid fa-user-pen text-emerald-600"></i> แก้ไขข้อมูล (' + escapeHTML(username) + ')' + swapBtnHtml;
         document.getElementById('userFormUsername').value = u.username;
         document.getElementById('userFormUsername').readOnly = true;
         document.getElementById('userFormPassword').value = '';
@@ -5395,6 +5547,346 @@
         }
       });
     }
+
+    // =========================================================================
+    // SWAP CARS & LUCKY DRAW ENGINE (Version 149)
+    // =========================================================================
+    var currentSwapSourceUsername = null;
+    var currentSwapTargetUsername = null;
+    var luckyDrawRollInterval = null;
+
+    function isDefaultTeamNameCheck(name, username, carCode) {
+      if (!name) return true;
+      var clean = String(name).trim().toLowerCase();
+      var u = String(username || '').trim().toLowerCase();
+      var c = String(carCode || '').trim().toLowerCase();
+      return clean === 'ทีม ' + u || clean === 'ทีม ' + c || clean === u || clean === c || clean === '';
+    }
+
+    function openSwapCarModal(username) {
+      if (!ensureAuthenticated()) return;
+      if (!username) return;
+
+      var source = usersData.find(function(x) { return x.username === username; });
+      if (!source) {
+        Swal.fire('ไม่พบบัญชี', 'ไม่พบข้อมูลรถคันที่ระบุ', 'error');
+        return;
+      }
+
+      currentSwapSourceUsername = username;
+      currentSwapTargetUsername = null;
+      if (luckyDrawRollInterval) {
+        clearInterval(luckyDrawRollInterval);
+        luckyDrawRollInterval = null;
+      }
+
+      // Populate source info
+      var srcAvatar = document.getElementById('swapSourceAvatar');
+      if (srcAvatar) srcAvatar.src = source.profileUrl || 'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&w=400&q=80';
+      
+      var srcUserEl = document.getElementById('swapSourceUsername');
+      if (srcUserEl) srcUserEl.innerText = source.username + (source.carCode ? ' (' + source.carCode + ')' : '');
+
+      var srcBadge = document.getElementById('swapSourceColorBadge');
+      if (srcBadge) {
+        srcBadge.className = 'px-2 py-0.5 rounded-full text-[10px] font-semibold ' + getCarColorStyle(source.carColor);
+        srcBadge.innerText = getCarColorThaiName(source.carColor);
+      }
+
+      var srcNameEl = document.getElementById('swapSourceName');
+      if (srcNameEl) srcNameEl.innerText = source.name;
+
+      var srcMembersEl = document.getElementById('swapSourceMembers');
+      if (srcMembersEl) {
+        if (source.members && source.members.length > 0) {
+          srcMembersEl.innerHTML = '<i class="fa-solid fa-users text-emerald-600 text-[10px] mr-1"></i> ' + source.members.length + ' คน: ' + escapeHTML(source.members.join(', '));
+        } else {
+          srcMembersEl.innerHTML = '<span class="text-slate-400">ยังไม่ระบุสมาชิก</span>';
+        }
+      }
+
+      // Populate target select dropdown (sorted by natural car number)
+      var select = document.getElementById('swapTargetSelect');
+      if (select) {
+        var competitorCars = usersData.filter(function(u) {
+          return u.role === 'User' && u.username !== source.username;
+        });
+
+        competitorCars.sort(function(a, b) {
+          var numA = parseInt(a.username.replace(/\D/g, ''), 10) || 0;
+          var numB = parseInt(b.username.replace(/\D/g, ''), 10) || 0;
+          if (numA !== numB) return numA - numB;
+          return a.username.localeCompare(b.username);
+        });
+
+        select.innerHTML = '<option value="">-- เลือกเบอร์รถปลายทาง (จากการจับฉลาก) --</option>' +
+          competitorCars.map(function(u) {
+            var memCount = (u.members && u.members.length > 0) ? (u.members.length + ' คน') : 'ว่าง (ยังไม่มีสมาชิก)';
+            return '<option value="' + escapeHTML(u.username) + '">' +
+              escapeHTML(u.username) + (u.carCode ? ' (' + escapeHTML(u.carCode) + ')' : '') +
+              ' — ' + escapeHTML(u.name) + ' [' + memCount + ']' +
+              '</option>';
+          }).join('');
+        select.value = '';
+      }
+
+      // Reset Lucky Draw Box and Preview Box
+      var rollBox = document.getElementById('luckyDrawDisplayBox');
+      if (rollBox) rollBox.style.display = 'none';
+
+      var previewBox = document.getElementById('swapPreviewBox');
+      if (previewBox) previewBox.style.display = 'none';
+
+      var btnConfirm = document.getElementById('btnConfirmSwap');
+      if (btnConfirm) btnConfirm.disabled = true;
+
+      var modal = document.getElementById('modalSwapCar');
+      if (modal) modal.style.display = 'flex';
+    }
+    window.openSwapCarModal = openSwapCarModal;
+
+    function closeSwapCarModal() {
+      if (luckyDrawRollInterval) {
+        clearInterval(luckyDrawRollInterval);
+        luckyDrawRollInterval = null;
+      }
+      var modal = document.getElementById('modalSwapCar');
+      if (modal) modal.style.display = 'none';
+      currentSwapSourceUsername = null;
+      currentSwapTargetUsername = null;
+    }
+    window.closeSwapCarModal = closeSwapCarModal;
+
+    function onSwapTargetChange() {
+      var select = document.getElementById('swapTargetSelect');
+      currentSwapTargetUsername = select ? select.value : null;
+      updateSwapPreview();
+    }
+    window.onSwapTargetChange = onSwapTargetChange;
+
+    function updateSwapPreview() {
+      var previewBox = document.getElementById('swapPreviewBox');
+      var btnConfirm = document.getElementById('btnConfirmSwap');
+
+      if (!currentSwapSourceUsername || !currentSwapTargetUsername || currentSwapSourceUsername === currentSwapTargetUsername) {
+        if (previewBox) previewBox.style.display = 'none';
+        if (btnConfirm) btnConfirm.disabled = true;
+        return;
+      }
+
+      var source = usersData.find(function(x) { return x.username === currentSwapSourceUsername; });
+      var target = usersData.find(function(x) { return x.username === currentSwapTargetUsername; });
+
+      if (!source || !target) {
+        if (previewBox) previewBox.style.display = 'none';
+        if (btnConfirm) btnConfirm.disabled = true;
+        return;
+      }
+
+      var newNameForSource = target.name;
+      if (isDefaultTeamNameCheck(target.name, target.username, target.carCode)) {
+        newNameForSource = 'ทีม ' + (source.carCode || source.username);
+      }
+
+      var newNameForTarget = source.name;
+      if (isDefaultTeamNameCheck(source.name, source.username, source.carCode)) {
+        newNameForTarget = 'ทีม ' + (target.carCode || target.username);
+      }
+
+      // Populate preview fields
+      var pUserA = document.getElementById('previewUserA');
+      var pTeamA = document.getElementById('previewTeamA');
+      var pMembersA = document.getElementById('previewMembersA');
+      if (pUserA) pUserA.innerText = source.username;
+      if (pTeamA) pTeamA.innerHTML = '<i class="fa-solid fa-flag text-purple-600 mr-1"></i> ' + escapeHTML(newNameForSource);
+      if (pMembersA) {
+        pMembersA.innerHTML = (target.members && target.members.length > 0)
+          ? ('<i class="fa-solid fa-users text-emerald-600 mr-1"></i> ' + target.members.length + ' คน: ' + escapeHTML(target.members.join(', ')))
+          : '<span class="text-slate-400">ยังไม่มีสมาชิก</span>';
+      }
+
+      var pUserB = document.getElementById('previewUserB');
+      var pTeamB = document.getElementById('previewTeamB');
+      var pMembersB = document.getElementById('previewMembersB');
+      if (pUserB) pUserB.innerText = target.username;
+      if (pTeamB) pTeamB.innerHTML = '<i class="fa-solid fa-flag text-amber-600 mr-1"></i> ' + escapeHTML(newNameForTarget);
+      if (pMembersB) {
+        pMembersB.innerHTML = (source.members && source.members.length > 0)
+          ? ('<i class="fa-solid fa-users text-emerald-600 mr-1"></i> ' + source.members.length + ' คน: ' + escapeHTML(source.members.join(', ')))
+          : '<span class="text-slate-400">ยังไม่มีสมาชิก</span>';
+      }
+
+      if (previewBox) previewBox.style.display = 'block';
+      if (btnConfirm) btnConfirm.disabled = false;
+    }
+
+    function startLuckyDraw() {
+      if (!currentSwapSourceUsername) return;
+
+      var competitorCars = usersData.filter(function(u) {
+        return u.role === 'User' && u.username !== currentSwapSourceUsername;
+      });
+
+      if (competitorCars.length === 0) {
+        Swal.fire('ไม่มีรถคันอื่น', 'ไม่พบรถแข่งขันคันอื่นในระบบให้สลับ', 'info');
+        return;
+      }
+
+      var emptyOnly = document.getElementById('swapEmptyOnlyCheck') && document.getElementById('swapEmptyOnlyCheck').checked;
+      var candidateCars = competitorCars;
+
+      if (emptyOnly) {
+        var emptyCars = competitorCars.filter(function(u) {
+          return !u.members || u.members.length === 0;
+        });
+        if (emptyCars.length > 0) {
+          candidateCars = emptyCars;
+        } else {
+          candidateCars = competitorCars;
+        }
+      }
+
+      var rollBox = document.getElementById('luckyDrawDisplayBox');
+      var numberRoll = document.getElementById('luckyDrawNumberRoll');
+      var hint = document.getElementById('luckyDrawTeamHint');
+      var btn = document.getElementById('btnLuckyDraw');
+
+      if (rollBox) rollBox.style.display = 'block';
+      if (btn) btn.disabled = true;
+
+      if (luckyDrawRollInterval) clearInterval(luckyDrawRollInterval);
+
+      var elapsed = 0;
+      var duration = 1500;
+      var speed = 60;
+
+      luckyDrawRollInterval = setInterval(function() {
+        elapsed += speed;
+        var randIndex = Math.floor(Math.random() * candidateCars.length);
+        var randCar = candidateCars[randIndex];
+
+        if (numberRoll) numberRoll.innerText = randCar.username;
+        if (hint) hint.innerText = 'กำลังสุ่ม: ' + randCar.name;
+
+        if (elapsed >= duration) {
+          clearInterval(luckyDrawRollInterval);
+          luckyDrawRollInterval = null;
+
+          var finalTarget = candidateCars[Math.floor(Math.random() * candidateCars.length)];
+          if (numberRoll) {
+            numberRoll.innerHTML = '<span class="animate-bounce inline-block text-amber-300">' + escapeHTML(finalTarget.username) + '</span>';
+          }
+          if (hint) {
+            hint.innerHTML = '🎉 <span class="text-amber-300 font-bold">จับฉลากได้ ' + escapeHTML(finalTarget.username) + ' (' + escapeHTML(finalTarget.name) + ')</span>';
+          }
+          if (btn) btn.disabled = false;
+
+          var select = document.getElementById('swapTargetSelect');
+          if (select) {
+            select.value = finalTarget.username;
+            currentSwapTargetUsername = finalTarget.username;
+            updateSwapPreview();
+          }
+
+          if (typeof confetti === 'function') {
+            confetti({
+              particleCount: 40,
+              spread: 60,
+              origin: { y: 0.6 }
+            });
+          }
+        }
+      }, speed);
+    }
+    window.startLuckyDraw = startLuckyDraw;
+
+    function confirmSwapCars() {
+      if (!ensureAuthenticated()) return;
+      if (!currentSwapSourceUsername || !currentSwapTargetUsername) return;
+
+      var uA = currentSwapSourceUsername;
+      var uB = currentSwapTargetUsername;
+
+      var userA = usersData.find(function(x) { return x.username === uA; });
+      var userB = usersData.find(function(x) { return x.username === uB; });
+
+      if (!userA || !userB) {
+        Swal.fire('ข้อผิดพลาด', 'ไม่พบข้อมูลบัญชีที่ต้องการสลับ', 'error');
+        return;
+      }
+
+      var newNameForA = userB.name;
+      if (isDefaultTeamNameCheck(userB.name, userB.username, userB.carCode)) {
+        newNameForA = 'ทีม ' + (userA.carCode || userA.username);
+      }
+      var newNameForB = userA.name;
+      if (isDefaultTeamNameCheck(userA.name, userA.username, userA.carCode)) {
+        newNameForB = 'ทีม ' + (userB.carCode || userB.username);
+      }
+
+      showLoading('กำลังสลับเบอร์รถ ' + uA + ' และ ' + uB + '...');
+
+      // Optimistic in-memory update
+      var tempProfile = userA.profileUrl;
+      var tempColor = userA.carColor;
+      var tempBonus = userA.bonusPoints;
+      var tempMembers = userA.members ? JSON.parse(JSON.stringify(userA.members)) : [];
+
+      userA.name = newNameForA;
+      userA.profileUrl = userB.profileUrl;
+      userA.carColor = userB.carColor;
+      userA.bonusPoints = userB.bonusPoints;
+      userA.members = userB.members ? JSON.parse(JSON.stringify(userB.members)) : [];
+
+      userB.name = newNameForB;
+      userB.profileUrl = tempProfile;
+      userB.carColor = tempColor;
+      userB.bonusPoints = tempBonus;
+      userB.members = tempMembers;
+
+      renderAdminUsersTable();
+      renderUserDashboard();
+      renderLeaderboard();
+
+      if (isMockMode) {
+        setTimeout(function() {
+          hideLoading();
+          closeSwapCarModal();
+          Swal.fire({
+            icon: 'success',
+            title: 'สลับเบอร์รถสำเร็จ!',
+            html: '<p>สลับข้อมูลระหว่าง <b>' + escapeHTML(uA) + '</b> และ <b>' + escapeHTML(uB) + '</b> เรียบร้อยแล้ว</p>',
+            confirmButtonColor: '#10b981'
+          });
+        }, 300);
+      } else {
+        if (typeof google !== 'undefined' && google.script && google.script.run) {
+          google.script.run
+            .withSuccessHandler(function(res) {
+              hideLoading();
+              if (res.success) {
+                closeSwapCarModal();
+                Swal.fire({
+                  icon: 'success',
+                  title: 'สลับเบอร์รถสำเร็จ!',
+                  html: '<p>' + escapeHTML(res.message) + '</p>',
+                  confirmButtonColor: '#10b981'
+                });
+                loadAppData();
+              } else {
+                handleApiResponseError(res);
+              }
+            })
+            .withFailureHandler(function(err) {
+              hideLoading();
+              Swal.fire('ข้อผิดพลาดระบบ', err.message || err.toString(), 'error');
+            })
+            .apiSwapCars(uA, uB, sessionToken);
+        }
+      }
+    }
+    window.confirmSwapCars = confirmSwapCars;
+
 
     // Chart & Analytics state initialized in Section 3
 

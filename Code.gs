@@ -107,6 +107,8 @@ function handleApiRequest(action, payload) {
       return apiSaveUser(payload.userData, token);
     case 'deleteUser':
       return apiDeleteUser(payload.username, token);
+    case 'swapCars':
+      return apiSwapCars(payload.usernameA, payload.usernameB, token);
     case 'updateSelfProfile':
       return apiUpdateSelfProfile(payload.username, payload.name, payload.profileUrl, token);
     case 'clearAllSubmissions':
@@ -1230,6 +1232,159 @@ function apiDeleteUser(username, sessionToken) {
     return { success: false, message: 'ไม่พบผู้ใช้งานที่ต้องการลบ' };
   });
 }
+
+/**
+ * API: Swap/Reassign Cars between two competitor accounts (Admin Only)
+ * Swaps: name, carColor, profileUrl, bonusPoints, members
+ * Also safely updates Submissions and Votes sheets if any exist.
+ */
+function apiSwapCars(usernameA, usernameB, sessionToken) {
+  const auth = verifyAuth(sessionToken, ['Admin']);
+  if (!auth.success) return auth;
+
+  if (!usernameA || !usernameB) {
+    return { success: false, message: 'กรุณาระบุบัญชีรถทั้งสองคันที่ต้องการสลับ' };
+  }
+  if (String(usernameA).trim().toLowerCase() === String(usernameB).trim().toLowerCase()) {
+    return { success: false, message: 'ไม่สามารถสลับกับบัญชีเดียวกันได้' };
+  }
+
+  return withLock(function() {
+    const ss = getSpreadsheet();
+    const usersSheet = getOrCreateSheet(ss, SHEET_NAMES.USERS);
+    const usersData = usersSheet.getDataRange().getValues();
+
+    let rowA = -1;
+    let rowB = -1;
+
+    const targetA = String(usernameA).trim().toLowerCase();
+    const targetB = String(usernameB).trim().toLowerCase();
+
+    for (let i = 1; i < usersData.length; i++) {
+      const u = String(usersData[i][0] || '').trim().toLowerCase();
+      if (u === targetA) rowA = i + 1;
+      if (u === targetB) rowB = i + 1;
+    }
+
+    if (rowA <= 0 || rowB <= 0) {
+      return { success: false, message: 'ไม่พบบัญชีผู้ใช้งานที่ระบุในระบบ' };
+    }
+
+    const dataA = usersData[rowA - 1];
+    const dataB = usersData[rowB - 1];
+
+    if (String(dataA[3] || '').trim() !== 'User' || String(dataB[3] || '').trim() !== 'User') {
+      return { success: false, message: 'อนุญาตให้สลับได้เฉพาะบัญชีผู้เข้าแข่งขัน (Role: User) เท่านั้น' };
+    }
+
+    // Helper to check if name is default "ทีม carXX"
+    function isDefaultName(name, username, carCode) {
+      if (!name) return true;
+      const clean = String(name).trim().toLowerCase();
+      const u = String(username || '').trim().toLowerCase();
+      const c = String(carCode || '').trim().toLowerCase();
+      return clean === 'ทีม ' + u || clean === 'ทีม ' + c || clean === u || clean === c || clean === '';
+    }
+
+    // Col 0: username, Col 1: password, Col 2: name, Col 3: role, Col 4: carCode, Col 5: carColor, Col 6: profileUrl, Col 7: bonusPoints, Col 8: members
+    const nameA = dataA[2];
+    const carCodeA = dataA[4];
+    const carColorA = dataA[5];
+    const profileA = dataA[6];
+    const bonusA = dataA[7];
+    const membersA = dataA[8];
+
+    const nameB = dataB[2];
+    const carCodeB = dataB[4];
+    const carColorB = dataB[5];
+    const profileB = dataB[6];
+    const bonusB = dataB[7];
+    const membersB = dataB[8];
+
+    // Calculate new names: if one was default "ทีม carX", adopt new car's default name
+    let newNameForA = nameB;
+    if (isDefaultName(nameB, dataB[0], carCodeB)) {
+      newNameForA = 'ทีม ' + (carCodeA || dataA[0]);
+    }
+    let newNameForB = nameA;
+    if (isDefaultName(nameA, dataA[0], carCodeA)) {
+      newNameForB = 'ทีม ' + (carCodeB || dataB[0]);
+    }
+
+    // Write swapped data to Row A (Row A keeps usernameA, passwordA, roleA, carCodeA)
+    usersSheet.getRange(rowA, 3).setValue(newNameForA);
+    usersSheet.getRange(rowA, 6).setValue(carColorB || 'Red');
+    usersSheet.getRange(rowA, 7).setValue(profileB || '');
+    usersSheet.getRange(rowA, 8).setValue(Number(bonusB) || 0);
+    usersSheet.getRange(rowA, 9).setValue(membersB || '[]');
+
+    // Write swapped data to Row B (Row B keeps usernameB, passwordB, roleB, carCodeB)
+    usersSheet.getRange(rowB, 3).setValue(newNameForB);
+    usersSheet.getRange(rowB, 6).setValue(carColorA || 'Red');
+    usersSheet.getRange(rowB, 7).setValue(profileA || '');
+    usersSheet.getRange(rowB, 8).setValue(Number(bonusA) || 0);
+    usersSheet.getRange(rowB, 9).setValue(membersA || '[]');
+
+    // Swap username in Submissions if any exist
+    try {
+      const subSheet = getOrCreateSheet(ss, SHEET_NAMES.SUBMISSIONS);
+      const subData = subSheet.getDataRange().getValues();
+      if (subData.length > 1) {
+        let subChanged = false;
+        for (let i = 1; i < subData.length; i++) {
+          const u = String(subData[i][2] || '').trim().toLowerCase();
+          if (u === targetA) {
+            subData[i][2] = '__SWAP_TEMP__';
+            subChanged = true;
+          } else if (u === targetB) {
+            subData[i][2] = dataA[0]; // usernameA original case
+            subChanged = true;
+          }
+        }
+        if (subChanged) {
+          for (let i = 1; i < subData.length; i++) {
+            if (subData[i][2] === '__SWAP_TEMP__') {
+              subData[i][2] = dataB[0]; // usernameB original case
+            }
+          }
+          subSheet.getRange(1, 1, subData.length, subData[0].length).setValues(subData);
+        }
+      }
+    } catch(subErr) {}
+
+    // Swap username in Votes if any exist
+    try {
+      const votesSheet = getOrCreateSheet(ss, SHEET_NAMES.VOTES);
+      const votesData = votesSheet.getDataRange().getValues();
+      if (votesData.length > 1) {
+        let votesChanged = false;
+        for (let i = 1; i < votesData.length; i++) {
+          const voter = String(votesData[i][2] || '').trim().toLowerCase();
+          const target = String(votesData[i][3] || '').trim().toLowerCase();
+          if (voter === targetA) { votesData[i][2] = '__SWAP_TEMP_V__'; votesChanged = true; }
+          else if (voter === targetB) { votesData[i][2] = dataA[0]; votesChanged = true; }
+          if (target === targetA) { votesData[i][3] = '__SWAP_TEMP_T__'; votesChanged = true; }
+          else if (target === targetB) { votesData[i][3] = dataA[0]; votesChanged = true; }
+        }
+        if (votesChanged) {
+          for (let i = 1; i < votesData.length; i++) {
+            if (votesData[i][2] === '__SWAP_TEMP_V__') votesData[i][2] = dataB[0];
+            if (votesData[i][3] === '__SWAP_TEMP_T__') votesData[i][3] = dataB[0];
+          }
+          votesSheet.getRange(1, 1, votesData.length, votesData[0].length).setValues(votesData);
+        }
+      }
+    } catch(voteErr) {}
+
+    return {
+      success: true,
+      message: 'สลับข้อมูลระหว่าง ' + dataA[0] + ' และ ' + dataB[0] + ' เรียบร้อยแล้ว',
+      carA: { username: dataA[0], name: newNameForA, carColor: carColorB, profileUrl: profileB, bonusPoints: bonusB, members: JSON.parse(membersB || '[]') },
+      carB: { username: dataB[0], name: newNameForB, carColor: carColorA, profileUrl: profileA, bonusPoints: bonusA, members: JSON.parse(membersA || '[]') }
+    };
+  });
+}
+
 
 /**
  * API: Update Self Profile (Name and Profile Picture for User)
