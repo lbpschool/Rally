@@ -2023,8 +2023,8 @@
             apiDeleteUser: function(username) {
               callFetch('deleteUser', { username: username });
             },
-            apiSwapCars: function(usernameA, usernameB) {
-              callFetch('swapCars', { usernameA: usernameA, usernameB: usernameB });
+            apiSwapCars: function(usernameA, usernameB, token) {
+              callFetch('swapCars', { usernameA: usernameA, usernameB: usernameB, sessionToken: token || sessionToken });
             },
             apiUpdateSelfProfile: function(username, name, profileUrl) {
               callFetch('updateSelfProfile', { username: username, name: name, profileUrl: profileUrl });
@@ -2057,7 +2057,7 @@
               controller = new AbortController();
               timeoutId = setTimeout(function() {
                 try { controller.abort(); } catch (e) {}
-              }, 20000); // 20-second timeout
+              }, 45000); // 45-second timeout for reliable GAS execution
             }
 
             fetch(GAS_API_URL, {
@@ -5879,7 +5879,13 @@
             })
             .withFailureHandler(function(err) {
               hideLoading();
-              Swal.fire('ข้อผิดพลาดระบบ', err.message || err.toString(), 'error');
+              console.error('Swap car error:', err);
+              var isNetErr = !err || err.message === 'Failed to fetch' || String(err).includes('fetch');
+              var errMsg = isNetErr
+                ? 'ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้ กรุณาลองใหม่อีกครั้ง'
+                : (err.message || err.toString());
+              Swal.fire({ icon: 'error', title: 'การเชื่อมต่อขัดข้อง', text: errMsg, confirmButtonText: 'ตกลง' });
+              loadAppData();
             })
             .apiSwapCars(uA, uB, sessionToken);
         }
