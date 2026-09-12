@@ -1559,7 +1559,7 @@
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label class="block text-slate-700 mb-1">บทบาท (Role)</label>
-              <select id="userFormRole" required class="w-full px-3 py-2.5 rounded-xl glass-input">
+              <select id="userFormRole" required onchange="var sec = document.getElementById('userFormMembersSection'); if (sec) sec.style.display = (this.value === 'User' ? 'block' : 'none');" class="w-full px-3 py-2.5 rounded-xl glass-input">
                 <option value="User">User (ผู้แข่งขัน)</option>
                 <option value="Sub-Admin">Sub-Admin (กรรมการ)</option>
                 <option value="Admin">Admin (ผู้ดูแลระบบ)</option>
@@ -1582,6 +1582,93 @@
           <div>
             <label class="block text-slate-700 mb-1">รหัสรถ (Car Code)</label>
             <input type="text" id="userFormCarCode" placeholder="เช่น R-04" class="w-full px-3 py-2.5 rounded-xl glass-input">
+          </div>
+
+          <!-- Team Players Section (ช่องเพิ่มผู้เล่น 1-5 คน) -->
+          <div id="userFormMembersSection" class="p-4 rounded-2xl bg-gradient-to-br from-emerald-50/80 via-teal-50/40 to-slate-50/60 border border-emerald-200/90 space-y-3">
+            <div class="flex items-center justify-between flex-wrap gap-1 pb-1 border-b border-emerald-100">
+              <label class="font-black text-slate-800 flex items-center gap-1.5 text-xs">
+                <i class="fa-solid fa-users text-emerald-600"></i>
+                <span>รายชื่อผู้เล่นประจำรถ (4 - 5 คน)</span>
+              </label>
+              <span class="text-[10px] text-emerald-700 font-bold px-2 py-0.5 rounded-full bg-emerald-100 border border-emerald-200">พิมพ์ค้นหาจาก 142 รายชื่อ</span>
+            </div>
+            
+            <p class="text-[11px] text-slate-500 leading-snug">
+              พิมพ์ชื่อจริง นามสกุล หรือคำนำหน้า เพื่อค้นหาและเลือกรายชื่อบุคลากร (บางคันมี 4 คน หรือ 5 คน)
+            </p>
+
+            <div class="space-y-2.5">
+              <!-- Player 1 -->
+              <div>
+                <label class="block text-[11px] font-bold text-slate-700 mb-1 flex items-center justify-between">
+                  <span>ผู้เล่นคนที่ 1 (คนขับ/หัวหน้าทีม)</span>
+                  <span class="text-rose-500 text-[10px] font-semibold">*จำเป็น</span>
+                </label>
+                <div class="relative">
+                  <input type="text" id="userFormMember1" list="personnelDatalist" placeholder="พิมพ์ชื่อเพื่อค้นหาผู้เล่นคนที่ 1..." class="w-full pl-8 pr-8 py-2 rounded-xl glass-input text-xs font-medium text-slate-800" autocomplete="off">
+                  <i class="fa-solid fa-user-tie text-emerald-600 absolute left-2.5 top-2.5 text-[11px]"></i>
+                  <button type="button" onclick="clearMemberSlot(1)" class="absolute right-2.5 top-2 text-slate-400 hover:text-rose-500 text-xs font-bold" title="ล้างชื่อ">✕</button>
+                </div>
+              </div>
+
+              <!-- Player 2 -->
+              <div>
+                <label class="block text-[11px] font-bold text-slate-700 mb-1 flex items-center justify-between">
+                  <span>ผู้เล่นคนที่ 2</span>
+                  <span class="text-rose-500 text-[10px] font-semibold">*จำเป็น</span>
+                </label>
+                <div class="relative">
+                  <input type="text" id="userFormMember2" list="personnelDatalist" placeholder="พิมพ์ชื่อเพื่อค้นหาผู้เล่นคนที่ 2..." class="w-full pl-8 pr-8 py-2 rounded-xl glass-input text-xs font-medium text-slate-800" autocomplete="off">
+                  <i class="fa-solid fa-user text-teal-600 absolute left-2.5 top-2.5 text-[11px]"></i>
+                  <button type="button" onclick="clearMemberSlot(2)" class="absolute right-2.5 top-2 text-slate-400 hover:text-rose-500 text-xs font-bold" title="ล้างชื่อ">✕</button>
+                </div>
+              </div>
+
+              <!-- Player 3 -->
+              <div>
+                <label class="block text-[11px] font-bold text-slate-700 mb-1 flex items-center justify-between">
+                  <span>ผู้เล่นคนที่ 3</span>
+                  <span class="text-rose-500 text-[10px] font-semibold">*จำเป็น</span>
+                </label>
+                <div class="relative">
+                  <input type="text" id="userFormMember3" list="personnelDatalist" placeholder="พิมพ์ชื่อเพื่อค้นหาผู้เล่นคนที่ 3..." class="w-full pl-8 pr-8 py-2 rounded-xl glass-input text-xs font-medium text-slate-800" autocomplete="off">
+                  <i class="fa-solid fa-user text-teal-600 absolute left-2.5 top-2.5 text-[11px]"></i>
+                  <button type="button" onclick="clearMemberSlot(3)" class="absolute right-2.5 top-2 text-slate-400 hover:text-rose-500 text-xs font-bold" title="ล้างชื่อ">✕</button>
+                </div>
+              </div>
+
+              <!-- Player 4 -->
+              <div>
+                <label class="block text-[11px] font-bold text-slate-700 mb-1 flex items-center justify-between">
+                  <span>ผู้เล่นคนที่ 4</span>
+                  <span class="text-rose-500 text-[10px] font-semibold">*จำเป็น</span>
+                </label>
+                <div class="relative">
+                  <input type="text" id="userFormMember4" list="personnelDatalist" placeholder="พิมพ์ชื่อเพื่อค้นหาผู้เล่นคนที่ 4..." class="w-full pl-8 pr-8 py-2 rounded-xl glass-input text-xs font-medium text-slate-800" autocomplete="off">
+                  <i class="fa-solid fa-user text-teal-600 absolute left-2.5 top-2.5 text-[11px]"></i>
+                  <button type="button" onclick="clearMemberSlot(4)" class="absolute right-2.5 top-2 text-slate-400 hover:text-rose-500 text-xs font-bold" title="ล้างชื่อ">✕</button>
+                </div>
+              </div>
+
+              <!-- Player 5 -->
+              <div>
+                <label class="block text-[11px] font-bold text-slate-700 mb-1 flex items-center justify-between">
+                  <span>ผู้เล่นคนที่ 5</span>
+                  <span class="text-slate-400 text-[10px] font-normal">(เว้นว่างได้ หากคันนี้มี 4 คน)</span>
+                </label>
+                <div class="relative">
+                  <input type="text" id="userFormMember5" list="personnelDatalist" placeholder="พิมพ์ชื่อเพื่อค้นหาผู้เล่นคนที่ 5 (ถ้ามี)..." class="w-full pl-8 pr-8 py-2 rounded-xl glass-input text-xs font-medium text-slate-800" autocomplete="off">
+                  <i class="fa-solid fa-user-plus text-slate-400 absolute left-2.5 top-2.5 text-[11px]"></i>
+                  <button type="button" onclick="clearMemberSlot(5)" class="absolute right-2.5 top-2 text-slate-400 hover:text-rose-500 text-xs font-bold" title="ล้างชื่อ">✕</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Datalist for personnel search -->
+            <datalist id="personnelDatalist">
+              <!-- Dynamically populated from PERSONNEL_LIST -->
+            </datalist>
           </div>
 
           <div>
@@ -1906,6 +1993,150 @@
     var revealedOverallPodiumRanks = { 1: false, 2: false, 3: false };
     var boobyRank = 0;
     var revealedBoobyPrize = false;
+    var PERSONNEL_LIST = [
+  "นายอรรถพงษ์ พลนิกร",
+  "นายชนะ ผลบุญ",
+  "นางสาวณัฐิยา คีรีทวีป",
+  "ว่าที่ร้อยตรีวรเทพ ศิริเวช",
+  "นางศุภาวรรณ ทองศักดิ์",
+  "นางสาวเพชรรัตน์ กัวหา",
+  "นางรินลดา เสนารายณ์",
+  "นางวิไลรัตน์ ศรีนวลเอียด",
+  "นางสาวบุศยา รวมดอน",
+  "นางสาวประภาพร สุขภาพ",
+  "นางสาวฐัชญา เนตรนิล",
+  "ว่าที่ ร.ต.หญิงวรรณธิดา สุขสำราญ",
+  "นางสุธารัตน์ หมื่นสิทธิแพร่",
+  "นางสาวผาสุข สินจุ้ย",
+  "นางสาวสุดาพร ดวงโภคา",
+  "นางสาวกุสุมา แสงประดิษฐ์",
+  "นายเฉลิมพล รุจกิตติโรจน์",
+  "นายพิสิฐ สุวรรณนิมิตร",
+  "นายสุวภัทร สิงห์พรหม",
+  "นางสาวชุลีพร ลิ้มประเสริฐ",
+  "นางกชพร มาลากุลต๊ะ",
+  "นางสาวศิริวดี เชิมชัยภูมิ",
+  "นางสาวฐิติมา นิธิมหามงคล",
+  "นางสาวนัทธ์หทัย คำยวง",
+  "นางสาวรุ่งทิวา สารสี",
+  "นางสาวพิชญ์สินี กำพล",
+  "นางกมลวรรณ อิวปลา",
+  "นายอภิชิต เงินกองแก้ว",
+  "นางสาวศุภาพิชญ์ สารเฉวต",
+  "นางสาววรุณีย์ กาดู",
+  "ว่าที่ รต.หญิงมณีรัตน์ บุญเทียม",
+  "นางเอื้ออัชลี กำปั่นทอง",
+  "นางสุภาพร บัวแก้ว",
+  "นางสาวทิพย์วารี วัฒแสง",
+  "นายนพรัตน์ ป้องกัน",
+  "นายชิษณุพงศ์ จริยรักษ์วรกุล",
+  "นางนันทพร ชุ่มทวี",
+  "นางสาวสุพัตรา พุฒิสาร",
+  "นางสาวพนิสา คำพูล",
+  "นายชยพล มาลากุลต๊ะ",
+  "นางสาววิกานดา เจริญสุข",
+  "นางสาวทิวาภรณ์ ลิดสิน",
+  "นางสาววิริญย์ รวบรัด",
+  "นางเพชรลัดฎา สมนึก",
+  "นางสาวธมลวรรณ ไทยภักดี",
+  "นางสาวอัจฉราวรรณ จินดาวรรณ",
+  "นางสาวรัตติกุล บุญเทพ",
+  "นายเกียรติศักดิ์ ล้อสินคำ",
+  "นางสาวอาซีมะห์ ดอเลาะ",
+  "นางสาวธันย์ชนก ละมุล",
+  "นางสาวสุจิรา เจริญศรี",
+  "นางสาวณัฐฐาภรณ์ ทรัพย์บริบูรณ์",
+  "นายชรินทร์ สายทอง",
+  "นายอนันตชัย คำมีรักษ์",
+  "นายไตรรัตน์ หาระสาร",
+  "นางสาวไข่มุก สิมมา",
+  "นางสาวเบญจมาศ พื้นหินลาด",
+  "นางสาวมณีรัตน์ คงพะเนา",
+  "นายไพโรจน์ ปัญญาวีรยุทธ",
+  "นางสาวแพรพิไล เพ็งโพธิ์ทอง",
+  "นางสาวนฤมล นาคศรี",
+  "นายวีระพงษ์ สุนทรเจริญนนท์",
+  "นางสาวคิมญาณัณฐ์ ยิ้มแฉ่ง",
+  "นายเวทางค์ มาเพชร",
+  "ว่าที่ ร.ต.หญิงดาราวรรณ สุนทรโอวาท",
+  "นางสาวฐิตาภรณ์ คงเขียว",
+  "นายเจตนันท์ สุขสำราญ",
+  "นางอัญชลีพร สักกะตะ",
+  "นางสาวมัสลิน มิตรอำพันธ์",
+  "นางสาวภาวิณี วงสเนา",
+  "นายนันทพล กองบุญมา",
+  "นางสาวอัจฉราพร เพชรใส",
+  "นางสาววรรณพร ทองทิพย์",
+  "นางสาวสุภิชา บุญมา",
+  "นายเดชชาติ เกิดไทย",
+  "นางสาวเสาวลักษ์ เลขงู",
+  "นายณัติฐิพงศ์ แย้มอรุณ",
+  "นางสาวธัญชนก มีเที่ยง",
+  "นายสุรชัย ยินมะเริง",
+  "นายกิตติพจน์ วงษ์จันทร์สอน",
+  "นางสาวดวงฤทัย นวลศรี",
+  "นายสุรพล วงษ์ธรรม",
+  "นางพิมม์กมน ปุญยฤทธิ์วราวุฒิ",
+  "นายทิวากร สงวนพวก",
+  "นางสาวฉัตรอรุณ สุวรรณวงษ์",
+  "นายธีรพล พวงเย็น",
+  "นางสาวอมรรัตน์ กีรติศานติ์",
+  "นางสาวบุศรา อินทโร",
+  "นางสาวสุภาวดี ขันทอง",
+  "นางสาวนันทวัน เอี่ยมแสน",
+  "นางสาวขวัญตา แตงไทยทอง",
+  "นางสาวกชพรรณ สืบเชื้อ",
+  "นางสาวปัญชรี เย็นใจ",
+  "นายอรรคเดช อรรคเสริญ",
+  "นายจักรภัทร แก้วทอง",
+  "นางสาวสุนีย์ สง่าธนอนันต์",
+  "นางสาวยุวดี แก้วพิมพ์",
+  "นางสาวพิมลพัณณ์ กำลังแพทย์",
+  "นายณัฐกฤษณ์ เกตุศิริ",
+  "นางสาววรกนก อินทร์สุข",
+  "นายกฤษดา พุฒิสาร",
+  "นางสาวเหมือนฝัน คำมีรักษ์",
+  "นางสาวธัญทิพ คำยวง",
+  "นายปรมัตถ์ สุทธิประภา",
+  "นางสาวภัทราพร จันภักดี",
+  "นายสหภาพ ต่ายฝอย",
+  "นายภานุพงศ์ วงษ์ปลั่ง",
+  "นายพิเชษฐ เสนารายณ์",
+  "นายวัชรชัย เฉลียวฉลาด",
+  "นายทองเริ่ม อินทร์สุข",
+  "นางวรวรรณ อินทร์สุข",
+  "นางรัศมี พวงมาลัย",
+  "นางสุกัลยา ขันธะหงษ์",
+  "นางเกศแก้ว พูลราม",
+  "นางกมลทิพย์ รักษาสุวรรณ",
+  "นางทองสุข แก้วทา",
+  "นางปิยะภรณ์ เครือคูณ",
+  "นางสมบัติ ทองคำ",
+  "นางทวี พักปาน",
+  "นางสาววิมลพรรณ์ จันทบาล",
+  "นางเฉลา ยิ้มจันทร์",
+  "นางดวงชีวัน อมรนัต",
+  "นางเรียม แก้ววัน",
+  "นางพรรณิกา สว่างศรี",
+  "นางสุนันท์ ยุวพันธ์",
+  "นางทัศนีย์ เพ็งรุ่ง",
+  "นายพงษ์เกียรติ จันชุน",
+  "นางจิตตานันท์ เทศทอง",
+  "นางสาวไอยรินทร์ มีความสุข",
+  "นางสาวทิพวรรณ์ อินรุณ",
+  "นายภัทพงษ์ อังกาบเพชร",
+  "นายใจเมือง ขันธะหงษ์",
+  "นางสาวนงลักษณ์ ศรีทอง",
+  "นายจักรกิต นครเกตุ",
+  "นายคำพันธ์ จันโทกุล",
+  "นายพร้อม ชอบใจ",
+  "นางสาวธิดารัตน์ สงวนพันธ์",
+  "นายนันทวุฒิ จำนงค์เวช",
+  "นายสันติ อรรคเนตร์",
+  "นางกาญจนา กวีวุฒิกุล",
+  "นางสาวปาลิตา สมบูรณ์ศักดิ์ศิริ",
+  "นางผาสุข อรรคเนตร์"
+];
     var activeCeremonyTab = 'overall';
     var isLiveRankingTableVisible = false;
     var analyticsMatrixCategory = 'Base';
@@ -3196,6 +3427,11 @@
             '</div></div>' +
             '<h4 class="text-sm font-extrabold text-slate-800 line-clamp-1 leading-tight">' + escapeHTML(item.user.name) + '</h4>' +
             '<p class="text-xs text-slate-500 font-medium mt-0.5">ID: ' + escapeHTML(item.user.username) + ' (' + escapeHTML(getCarColorThaiName(item.user.carColor)) + ')</p>' +
+            (item.user.members && item.user.members.length > 0
+              ? '<div class="text-[10px] text-slate-500 font-medium mt-1 truncate max-w-full px-1" title="' + escapeHTML(item.user.members.join(', ')) + '">' +
+                '<i class="fa-solid fa-users text-[9px] text-emerald-600 mr-1"></i>' + item.user.members.length + ' คน: ' + escapeHTML(item.user.members.join(', ')) +
+                '</div>'
+              : '') +
             '</div>' +
             scoreDisplayHTML +
             voteButtonHTML +
@@ -4894,7 +5130,14 @@
           '<img src="' + escapeHTML(u.profileUrl) + '" class="w-10 h-10 sm:w-11 sm:h-11 rounded-xl object-cover object-center border-2 border-purple-100 shadow-sm group-hover:scale-105 transition-transform" alt="Avatar">' +
           '</div></td>' +
           '<td class="py-2.5 px-3.5 font-mono text-purple-700 font-semibold text-xs whitespace-nowrap">' + escapeHTML(u.username) + '</td>' +
-          '<td class="py-2.5 px-3.5 text-slate-800 font-bold text-xs whitespace-nowrap">' + escapeHTML(u.name) + '</td>' +
+          '<td class="py-2.5 px-3.5 text-slate-800 font-bold text-xs whitespace-nowrap">' +
+            '<div>' + escapeHTML(u.name) + '</div>' +
+            (u.members && u.members.length > 0
+              ? '<div class="text-[10px] text-slate-500 font-normal mt-0.5 max-w-[220px] truncate" title="' + escapeHTML(u.members.join(', ')) + '">' +
+                '<i class="fa-solid fa-users text-[9px] text-emerald-600 mr-1"></i>' + u.members.length + ' คน: ' + escapeHTML(u.members.join(', ')) +
+                '</div>'
+              : '<div class="text-[10px] text-slate-400 font-normal mt-0.5">ยังไม่ระบุสมาชิก</div>') +
+          '</td>' +
           '<td class="py-2.5 px-3.5 whitespace-nowrap">' + roleBadge + '</td>' +
           '<td class="py-2.5 px-3.5 text-slate-700 font-mono text-xs whitespace-nowrap">' + escapeHTML(u.carCode || '-') + '</td>' +
           '<td class="py-2.5 px-3.5 text-center whitespace-nowrap"><span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-semibold ' + getCarColorStyle(u.carColor) + ' whitespace-nowrap">' + escapeHTML(getCarColorThaiName(u.carColor)) + '</span></td>' +
@@ -4921,6 +5164,12 @@
         document.getElementById('userFormRole').value = u.role;
         document.getElementById('userFormCarColor').value = u.carColor || 'Red';
         document.getElementById('userFormCarCode').value = u.carCode || '';
+        
+        var members = (u && Array.isArray(u.members)) ? u.members : [];
+        for (var i = 1; i <= 5; i++) {
+          var el = document.getElementById('userFormMember' + i);
+          if (el) el.value = members[i - 1] || '';
+        }
       } else {
         document.getElementById('modalUserTitle').innerHTML = '<i class="fa-solid fa-user-plus text-emerald-600"></i> เพิ่มผู้ใช้งาน / รถแข่ง';
         document.getElementById('userFormUsername').value = '';
@@ -4932,11 +5181,38 @@
         document.getElementById('userFormRole').value = 'User';
         document.getElementById('userFormCarColor').value = 'Red';
         document.getElementById('userFormCarCode').value = '';
+        
+        for (var i = 1; i <= 5; i++) {
+          var el = document.getElementById('userFormMember' + i);
+          if (el) el.value = '';
+        }
       }
+      renderPersonnelDatalist();
+      var sec = document.getElementById('userFormMembersSection');
+      if (sec) sec.style.display = ((username ? u.role : 'User') === 'User' ? 'block' : 'none');
       document.getElementById('userFormFile').value = '';
       var m = document.getElementById('modalUser');
       m.style.display = 'flex';
     }
+
+    function renderPersonnelDatalist() {
+      var dl = document.getElementById('personnelDatalist');
+      if (!dl) return;
+      if (dl.options && dl.options.length > 0) return;
+      dl.innerHTML = PERSONNEL_LIST.map(function(name) {
+        return '<option value="' + escapeHTML(name) + '"></option>';
+      }).join('');
+    }
+    window.renderPersonnelDatalist = renderPersonnelDatalist;
+
+    function clearMemberSlot(num) {
+      var el = document.getElementById('userFormMember' + num);
+      if (el) {
+        el.value = '';
+        el.focus();
+      }
+    }
+    window.clearMemberSlot = clearMemberSlot;
 
     function closeUserModal() {
       var m = document.getElementById('modalUser');
@@ -4957,7 +5233,8 @@
         carColor: userData.carColor,
         carCode: userData.carCode,
         profileUrl: profileUrl,
-        bonusPoints: existingIdx >= 0 ? usersData[existingIdx].bonusPoints : 0
+        bonusPoints: existingIdx >= 0 ? usersData[existingIdx].bonusPoints : 0,
+        members: userData.members || (existingIdx >= 0 ? (usersData[existingIdx].members || []) : [])
       };
 
       if (existingIdx >= 0) usersData[existingIdx] = newU;
@@ -5002,6 +5279,33 @@
       var role = document.getElementById('userFormRole').value;
       var carColor = document.getElementById('userFormCarColor').value;
       var carCode = document.getElementById('userFormCarCode').value.trim();
+
+      var members = [];
+      var memberSet = {};
+      var hasDuplicate = false;
+      var duplicateName = '';
+
+      for (var mIdx = 1; mIdx <= 5; mIdx++) {
+        var mEl = document.getElementById('userFormMember' + mIdx);
+        var val = mEl ? mEl.value.trim() : '';
+        if (val) {
+          if (memberSet[val.toLowerCase()]) {
+            hasDuplicate = true;
+            duplicateName = val;
+          }
+          memberSet[val.toLowerCase()] = true;
+          members.push(val);
+        }
+      }
+
+      if (hasDuplicate) {
+        Swal.fire({
+          icon: 'warning',
+          title: 'รายชื่อผู้เล่นซ้ำกัน',
+          text: 'พบรายชื่อ "' + duplicateName + '" ซ้ำกันมากกว่า 1 ช่องในรถคันเดียวกัน โปรดตรวจสอบอีกครั้ง'
+        });
+        return false;
+      }
       
       var fileInput = document.getElementById('userFormFile');
       if (fileInput && fileInput.files.length > 0) {
@@ -5020,6 +5324,7 @@
             role: role,
             carColor: carColor,
             carCode: carCode,
+            members: members,
             imageFileObj: imageFileObj
           });
         });
@@ -5033,6 +5338,7 @@
         role: role,
         carColor: carColor,
         carCode: carCode,
+        members: members,
         imageFileObj: null
       });
       return false;

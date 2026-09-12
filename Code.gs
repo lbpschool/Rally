@@ -167,8 +167,10 @@ function setupDatabase() {
   // 1. Users Sheet
   let usersSheet = getOrCreateSheet(ss, SHEET_NAMES.USERS);
   if (usersSheet.getLastRow() === 0) {
-    usersSheet.appendRow(['username', 'password', 'name', 'role', 'carCode', 'carColor', 'profileUrl', 'bonusPoints']);
-    usersSheet.getRange(1, 1, 1, 8).setFontWeight('bold').setBackground('#1e293b').setFontColor('#ffffff');
+    usersSheet.appendRow(['username', 'password', 'name', 'role', 'carCode', 'carColor', 'profileUrl', 'bonusPoints', 'members']);
+    usersSheet.getRange(1, 1, 1, 9).setFontWeight('bold').setBackground('#1e293b').setFontColor('#ffffff');
+  } else if (usersSheet.getLastColumn() === 8) {
+    usersSheet.getRange(1, 9).setValue('members').setFontWeight('bold').setBackground('#1e293b').setFontColor('#ffffff');
     
     // Add Initial Default Data
     usersSheet.appendRow(['admin', 'admin123', 'ผู้ดูแลระบบสูงสุด', 'Admin', 'ADM-00', 'Red', 'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&w=400&q=80', 0]);
@@ -459,7 +461,12 @@ function apiLogin(username, password) {
           carCode: row[4],
           carColor: row[5],
           profileUrl: row[6],
-          bonusPoints: Number(row[7]) || 0
+          bonusPoints: Number(row[7]) || 0,
+          members: (function() {
+            try { return JSON.parse(row[8] || '[]'); } catch(e) {
+              return row[8] ? String(row[8]).split(',').map(function(s){ return s.trim(); }).filter(Boolean) : [];
+            }
+          })()
         },
         isScoresHidden: settings.isScoresHidden,
         isVotingOpen: settings.isVotingOpen,
@@ -485,6 +492,13 @@ function apiGetInitialData(username, sessionToken) {
   let currentUser = null;
   
   for (let i = 1; i < usersRaw.length; i++) {
+    let membersList = [];
+    try {
+      membersList = JSON.parse(usersRaw[i][8] || '[]');
+    } catch(e) {
+      if (usersRaw[i][8]) membersList = String(usersRaw[i][8]).split(',').map(function(s){ return s.trim(); }).filter(Boolean);
+    }
+
     const u = {
       username: usersRaw[i][0],
       name: usersRaw[i][2],
@@ -492,7 +506,8 @@ function apiGetInitialData(username, sessionToken) {
       carCode: usersRaw[i][4],
       carColor: usersRaw[i][5],
       profileUrl: usersRaw[i][6],
-      bonusPoints: Number(usersRaw[i][7]) || 0
+      bonusPoints: Number(usersRaw[i][7]) || 0,
+      members: Array.isArray(membersList) ? membersList : []
     };
     users.push(u);
     if (u.username === username) currentUser = u;
@@ -1150,10 +1165,12 @@ function apiSaveUser(userData, sessionToken) {
 
     let foundRow = -1;
     let existingPassword = 'pass' + Date.now();
+    let existingMembers = [];
     for (let i = 1; i < usersData.length; i++) {
       if (usersData[i][0] === userData.username) {
         foundRow = i + 1;
         existingPassword = usersData[i][1];
+        try { existingMembers = JSON.parse(usersData[i][8] || '[]'); } catch(e) {}
         break;
       }
     }
@@ -1163,6 +1180,10 @@ function apiSaveUser(userData, sessionToken) {
       ? String(userData.password).trim()
       : existingPassword;
 
+    const finalMembers = (userData.members && Array.isArray(userData.members))
+      ? userData.members
+      : existingMembers;
+
     const rowContent = [
       userData.username,
       finalPassword,
@@ -1171,11 +1192,16 @@ function apiSaveUser(userData, sessionToken) {
       userData.carCode || '',
       userData.carColor || 'Red',
       profileUrl,
-      Number(userData.bonusPoints) || 0
+      Number(userData.bonusPoints) || 0,
+      JSON.stringify(finalMembers || [])
     ];
 
+    if (usersSheet.getLastColumn() < 9) {
+      usersSheet.getRange(1, 9).setValue('members').setFontWeight('bold').setBackground('#1e293b').setFontColor('#ffffff');
+    }
+
     if (foundRow > 0) {
-      usersSheet.getRange(foundRow, 1, 1, 8).setValues([rowContent]);
+      usersSheet.getRange(foundRow, 1, 1, rowContent.length).setValues([rowContent]);
     } else {
       usersSheet.appendRow(rowContent);
     }
