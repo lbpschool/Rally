@@ -1333,9 +1333,9 @@
   </div>
 
 
-  <!-- ================= MODAL: AWARD CELEBRATION (อันดับ 1, 2, 3, บู้บี้, คะแนนรวม) ================= -->
+  <!-- ================= MODAL: AWARD CELEBRATION (รูปแบบ ก: แบบเรียงแนวตั้งอลังการ) ================= -->
   <div id="voteCelebrationModal" style="display: none;" class="fixed inset-0 z-50 items-center justify-center bg-slate-950/85 backdrop-blur-md p-3 sm:p-6 animate-fade-in overflow-y-auto" onclick="if(event.target === this) closeVoteCelebrationModal()">
-    <div class="bg-white w-full max-w-5xl lg:max-w-6xl max-h-[92vh] rounded-3xl p-5 sm:p-8 relative shadow-2xl border-4 border-amber-300 overflow-y-auto my-auto text-center flex flex-col">
+    <div class="bg-white w-full max-w-4xl lg:max-w-5xl max-h-[94vh] rounded-3xl p-5 sm:p-8 relative shadow-2xl border-4 border-amber-300 overflow-y-auto my-auto text-center flex flex-col items-center">
       <!-- Ambient Glow Effects -->
       <div class="absolute -top-24 -left-24 w-72 h-72 bg-amber-400/25 rounded-full blur-3xl pointer-events-none"></div>
       <div class="absolute -bottom-24 -right-24 w-72 h-72 bg-pink-500/20 rounded-full blur-3xl pointer-events-none"></div>
@@ -1345,15 +1345,15 @@
         <i class="fa-solid fa-xmark"></i>
       </button>
 
-      <!-- Trophy / Medal Badge & Header -->
-      <div class="relative z-10 flex flex-col items-center mb-4 sm:mb-6 shrink-0">
-        <div id="celebrationMedalIconWrapper" class="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl sm:rounded-3xl bg-gradient-to-tr from-amber-400 via-amber-300 to-yellow-200 p-1 shadow-xl shadow-amber-500/30 mb-2.5 flex items-center justify-center border-2">
-          <div id="celebrationMedalIcon" class="text-3xl sm:text-4xl text-amber-900 drop-shadow-md">
+      <!-- 1. ถ้วยรางวัล/เหรียญทอง + ป้ายอันดับ + หัวข้อรางวัล (ขนาดใหญ่พิเศษ) -->
+      <div class="relative z-10 flex flex-col items-center mb-4 sm:mb-5 shrink-0">
+        <div id="celebrationMedalIconWrapper" class="w-18 h-18 sm:w-22 sm:h-22 rounded-2xl sm:rounded-3xl bg-gradient-to-tr from-amber-400 via-amber-300 to-yellow-200 p-1 shadow-xl shadow-amber-500/30 mb-3 flex items-center justify-center border-2">
+          <div id="celebrationMedalIcon" class="text-4xl sm:text-5xl text-amber-900 drop-shadow-md">
             <i class="fa-solid fa-trophy"></i>
           </div>
         </div>
 
-        <span id="celebrationRankBadge" class="px-4 py-1 rounded-full text-xs sm:text-sm font-black tracking-wider uppercase bg-amber-100 text-amber-800 border border-amber-300 mb-2 shadow-sm">
+        <span id="celebrationRankBadge" class="px-4 py-1.5 rounded-full text-xs sm:text-sm font-black tracking-wider uppercase bg-amber-100 text-amber-800 border border-amber-300 mb-2 shadow-sm">
           🏆 ชนะเลิศอันดับ 1
         </span>
 
@@ -1362,55 +1362,50 @@
         </h2>
       </div>
 
-      <!-- Content Section: Two Columns on md/lg (รูปแบบ ข) -->
-      <div class="relative z-10 grid grid-cols-1 md:grid-cols-12 gap-5 sm:gap-6 items-center flex-1">
-        
-        <!-- Left Column: Photo (สัดส่วนจริงของภาพเดิม ไม่ถูก crop + กรอบทองหรูหรา) -->
-        <div class="md:col-span-6 lg:col-span-6 flex flex-col items-center justify-center">
-          <div class="w-full rounded-2xl sm:rounded-3xl p-2 sm:p-2.5 bg-gradient-to-tr from-amber-300 via-yellow-200 to-amber-400 shadow-2xl border-2 border-amber-300/80">
-            <div class="w-full rounded-xl sm:rounded-2xl overflow-hidden bg-slate-900/5 flex items-center justify-center relative group cursor-pointer" style="min-height: 220px; max-height: 48vh;" onclick="openImageModal(document.getElementById('celebrationTeamImg').src, document.getElementById('celebrationTeamName').innerText)">
-              <img id="celebrationTeamImg" src="" class="max-h-[44vh] w-auto max-w-full object-contain rounded-xl group-hover:scale-105 transition-transform duration-300" alt="Team Photo">
-              <div class="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity rounded-xl flex items-center justify-center">
-                <span class="px-3 py-1.5 rounded-xl bg-black/60 text-white text-xs font-bold flex items-center gap-1.5 shadow-lg backdrop-blur-xs">
-                  <i class="fa-solid fa-magnifying-glass-plus"></i> ดูรูปขนาดเต็ม
-                </span>
-              </div>
+      <!-- 2. รูปรถ/รูปทีมขนาดใหญ่จุใจตรงกลาง (max-h-72 sm:max-h-80) มีเงาและกรอบสีทองหรูหรา -->
+      <div class="relative z-10 w-full max-w-2xl sm:max-w-3xl mb-4 sm:mb-5">
+        <div class="w-full rounded-2xl sm:rounded-3xl p-2 sm:p-2.5 bg-gradient-to-tr from-amber-300 via-yellow-200 to-amber-400 shadow-2xl border-2 border-amber-300/80">
+          <div class="w-full rounded-xl sm:rounded-2xl overflow-hidden bg-slate-900/5 flex items-center justify-center relative group cursor-pointer" onclick="openImageModal(document.getElementById('celebrationTeamImg').src, document.getElementById('celebrationTeamName').innerText)">
+            <img id="celebrationTeamImg" src="" class="max-h-64 sm:max-h-72 md:max-h-80 w-auto max-w-full object-contain rounded-xl group-hover:scale-105 transition-transform duration-300" alt="Team Photo">
+            <div class="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity rounded-xl flex items-center justify-center">
+              <span class="px-3.5 py-1.5 rounded-xl bg-black/60 text-white text-xs font-bold flex items-center gap-1.5 shadow-lg backdrop-blur-xs">
+                <i class="fa-solid fa-magnifying-glass-plus"></i> ดูรูปขนาดเต็ม
+              </span>
             </div>
           </div>
         </div>
-
-        <!-- Right Column: Team Name, Score Badge, Members Grid -->
-        <div class="md:col-span-6 lg:col-span-6 flex flex-col items-center md:items-start text-center md:text-left">
-          <!-- Team Name (NO CAR CODE, NO COLOR!) -->
-          <h3 id="celebrationTeamName" class="text-2xl sm:text-3xl font-black text-slate-800 line-clamp-2 mb-2.5">
-            ชื่อทีม
-          </h3>
-
-          <!-- Score / Votes Pill Wrapper -->
-          <div id="celebrationPillWrapper" class="py-2.5 px-6 rounded-full bg-gradient-to-r from-pink-500 to-rose-500 text-white font-black text-sm sm:text-base shadow-lg shadow-pink-500/30 inline-flex items-center justify-center gap-2 mb-4">
-            <i id="celebrationPillIcon" class="fa-solid fa-heart text-rose-200"></i>
-            <span id="celebrationVoteCount">0 คะแนน (0.0%)</span>
-          </div>
-
-          <!-- Team Members Box (Grid 2-3 คอลัมน์) -->
-          <div id="celebrationMembersSection" class="w-full bg-slate-50/90 border border-slate-200/90 rounded-2xl p-4 shadow-sm text-left">
-            <div class="flex items-center justify-between gap-2 mb-3 pb-2 border-b border-slate-200/80">
-              <span class="text-xs sm:text-sm font-black text-slate-700 flex items-center gap-2">
-                <i class="fa-solid fa-users text-amber-500"></i> สมาชิกในทีม
-              </span>
-              <span id="celebrationMembersCount" class="text-xs font-extrabold px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-300">
-                0 คน
-              </span>
-            </div>
-
-            <!-- Grid for Members 1-5 -->
-            <div id="celebrationMembersList" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 text-left">
-              <!-- Dynamic populated member items -->
-            </div>
-          </div>
-        </div>
-
       </div>
+
+      <!-- 3. ชื่อทีมเด่นชัด (text-2xl sm:text-3xl) พร้อมแถบสรุปคะแนน (Pill Badge) -->
+      <div class="relative z-10 flex flex-col items-center mb-4 sm:mb-5 w-full">
+        <h3 id="celebrationTeamName" class="text-2xl sm:text-3xl font-black text-slate-800 line-clamp-2 mb-2.5">
+          ชื่อทีม
+        </h3>
+
+        <!-- Score / Votes Pill Wrapper -->
+        <div id="celebrationPillWrapper" class="py-2.5 px-6 rounded-full bg-gradient-to-r from-pink-500 to-rose-500 text-white font-black text-sm sm:text-base shadow-lg shadow-pink-500/30 inline-flex items-center justify-center gap-2">
+          <i id="celebrationPillIcon" class="fa-solid fa-heart text-rose-200"></i>
+          <span id="celebrationVoteCount">0 คะแนน (0.0%)</span>
+        </div>
+      </div>
+
+      <!-- 4. กล่องรายชื่อสมาชิกในทีม: จัดแสดงเป็น Grid 2-3 คอลัมน์ ด้านล่างสุด -->
+      <div id="celebrationMembersSection" class="relative z-10 w-full max-w-3xl bg-slate-50/90 border border-slate-200/90 rounded-2xl p-4 sm:p-5 shadow-sm text-left">
+        <div class="flex items-center justify-between gap-2 mb-3 pb-2 border-b border-slate-200/80">
+          <span class="text-xs sm:text-sm font-black text-slate-700 flex items-center gap-2">
+            <i class="fa-solid fa-users text-amber-500"></i> สมาชิกในทีม
+          </span>
+          <span id="celebrationMembersCount" class="text-xs font-extrabold px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-300">
+            0 คน
+          </span>
+        </div>
+
+        <!-- Grid for Members 1-5 -->
+        <div id="celebrationMembersList" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5 sm:gap-3 text-left">
+          <!-- Dynamic populated member items -->
+        </div>
+      </div>
+
     </div>
   </div>
 
@@ -7643,7 +7638,7 @@
       }
 
       // Render as 2-3 columns grid
-      container.className = 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-2.5 text-left';
+      container.className = 'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5 sm:gap-3 text-left';
       container.innerHTML = members.map(function(m, idx) {
         return '<div class="flex items-center gap-2 sm:gap-2.5 p-2 sm:p-2.5 rounded-xl bg-white border border-slate-200/90 shadow-xs hover:border-amber-400 hover:shadow-sm transition-all min-w-0">' +
           '<span class="w-6 h-6 rounded-full bg-gradient-to-tr from-amber-400 via-amber-300 to-yellow-200 text-amber-950 font-black text-xs flex items-center justify-center shrink-0 border border-amber-300/80 shadow-xs">' + (idx + 1) + '</span>' +
