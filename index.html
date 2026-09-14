@@ -3904,20 +3904,10 @@
           // ใน role admin ไม่ต้องแสดงช่องพิมพ์คำตอบและปุ่มกดส่งคำตอบ
           cardFooterHTML = adminSolutionHTML;
         } else {
-          // ตรวจสอบว่าผู้เล่นส่งคำตอบกิจกรรมนี้แล้วหรือไม่ (ล็อคส่งได้เพียง 1 ครั้ง!)
+          // ตรวจสอบว่าผู้เล่นส่งคำตอบกิจกรรมนี้แล้วหรือไม่ (ล็อคส่งได้เพียง 1 ครั้ง & ไม่แสดงการเฉลยคำตอบ)
           if (sub) {
-            var statusIcon = sub.status === 'passed'
-              ? '<i class="fa-solid fa-circle-check text-emerald-600 text-sm"></i>'
-              : (sub.status === 'failed' ? '<i class="fa-solid fa-circle-xmark text-rose-600 text-sm"></i>' : '<i class="fa-solid fa-clock text-amber-600 text-sm"></i>');
-            var statusTitle = sub.status === 'passed'
-              ? 'ทำภารกิจสำเร็จเรียบร้อยแล้ว!'
-              : (sub.status === 'failed' ? 'ส่งคำตอบแล้ว (คำตอบไม่ถูกต้อง)' : 'ส่งงานเรียบร้อยแล้ว รอการตรวจคะแนน');
-            var boxStyle = sub.status === 'passed'
-              ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
-              : (sub.status === 'failed' ? 'bg-rose-50 border-rose-200 text-rose-800' : 'bg-amber-50 border-amber-200 text-amber-800');
-
-            cardFooterHTML = '<div class="mt-3 p-3.5 rounded-2xl border text-xs ' + boxStyle + ' shadow-xs">' +
-              '<p class="font-extrabold flex items-center gap-1.5">' + statusIcon + ' ' + statusTitle + '</p>' +
+            cardFooterHTML = '<div class="mt-3 p-3.5 rounded-2xl border border-emerald-200 bg-emerald-50 text-xs text-emerald-800 shadow-xs">' +
+              '<p class="font-extrabold flex items-center gap-1.5"><i class="fa-solid fa-circle-check text-emerald-600 text-sm"></i> ส่งคำตอบเรียบร้อยแล้ว</p>' +
               (sub.answerText ? '<p class="mt-1 text-slate-700 font-bold">คำตอบที่ส่ง: "' + escapeHTML(sub.answerText) + '"</p>' : '') +
               (sub.imageUrl ? '<button type="button" onclick="openImageModal(\'' + escapeHTML(sub.imageUrl) + '\', \'' + escapeHTML(act.title) + '\')" class="mt-1.5 text-purple-700 underline font-bold hover:text-purple-900 flex items-center gap-1 text-[11px] cursor-pointer"><i class="fa-solid fa-image"></i> เปิดดูรูปผลงานที่ส่งแล้ว</button>' : '') +
               '<div class="mt-2 pt-1.5 border-t border-slate-200/60 flex items-center gap-1.5 text-[10px] text-slate-500 font-bold">' +
@@ -4262,9 +4252,9 @@
         setTimeout(function() {
           hideLoading();
           Swal.fire({
-            icon: status === 'passed' ? 'success' : (status === 'failed' ? 'error' : 'info'),
-            title: status === 'passed' ? 'ตอบถูก!' : (status === 'failed' ? 'ส่งคำตอบแล้ว' : 'บันทึกสำเร็จ'),
-            text: status === 'passed' ? ('ได้รับ ' + score + ' คะแนน') : (status === 'failed' ? 'คำตอบไม่ถูกต้อง (ส่งได้ 1 ครั้ง)' : 'ส่งงานเรียบร้อยแล้ว รอการตรวจคะแนน'),
+            icon: 'success',
+            title: 'ส่งคำตอบเรียบร้อยแล้ว',
+            text: 'ระบบได้บันทึกคำตอบของท่านเรียบร้อยแล้ว',
             timer: 2200,
             showConfirmButton: false
           });
@@ -4276,9 +4266,9 @@
               hideLoading();
               if (res.success) {
                 Swal.fire({
-                  icon: status === 'passed' ? 'success' : (status === 'failed' ? 'warning' : 'info'),
-                  title: status === 'passed' ? 'ตอบถูก!' : (status === 'failed' ? 'ส่งคำตอบแล้ว' : 'บันทึกสำเร็จ'),
-                  text: res.message || (status === 'passed' ? ('ได้รับ ' + score + ' คะแนน') : 'บันทึกการส่งงานเรียบร้อยแล้ว'),
+                  icon: 'success',
+                  title: 'ส่งคำตอบเรียบร้อยแล้ว',
+                  text: 'ระบบได้บันทึกคำตอบของท่านเรียบร้อยแล้ว',
                   timer: 2200,
                   showConfirmButton: false
                 });

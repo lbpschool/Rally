@@ -911,7 +911,7 @@ function apiSubmitAnswer(username, activityId, answerText, imageFileObj, session
 
     return {
       success: true,
-      message: status === 'passed' ? 'ส่งคำตอบเรียบร้อยแล้ว (ตรวจถูกอัตโนมัติ!)' : (status === 'failed' ? 'ส่งคำตอบเรียบร้อย (คำตอบไม่ถูกต้อง)' : 'บันทึกการส่งงานเรียบร้อย รอการตรวจคะแนนจากกรรมการ'),
+      message: 'บันทึกการส่งคำตอบเรียบร้อยแล้ว',
       score: score,
       status: status
     };
