@@ -1334,74 +1334,63 @@
 
 
   <!-- ================= MODAL: AWARD CELEBRATION (รูปแบบ ก: แบบเรียงแนวตั้งอลังการ) ================= -->
-  <div id="voteCelebrationModal" style="display: none;" class="fixed inset-0 z-50 items-center justify-center bg-slate-950/85 backdrop-blur-md p-3 sm:p-6 animate-fade-in overflow-y-auto" onclick="if(event.target === this) closeVoteCelebrationModal()">
-    <div class="bg-white w-full max-w-4xl lg:max-w-5xl max-h-[94vh] rounded-3xl p-5 sm:p-8 relative shadow-2xl border-4 border-amber-300 overflow-y-auto my-auto text-center flex flex-col items-center">
-      <!-- Ambient Glow Effects -->
-      <div class="absolute -top-24 -left-24 w-72 h-72 bg-amber-400/25 rounded-full blur-3xl pointer-events-none"></div>
-      <div class="absolute -bottom-24 -right-24 w-72 h-72 bg-pink-500/20 rounded-full blur-3xl pointer-events-none"></div>
+  <div id="voteCelebrationModal" style="display: none;" class="fixed inset-0 z-50 items-center justify-center bg-slate-950/85 backdrop-blur-md p-3 sm:p-4 animate-fade-in overflow-hidden" onclick="if(event.target === this) closeVoteCelebrationModal()">
+    <div id="celebrationModalCard" class="bg-white w-full max-w-3xl lg:max-w-4xl max-h-[96vh] rounded-3xl p-4 sm:p-6 relative shadow-2xl border-4 border-amber-400 overflow-hidden my-auto text-center flex flex-col items-center justify-between">
+      <!-- Ambient Glow Effects (Dynamic per Theme) -->
+      <div id="celebrationGlowTop" class="absolute -top-24 -left-24 w-72 h-72 bg-amber-400/25 rounded-full blur-3xl pointer-events-none"></div>
+      <div id="celebrationGlowBottom" class="absolute -bottom-24 -right-24 w-72 h-72 bg-yellow-300/20 rounded-full blur-3xl pointer-events-none"></div>
 
       <!-- Close Button Top Right -->
-      <button type="button" onclick="closeVoteCelebrationModal()" class="absolute top-4 right-4 w-10 h-10 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 flex items-center justify-center text-lg transition-colors cursor-pointer z-30 shadow-md" title="ปิดหน้าต่าง">
+      <button type="button" onclick="closeVoteCelebrationModal()" class="absolute top-4 right-4 w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 flex items-center justify-center text-base sm:text-lg transition-colors cursor-pointer z-30 shadow-md" title="ปิดหน้าต่าง">
         <i class="fa-solid fa-xmark"></i>
       </button>
 
-      <!-- 1. ถ้วยรางวัล/เหรียญทอง + ป้ายอันดับ + หัวข้อรางวัล (ขนาดใหญ่พิเศษ) -->
-      <div class="relative z-10 flex flex-col items-center mb-4 sm:mb-5 shrink-0">
-        <div id="celebrationMedalIconWrapper" class="w-18 h-18 sm:w-22 sm:h-22 rounded-2xl sm:rounded-3xl bg-gradient-to-tr from-amber-400 via-amber-300 to-yellow-200 p-1 shadow-xl shadow-amber-500/30 mb-3 flex items-center justify-center border-2">
-          <div id="celebrationMedalIcon" class="text-4xl sm:text-5xl text-amber-900 drop-shadow-md">
-            <i class="fa-solid fa-trophy"></i>
+      <!-- 1. ถ้วยรางวัลสีจริง + ป้ายอันดับ + หัวข้อรางวัล (ไม่มี 🏆 หน้าชื่อรางวัล) -->
+      <div class="relative z-10 flex flex-col items-center mb-2 sm:mb-3 shrink-0">
+        <div id="celebrationMedalIconWrapper" class="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl sm:rounded-3xl p-1.5 shadow-xl mb-2 flex items-center justify-center border-2 shrink-0">
+          <div id="celebrationMedalIcon" class="flex items-center justify-center">
+            <!-- Dynamic 3D Realistic Trophy SVG -->
           </div>
         </div>
 
-        <span id="celebrationRankBadge" class="px-4 py-1.5 rounded-full text-xs sm:text-sm font-black tracking-wider uppercase bg-amber-100 text-amber-800 border border-amber-300 mb-2 shadow-sm">
+        <span id="celebrationRankBadge" class="px-3.5 py-1 rounded-full text-xs font-black tracking-wider uppercase border mb-1.5 shadow-xs">
           🏆 ชนะเลิศอันดับ 1
         </span>
 
-        <h2 id="celebrationTitle" class="text-xl sm:text-2xl lg:text-3xl font-black bg-gradient-to-r from-amber-600 via-pink-600 to-purple-600 bg-clip-text text-transparent">
-          ขอแสดงความยินดี!
+        <h2 id="celebrationTitle" class="text-xl sm:text-2xl font-black bg-clip-text text-transparent mb-1">
+          รางวัลชนะเลิศการแข่งขันคะแนนรวม
         </h2>
       </div>
 
-      <!-- 2. รูปรถ/รูปทีมขนาดใหญ่จุใจตรงกลาง (max-h-72 sm:max-h-80) มีเงาและกรอบสีทองหรูหรา -->
-      <div class="relative z-10 w-full max-w-2xl sm:max-w-3xl mb-4 sm:mb-5">
-        <div class="w-full rounded-2xl sm:rounded-3xl p-2 sm:p-2.5 bg-gradient-to-tr from-amber-300 via-yellow-200 to-amber-400 shadow-2xl border-2 border-amber-300/80">
-          <div class="w-full rounded-xl sm:rounded-2xl overflow-hidden bg-slate-900/5 flex items-center justify-center relative group cursor-pointer" onclick="openImageModal(document.getElementById('celebrationTeamImg').src, document.getElementById('celebrationTeamName').innerText)">
-            <img id="celebrationTeamImg" src="" class="max-h-64 sm:max-h-72 md:max-h-80 w-auto max-w-full object-contain rounded-xl group-hover:scale-105 transition-transform duration-300" alt="Team Photo">
-            <div class="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity rounded-xl flex items-center justify-center">
-              <span class="px-3.5 py-1.5 rounded-xl bg-black/60 text-white text-xs font-bold flex items-center gap-1.5 shadow-lg backdrop-blur-xs">
-                <i class="fa-solid fa-magnifying-glass-plus"></i> ดูรูปขนาดเต็ม
-              </span>
-            </div>
+      <!-- 2. รูปรถ/รูปทีมตรงกลาง (สัดส่วนจริง ไม่ถูก crop + ไม่มีพื้นหลังทองหนา) -->
+      <div class="relative z-10 w-full max-w-xl sm:max-w-2xl flex items-center justify-center mb-2 sm:mb-3 shrink-0">
+        <div class="relative group cursor-pointer overflow-hidden rounded-2xl shadow-xl border border-slate-200/90 bg-slate-900/5 flex items-center justify-center p-1" onclick="openImageModal(document.getElementById('celebrationTeamImg').src, document.getElementById('celebrationTeamName').innerText)">
+          <img id="celebrationTeamImg" src="" class="max-h-44 sm:max-h-52 md:max-h-60 w-auto max-w-full object-contain rounded-xl group-hover:scale-105 transition-transform duration-300" alt="Team Photo">
+          <div class="absolute inset-0 bg-black/25 opacity-0 group-hover:opacity-100 transition-opacity rounded-xl flex items-center justify-center">
+            <span class="px-3 py-1.5 rounded-xl bg-black/60 text-white text-xs font-bold flex items-center gap-1.5 shadow-lg backdrop-blur-xs">
+              <i class="fa-solid fa-magnifying-glass-plus"></i> ดูรูปขนาดเต็ม
+            </span>
           </div>
         </div>
       </div>
 
-      <!-- 3. ชื่อทีมเด่นชัด (text-2xl sm:text-3xl) พร้อมแถบสรุปคะแนน (Pill Badge) -->
-      <div class="relative z-10 flex flex-col items-center mb-4 sm:mb-5 w-full">
-        <h3 id="celebrationTeamName" class="text-2xl sm:text-3xl font-black text-slate-800 line-clamp-2 mb-2.5">
+      <!-- 3. ชื่อทีมเด่นชัด พร้อมแถบสรุปคะแนน -->
+      <div class="relative z-10 flex flex-col items-center mb-2 sm:mb-2.5 w-full shrink-0">
+        <h3 id="celebrationTeamName" class="text-xl sm:text-2xl font-black text-slate-800 line-clamp-1 mb-1.5">
           ชื่อทีม
         </h3>
 
         <!-- Score / Votes Pill Wrapper -->
-        <div id="celebrationPillWrapper" class="py-2.5 px-6 rounded-full bg-gradient-to-r from-pink-500 to-rose-500 text-white font-black text-sm sm:text-base shadow-lg shadow-pink-500/30 inline-flex items-center justify-center gap-2">
-          <i id="celebrationPillIcon" class="fa-solid fa-heart text-rose-200"></i>
+        <div id="celebrationPillWrapper" class="py-1.5 px-5 rounded-full text-white font-black text-xs sm:text-sm shadow-md inline-flex items-center justify-center gap-2">
+          <i id="celebrationPillIcon" class="fa-solid fa-trophy text-amber-200"></i>
           <span id="celebrationVoteCount">0 คะแนน (0.0%)</span>
         </div>
       </div>
 
-      <!-- 4. กล่องรายชื่อสมาชิกในทีม: จัดแสดงเป็น Grid 2-3 คอลัมน์ ด้านล่างสุด -->
-      <div id="celebrationMembersSection" class="relative z-10 w-full max-w-3xl bg-slate-50/90 border border-slate-200/90 rounded-2xl p-4 sm:p-5 shadow-sm text-left">
-        <div class="flex items-center justify-between gap-2 mb-3 pb-2 border-b border-slate-200/80">
-          <span class="text-xs sm:text-sm font-black text-slate-700 flex items-center gap-2">
-            <i class="fa-solid fa-users text-amber-500"></i> สมาชิกในทีม
-          </span>
-          <span id="celebrationMembersCount" class="text-xs font-extrabold px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-300">
-            0 คน
-          </span>
-        </div>
-
-        <!-- Grid for Members 1-5 -->
-        <div id="celebrationMembersList" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5 sm:gap-3 text-left">
+      <!-- 4. กล่องรายชื่อสมาชิกในทีม: 2 แถว ไม่มีแถบหัวข้อ 'สมาชิกในทีม 4 คน' -->
+      <div id="celebrationMembersSection" class="relative z-10 w-full max-w-2xl text-left shrink-0">
+        <!-- Grid for Members 1-5 in 2 rows -->
+        <div id="celebrationMembersList" class="grid grid-cols-2 sm:grid-cols-3 gap-2 text-left">
           <!-- Dynamic populated member items -->
         </div>
       </div>
@@ -7600,11 +7589,345 @@
     }
     window.resetPopularPodiumReveal = resetPopularPodiumReveal;
 
-    // Render Team Members in Celebration Modal (Grid 2-3 คอลัมน์, ป้ายหมายเลข 1-5, ไอคอน 👤)
-    function renderCelebrationMembers(user) {
+    // =========================================================================
+    // REALISTIC 3D METALLIC TROPHY SVGS (รูปถ้วยสีจริง ทุกอันดับ)
+    // =========================================================================
+    function getRealisticTrophySvg(type) {
+      if (type === 'gold' || type === 1) {
+        return '<svg class="w-12 h-12 sm:w-14 sm:h-14 drop-shadow-md" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">' +
+          '<defs>' +
+            '<linearGradient id="goldCupGrad" x1="16" y1="8" x2="48" y2="40" gradientUnits="userSpaceOnUse">' +
+              '<stop offset="0%" stop-color="#FFF3B0"/>' +
+              '<stop offset="25%" stop-color="#FFD700"/>' +
+              '<stop offset="50%" stop-color="#FFA000"/>' +
+              '<stop offset="75%" stop-color="#FFD700"/>' +
+              '<stop offset="100%" stop-color="#B7791F"/>' +
+            '</linearGradient>' +
+            '<linearGradient id="goldRimGrad" x1="18" y1="8" x2="46" y2="8" gradientUnits="userSpaceOnUse">' +
+              '<stop offset="0%" stop-color="#FFE082"/>' +
+              '<stop offset="50%" stop-color="#FFFFFF"/>' +
+              '<stop offset="100%" stop-color="#FFB300"/>' +
+            '</linearGradient>' +
+            '<linearGradient id="goldHandleGradL" x1="8" y1="12" x2="20" y2="28" gradientUnits="userSpaceOnUse">' +
+              '<stop offset="0%" stop-color="#FFE082"/>' +
+              '<stop offset="60%" stop-color="#FFA000"/>' +
+              '<stop offset="100%" stop-color="#B7791F"/>' +
+            '</linearGradient>' +
+            '<linearGradient id="goldHandleGradR" x1="44" y1="12" x2="56" y2="28" gradientUnits="userSpaceOnUse">' +
+              '<stop offset="0%" stop-color="#FFE082"/>' +
+              '<stop offset="60%" stop-color="#FFA000"/>' +
+              '<stop offset="100%" stop-color="#B7791F"/>' +
+            '</linearGradient>' +
+            '<linearGradient id="goldStemGrad" x1="28" y1="36" x2="36" y2="48" gradientUnits="userSpaceOnUse">' +
+              '<stop offset="0%" stop-color="#FFD700"/>' +
+              '<stop offset="50%" stop-color="#FFA000"/>' +
+              '<stop offset="100%" stop-color="#8D5B00"/>' +
+            '</linearGradient>' +
+            '<linearGradient id="baseGrad" x1="18" y1="48" x2="46" y2="58" gradientUnits="userSpaceOnUse">' +
+              '<stop offset="0%" stop-color="#374151"/>' +
+              '<stop offset="40%" stop-color="#1F2937"/>' +
+              '<stop offset="100%" stop-color="#111827"/>' +
+            '</linearGradient>' +
+            '<linearGradient id="plaqueGold" x1="24" y1="50" x2="40" y2="56" gradientUnits="userSpaceOnUse">' +
+              '<stop offset="0%" stop-color="#FFF9C4"/>' +
+              '<stop offset="100%" stop-color="#FFB300"/>' +
+            '</linearGradient>' +
+          '</defs>' +
+          '<path d="M20 14C12 14 10 20 10 24C10 30 16 33 22 33" stroke="url(#goldHandleGradL)" stroke-width="3.5" stroke-linecap="round"/>' +
+          '<path d="M44 14C52 14 54 20 54 24C54 30 48 33 42 33" stroke="url(#goldHandleGradR)" stroke-width="3.5" stroke-linecap="round"/>' +
+          '<path d="M19 10H45C45 10 44 32 32 37C20 32 19 10 19 10Z" fill="url(#goldCupGrad)"/>' +
+          '<ellipse cx="32" cy="10" rx="13" ry="3.5" fill="url(#goldRimGrad)"/>' +
+          '<ellipse cx="32" cy="10" rx="11" ry="2" fill="#D97706" opacity="0.6"/>' +
+          '<path d="M22 13C22 13 24 28 31 34C28 32 25 24 24 13Z" fill="#FFFFFF" opacity="0.45"/>' +
+          '<path d="M29 36H35L36 46H28L29 36Z" fill="url(#goldStemGrad)"/>' +
+          '<ellipse cx="32" cy="46" rx="7" ry="2" fill="#FFC107"/>' +
+          '<path d="M22 47H42L45 57H19L22 47Z" fill="url(#baseGrad)"/>' +
+          '<rect x="17" y="56" width="30" height="3" rx="1.5" fill="#111827"/>' +
+          '<rect x="25" y="50" width="14" height="4.5" rx="1" fill="url(#plaqueGold)" stroke="#8D5B00" stroke-width="0.5"/>' +
+          '<path d="M32 18L33.2 21.5H37L34 23.5L35.2 27L32 24.8L28.8 27L30 23.5L27 21.5H30.8L32 18Z" fill="#FFFFFF" opacity="0.85"/>' +
+        '</svg>';
+      } else if (type === 'silver' || type === 2) {
+        return '<svg class="w-12 h-12 sm:w-14 sm:h-14 drop-shadow-md" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">' +
+          '<defs>' +
+            '<linearGradient id="silverCupGrad" x1="16" y1="8" x2="48" y2="40" gradientUnits="userSpaceOnUse">' +
+              '<stop offset="0%" stop-color="#FFFFFF"/>' +
+              '<stop offset="25%" stop-color="#E2E8F0"/>' +
+              '<stop offset="50%" stop-color="#94A3B8"/>' +
+              '<stop offset="75%" stop-color="#CBD5E1"/>' +
+              '<stop offset="100%" stop-color="#64748B"/>' +
+            '</linearGradient>' +
+            '<linearGradient id="silverRimGrad" x1="18" y1="8" x2="46" y2="8" gradientUnits="userSpaceOnUse">' +
+              '<stop offset="0%" stop-color="#F8FAFC"/>' +
+              '<stop offset="50%" stop-color="#FFFFFF"/>' +
+              '<stop offset="100%" stop-color="#94A3B8"/>' +
+            '</linearGradient>' +
+            '<linearGradient id="silverHandleGradL" x1="8" y1="12" x2="20" y2="28" gradientUnits="userSpaceOnUse">' +
+              '<stop offset="0%" stop-color="#FFFFFF"/>' +
+              '<stop offset="60%" stop-color="#94A3B8"/>' +
+              '<stop offset="100%" stop-color="#475569"/>' +
+            '</linearGradient>' +
+            '<linearGradient id="silverHandleGradR" x1="44" y1="12" x2="56" y2="28" gradientUnits="userSpaceOnUse">' +
+              '<stop offset="0%" stop-color="#FFFFFF"/>' +
+              '<stop offset="60%" stop-color="#94A3B8"/>' +
+              '<stop offset="100%" stop-color="#475569"/>' +
+            '</linearGradient>' +
+            '<linearGradient id="silverStemGrad" x1="28" y1="36" x2="36" y2="48" gradientUnits="userSpaceOnUse">' +
+              '<stop offset="0%" stop-color="#E2E8F0"/>' +
+              '<stop offset="50%" stop-color="#94A3B8"/>' +
+              '<stop offset="100%" stop-color="#475569"/>' +
+            '</linearGradient>' +
+            '<linearGradient id="baseGradS" x1="18" y1="48" x2="46" y2="58" gradientUnits="userSpaceOnUse">' +
+              '<stop offset="0%" stop-color="#374151"/>' +
+              '<stop offset="40%" stop-color="#1F2937"/>' +
+              '<stop offset="100%" stop-color="#111827"/>' +
+            '</linearGradient>' +
+            '<linearGradient id="plaqueSilver" x1="24" y1="50" x2="40" y2="56" gradientUnits="userSpaceOnUse">' +
+              '<stop offset="0%" stop-color="#F8FAFC"/>' +
+              '<stop offset="100%" stop-color="#94A3B8"/>' +
+            '</linearGradient>' +
+          '</defs>' +
+          '<path d="M20 14C12 14 10 20 10 24C10 30 16 33 22 33" stroke="url(#silverHandleGradL)" stroke-width="3.5" stroke-linecap="round"/>' +
+          '<path d="M44 14C52 14 54 20 54 24C54 30 48 33 42 33" stroke="url(#silverHandleGradR)" stroke-width="3.5" stroke-linecap="round"/>' +
+          '<path d="M19 10H45C45 10 44 32 32 37C20 32 19 10 19 10Z" fill="url(#silverCupGrad)"/>' +
+          '<ellipse cx="32" cy="10" rx="13" ry="3.5" fill="url(#silverRimGrad)"/>' +
+          '<ellipse cx="32" cy="10" rx="11" ry="2" fill="#475569" opacity="0.6"/>' +
+          '<path d="M22 13C22 13 24 28 31 34C28 32 25 24 24 13Z" fill="#FFFFFF" opacity="0.55"/>' +
+          '<path d="M29 36H35L36 46H28L29 36Z" fill="url(#silverStemGrad)"/>' +
+          '<ellipse cx="32" cy="46" rx="7" ry="2" fill="#CBD5E1"/>' +
+          '<path d="M22 47H42L45 57H19L22 47Z" fill="url(#baseGradS)"/>' +
+          '<rect x="17" y="56" width="30" height="3" rx="1.5" fill="#111827"/>' +
+          '<rect x="25" y="50" width="14" height="4.5" rx="1" fill="url(#plaqueSilver)" stroke="#475569" stroke-width="0.5"/>' +
+          '<path d="M32 18L33.2 21.5H37L34 23.5L35.2 27L32 24.8L28.8 27L30 23.5L27 21.5H30.8L32 18Z" fill="#FFFFFF" opacity="0.9"/>' +
+        '</svg>';
+      } else if (type === 'bronze' || type === 3) {
+        return '<svg class="w-12 h-12 sm:w-14 sm:h-14 drop-shadow-md" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">' +
+          '<defs>' +
+            '<linearGradient id="bronzeCupGrad" x1="16" y1="8" x2="48" y2="40" gradientUnits="userSpaceOnUse">' +
+              '<stop offset="0%" stop-color="#FFD1B3"/>' +
+              '<stop offset="25%" stop-color="#F97316"/>' +
+              '<stop offset="50%" stop-color="#C2410C"/>' +
+              '<stop offset="75%" stop-color="#FB923C"/>' +
+              '<stop offset="100%" stop-color="#7C2D12"/>' +
+            '</linearGradient>' +
+            '<linearGradient id="bronzeRimGrad" x1="18" y1="8" x2="46" y2="8" gradientUnits="userSpaceOnUse">' +
+              '<stop offset="0%" stop-color="#FED7AA"/>' +
+              '<stop offset="50%" stop-color="#FFFFFF"/>' +
+              '<stop offset="100%" stop-color="#EA580C"/>' +
+            '</linearGradient>' +
+            '<linearGradient id="bronzeHandleGradL" x1="8" y1="12" x2="20" y2="28" gradientUnits="userSpaceOnUse">' +
+              '<stop offset="0%" stop-color="#FED7AA"/>' +
+              '<stop offset="60%" stop-color="#EA580C"/>' +
+              '<stop offset="100%" stop-color="#7C2D12"/>' +
+            '</linearGradient>' +
+            '<linearGradient id="bronzeHandleGradR" x1="44" y1="12" x2="56" y2="28" gradientUnits="userSpaceOnUse">' +
+              '<stop offset="0%" stop-color="#FED7AA"/>' +
+              '<stop offset="60%" stop-color="#EA580C"/>' +
+              '<stop offset="100%" stop-color="#7C2D12"/>' +
+            '</linearGradient>' +
+            '<linearGradient id="bronzeStemGrad" x1="28" y1="36" x2="36" y2="48" gradientUnits="userSpaceOnUse">' +
+              '<stop offset="0%" stop-color="#FB923C"/>' +
+              '<stop offset="50%" stop-color="#C2410C"/>' +
+              '<stop offset="100%" stop-color="#7C2D12"/>' +
+            '</linearGradient>' +
+            '<linearGradient id="baseGradB" x1="18" y1="48" x2="46" y2="58" gradientUnits="userSpaceOnUse">' +
+              '<stop offset="0%" stop-color="#374151"/>' +
+              '<stop offset="40%" stop-color="#1F2937"/>' +
+              '<stop offset="100%" stop-color="#111827"/>' +
+            '</linearGradient>' +
+            '<linearGradient id="plaqueBronze" x1="24" y1="50" x2="40" y2="56" gradientUnits="userSpaceOnUse">' +
+              '<stop offset="0%" stop-color="#FFEDD5"/>' +
+              '<stop offset="100%" stop-color="#C2410C"/>' +
+            '</linearGradient>' +
+          '</defs>' +
+          '<path d="M20 14C12 14 10 20 10 24C10 30 16 33 22 33" stroke="url(#bronzeHandleGradL)" stroke-width="3.5" stroke-linecap="round"/>' +
+          '<path d="M44 14C52 14 54 20 54 24C54 30 48 33 42 33" stroke="url(#bronzeHandleGradR)" stroke-width="3.5" stroke-linecap="round"/>' +
+          '<path d="M19 10H45C45 10 44 32 32 37C20 32 19 10 19 10Z" fill="url(#bronzeCupGrad)"/>' +
+          '<ellipse cx="32" cy="10" rx="13" ry="3.5" fill="url(#bronzeRimGrad)"/>' +
+          '<ellipse cx="32" cy="10" rx="11" ry="2" fill="#7C2D12" opacity="0.6"/>' +
+          '<path d="M22 13C22 13 24 28 31 34C28 32 25 24 24 13Z" fill="#FFFFFF" opacity="0.45"/>' +
+          '<path d="M29 36H35L36 46H28L29 36Z" fill="url(#bronzeStemGrad)"/>' +
+          '<ellipse cx="32" cy="46" rx="7" ry="2" fill="#FB923C"/>' +
+          '<path d="M22 47H42L45 57H19L22 47Z" fill="url(#baseGradB)"/>' +
+          '<rect x="17" y="56" width="30" height="3" rx="1.5" fill="#111827"/>' +
+          '<rect x="25" y="50" width="14" height="4.5" rx="1" fill="url(#plaqueBronze)" stroke="#7C2D12" stroke-width="0.5"/>' +
+          '<path d="M32 18L33.2 21.5H37L34 23.5L35.2 27L32 24.8L28.8 27L30 23.5L27 21.5H30.8L32 18Z" fill="#FFFFFF" opacity="0.85"/>' +
+        '</svg>';
+      } else if (type === 'booby') {
+        return '<svg class="w-12 h-12 sm:w-14 sm:h-14 drop-shadow-md" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">' +
+          '<defs>' +
+            '<radialGradient id="targetRed" cx="32" cy="32" r="28" gradientUnits="userSpaceOnUse">' +
+              '<stop offset="0%" stop-color="#EF4444"/>' +
+              '<stop offset="100%" stop-color="#991B1B"/>' +
+            '</radialGradient>' +
+          '</defs>' +
+          '<circle cx="32" cy="32" r="28" fill="#F8FAFC" stroke="#9333EA" stroke-width="3"/>' +
+          '<circle cx="32" cy="32" r="22" fill="url(#targetRed)"/>' +
+          '<circle cx="32" cy="32" r="16" fill="#FFFFFF"/>' +
+          '<circle cx="32" cy="32" r="10" fill="url(#targetRed)"/>' +
+          '<circle cx="32" cy="32" r="4" fill="#FBBF24"/>' +
+          '<line x1="32" y1="4" x2="32" y2="60" stroke="#9333EA" stroke-width="1.5" stroke-dasharray="2 2" opacity="0.6"/>' +
+          '<line x1="4" y1="32" x2="60" y2="32" stroke="#9333EA" stroke-width="1.5" stroke-dasharray="2 2" opacity="0.6"/>' +
+        '</svg>';
+      }
+      return '<i class="fa-solid fa-trophy text-3xl"></i>';
+    }
+    window.getRealisticTrophySvg = getRealisticTrophySvg;
+
+    // Celebration Themes by Rank (เปลี่ยนสีธีมตามอันดับที่ได้)
+    var celebrationThemes = {
+      1: {
+        name: 'gold',
+        borderColor: 'border-amber-400 shadow-amber-500/25',
+        glowTop: 'bg-amber-400/25',
+        glowBottom: 'bg-yellow-300/20',
+        iconBg: 'bg-gradient-to-tr from-amber-400 via-amber-300 to-yellow-200 border-amber-400 shadow-amber-500/40',
+        rankBadge: 'bg-amber-100 text-amber-900 border-amber-300',
+        titleGradient: 'from-amber-600 via-yellow-600 to-amber-700',
+        pillBg: 'bg-gradient-to-r from-amber-500 to-yellow-500 shadow-amber-500/30',
+        pillIcon: 'fa-solid fa-trophy text-amber-200',
+        memberBadge: 'bg-gradient-to-tr from-amber-400 via-amber-300 to-yellow-200 text-amber-950 border border-amber-300',
+        trophyType: 'gold'
+      },
+      2: {
+        name: 'silver',
+        borderColor: 'border-slate-300 shadow-slate-400/25',
+        glowTop: 'bg-slate-300/30',
+        glowBottom: 'bg-cyan-200/20',
+        iconBg: 'bg-gradient-to-tr from-slate-200 via-slate-100 to-gray-200 border-slate-300 shadow-slate-400/30',
+        rankBadge: 'bg-slate-100 text-slate-800 border-slate-300',
+        titleGradient: 'from-slate-600 via-gray-600 to-slate-800',
+        pillBg: 'bg-gradient-to-r from-slate-600 to-gray-500 shadow-slate-500/30',
+        pillIcon: 'fa-solid fa-medal text-slate-200',
+        memberBadge: 'bg-gradient-to-tr from-slate-200 via-gray-100 to-slate-300 text-slate-800 border border-slate-300',
+        trophyType: 'silver'
+      },
+      3: {
+        name: 'bronze',
+        borderColor: 'border-orange-400 shadow-orange-500/25',
+        glowTop: 'bg-orange-400/25',
+        glowBottom: 'bg-amber-600/20',
+        iconBg: 'bg-gradient-to-tr from-amber-600 via-orange-400 to-amber-300 border-orange-400 shadow-orange-500/30',
+        rankBadge: 'bg-orange-100 text-orange-900 border-orange-300',
+        titleGradient: 'from-amber-700 via-orange-600 to-amber-800',
+        pillBg: 'bg-gradient-to-r from-amber-700 to-orange-500 shadow-orange-500/30',
+        pillIcon: 'fa-solid fa-award text-orange-200',
+        memberBadge: 'bg-gradient-to-tr from-orange-200 via-amber-200 to-orange-300 text-amber-950 border border-orange-300',
+        trophyType: 'bronze'
+      },
+      booby: {
+        name: 'booby',
+        borderColor: 'border-purple-400 shadow-purple-500/25',
+        glowTop: 'bg-purple-400/25',
+        glowBottom: 'bg-indigo-400/20',
+        iconBg: 'bg-gradient-to-tr from-purple-500 via-pink-500 to-indigo-400 border-purple-400 shadow-purple-500/40',
+        rankBadge: 'bg-purple-100 text-purple-800 border-purple-300',
+        titleGradient: 'from-purple-600 via-pink-600 to-indigo-600',
+        pillBg: 'bg-gradient-to-r from-purple-600 via-pink-600 to-indigo-600 shadow-purple-500/30',
+        pillIcon: 'fa-solid fa-trophy text-purple-200',
+        memberBadge: 'bg-gradient-to-tr from-purple-200 via-pink-200 to-purple-200 text-purple-900 border border-purple-300',
+        trophyType: 'booby'
+      },
+      popular1: {
+        name: 'popular1',
+        borderColor: 'border-amber-400 shadow-amber-500/25',
+        glowTop: 'bg-amber-400/25',
+        glowBottom: 'bg-pink-400/20',
+        iconBg: 'bg-gradient-to-tr from-amber-400 via-pink-300 to-rose-200 border-amber-300 shadow-amber-500/40',
+        rankBadge: 'bg-amber-100 text-amber-900 border-amber-300',
+        titleGradient: 'from-amber-600 via-pink-600 to-purple-600',
+        pillBg: 'bg-gradient-to-r from-pink-500 to-rose-500 shadow-pink-500/30',
+        pillIcon: 'fa-solid fa-heart text-rose-200',
+        memberBadge: 'bg-gradient-to-tr from-amber-400 via-amber-300 to-yellow-200 text-amber-950 border border-amber-300',
+        trophyType: 'gold'
+      },
+      popular2: {
+        name: 'popular2',
+        borderColor: 'border-slate-300 shadow-slate-400/25',
+        glowTop: 'bg-slate-300/30',
+        glowBottom: 'bg-pink-300/20',
+        iconBg: 'bg-gradient-to-tr from-slate-200 via-slate-100 to-gray-200 border-slate-300 shadow-slate-400/30',
+        rankBadge: 'bg-slate-100 text-slate-800 border-slate-300',
+        titleGradient: 'from-slate-600 via-pink-600 to-slate-800',
+        pillBg: 'bg-gradient-to-r from-pink-500 to-rose-500 shadow-pink-500/30',
+        pillIcon: 'fa-solid fa-heart text-rose-200',
+        memberBadge: 'bg-gradient-to-tr from-slate-200 via-gray-100 to-slate-300 text-slate-800 border border-slate-300',
+        trophyType: 'silver'
+      },
+      popular3: {
+        name: 'popular3',
+        borderColor: 'border-orange-400 shadow-orange-500/25',
+        glowTop: 'bg-orange-400/25',
+        glowBottom: 'bg-pink-300/20',
+        iconBg: 'bg-gradient-to-tr from-amber-600 via-orange-400 to-amber-300 border-orange-400 shadow-orange-500/30',
+        rankBadge: 'bg-orange-100 text-orange-900 border-orange-300',
+        titleGradient: 'from-amber-700 via-pink-600 to-amber-800',
+        pillBg: 'bg-gradient-to-r from-pink-500 to-rose-500 shadow-pink-500/30',
+        pillIcon: 'fa-solid fa-heart text-rose-200',
+        memberBadge: 'bg-gradient-to-tr from-orange-200 via-amber-200 to-orange-300 text-amber-950 border border-orange-300',
+        trophyType: 'bronze'
+      }
+    };
+    window.celebrationThemes = celebrationThemes;
+
+    function applyCelebrationTheme(themeKey) {
+      var theme = celebrationThemes[themeKey] || celebrationThemes[1];
+      
+      var card = document.getElementById('celebrationModalCard');
+      if (card) {
+        card.className = 'bg-white w-full max-w-3xl lg:max-w-4xl max-h-[96vh] rounded-3xl p-4 sm:p-6 relative shadow-2xl border-4 ' + theme.borderColor + ' overflow-hidden my-auto text-center flex flex-col items-center justify-between';
+      }
+
+      var glowTop = document.getElementById('celebrationGlowTop');
+      if (glowTop) {
+        glowTop.className = 'absolute -top-24 -left-24 w-72 h-72 rounded-full blur-3xl pointer-events-none ' + theme.glowTop;
+      }
+      var glowBottom = document.getElementById('celebrationGlowBottom');
+      if (glowBottom) {
+        glowBottom.className = 'absolute -bottom-24 -right-24 w-72 h-72 rounded-full blur-3xl pointer-events-none ' + theme.glowBottom;
+      }
+
+      var iconWrapper = document.getElementById('celebrationMedalIconWrapper');
+      if (iconWrapper) {
+        iconWrapper.className = 'w-16 h-16 sm:w-20 sm:h-20 rounded-2xl sm:rounded-3xl p-1.5 shadow-xl mb-2 flex items-center justify-center border-2 shrink-0 ' + theme.iconBg;
+      }
+
+      var iconEl = document.getElementById('celebrationMedalIcon');
+      if (iconEl) {
+        iconEl.innerHTML = getRealisticTrophySvg(theme.trophyType);
+      }
+
+      var badgeEl = document.getElementById('celebrationRankBadge');
+      if (badgeEl) {
+        badgeEl.className = 'px-3.5 py-1 rounded-full text-xs font-black tracking-wider uppercase border mb-1.5 shadow-xs ' + theme.rankBadge;
+      }
+
+      var titleEl = document.getElementById('celebrationTitle');
+      if (titleEl) {
+        titleEl.className = 'text-xl sm:text-2xl font-black bg-gradient-to-r ' + theme.titleGradient + ' bg-clip-text text-transparent mb-1';
+      }
+
+      var pillWrapper = document.getElementById('celebrationPillWrapper');
+      if (pillWrapper) {
+        pillWrapper.className = 'py-1.5 px-5 rounded-full text-white font-black text-xs sm:text-sm shadow-md inline-flex items-center justify-center gap-2 ' + theme.pillBg;
+      }
+
+      var pillIcon = document.getElementById('celebrationPillIcon');
+      if (pillIcon) {
+        pillIcon.className = theme.pillIcon;
+      }
+
+      return theme;
+    }
+    window.applyCelebrationTheme = applyCelebrationTheme;
+
+    // Render Team Members in Celebration Modal (2 แถว, ป้ายหมายเลข 1-5, ไอคอน 👤)
+    function renderCelebrationMembers(user, theme) {
       var container = document.getElementById('celebrationMembersList');
-      var countEl = document.getElementById('celebrationMembersCount');
       if (!container) return;
+
+      var badgeClass = (theme && theme.memberBadge)
+        ? theme.memberBadge
+        : 'bg-gradient-to-tr from-amber-400 via-amber-300 to-yellow-200 text-amber-950 border border-amber-300';
 
       var members = [];
       if (user && user.members) {
@@ -7627,24 +7950,20 @@
         }
       }
 
-      if (countEl) {
-        countEl.innerText = members.length > 0 ? (members.length + ' คน') : '0 คน';
-      }
-
       if (members.length === 0) {
-        container.className = 'w-full py-4 text-center text-slate-400 text-xs italic bg-white rounded-xl border border-dashed border-slate-200';
+        container.className = 'w-full py-2 text-center text-slate-400 text-xs italic bg-slate-50 rounded-xl border border-dashed border-slate-200';
         container.innerHTML = '<i class="fa-regular fa-id-badge mr-1 text-slate-300"></i> ไม่มีข้อมูลรายชื่อสมาชิกในทีม';
         return;
       }
 
-      // Render as 2-3 columns grid
-      container.className = 'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5 sm:gap-3 text-left';
+      // Render as 2 rows grid (2-3 columns)
+      container.className = 'grid grid-cols-2 sm:grid-cols-3 gap-2 text-left';
       container.innerHTML = members.map(function(m, idx) {
-        return '<div class="flex items-center gap-2 sm:gap-2.5 p-2 sm:p-2.5 rounded-xl bg-white border border-slate-200/90 shadow-xs hover:border-amber-400 hover:shadow-sm transition-all min-w-0">' +
-          '<span class="w-6 h-6 rounded-full bg-gradient-to-tr from-amber-400 via-amber-300 to-yellow-200 text-amber-950 font-black text-xs flex items-center justify-center shrink-0 border border-amber-300/80 shadow-xs">' + (idx + 1) + '</span>' +
-          '<div class="min-w-0 flex-1 flex items-center gap-1.5">' +
-            '<i class="fa-regular fa-user text-slate-400 text-xs shrink-0"></i>' +
-            '<span class="text-slate-800 font-bold text-xs sm:text-sm truncate" title="' + escapeHTML(m) + '">' + escapeHTML(m) + '</span>' +
+        return '<div class="flex items-center gap-2 p-1.5 sm:p-2 rounded-xl bg-slate-50 border border-slate-200/90 shadow-2xs hover:border-amber-300 hover:shadow-xs transition-all min-w-0">' +
+          '<span class="w-5 h-5 rounded-full ' + badgeClass + ' font-black text-[11px] flex items-center justify-center shrink-0 shadow-2xs">' + (idx + 1) + '</span>' +
+          '<div class="min-w-0 flex-1 flex items-center gap-1">' +
+            '<i class="fa-regular fa-user text-slate-400 text-[11px] shrink-0"></i>' +
+            '<span class="text-slate-800 font-bold text-xs truncate" title="' + escapeHTML(m) + '">' + escapeHTML(m) + '</span>' +
           '</div>' +
         '</div>';
       }).join('');
@@ -7690,50 +8009,29 @@
       var modal = document.getElementById('voteCelebrationModal');
       if (!modal) return;
 
+      // Apply theme by rank (ที่ 1 สีทอง, ที่ 2 สีเงิน, ที่ 3 สีทองแดง)
+      var theme = applyCelebrationTheme(rank);
+
+      // Titles WITHOUT 🏆 emoji as requested!
       var titles = {
-        1: '🏆 รางวัลชนะเลิศการแข่งขันคะแนนรวม',
-        2: '🥈 รางวัลรองชนะเลิศอันดับ 1 การแข่งขันคะแนนรวม',
-        3: '🥉 รางวัลรองชนะเลิศอันดับ 2 การแข่งขันคะแนนรวม'
+        1: 'รางวัลชนะเลิศการแข่งขันคะแนนรวม',
+        2: 'รางวัลรองชนะเลิศอันดับ 1 การแข่งขันคะแนนรวม',
+        3: 'รางวัลรองชนะเลิศอันดับ 2 การแข่งขันคะแนนรวม'
       };
       var badges = {
-        1: '🏆 ชนะเลิศอันดับ 1 (Overall Champion)',
+        1: '🏆 ชนะเลิศอันดับ 1 (OVERALL CHAMPION)',
         2: '🥈 รองชนะเลิศอันดับ 1',
         3: '🥉 รองชนะเลิศอันดับ 2'
-      };
-      var badgeStyles = {
-        1: 'bg-amber-100 text-amber-800 border-amber-300',
-        2: 'bg-slate-100 text-slate-800 border-slate-300',
-        3: 'bg-orange-100 text-orange-800 border-orange-300'
-      };
-      var medalIcons = {
-        1: '<i class="fa-solid fa-trophy text-amber-900"></i>',
-        2: '<i class="fa-solid fa-medal text-slate-800"></i>',
-        3: '<i class="fa-solid fa-award text-orange-900"></i>'
-      };
-      var iconGradients = {
-        1: 'from-amber-400 via-amber-300 to-yellow-200 border-amber-400 shadow-amber-500/40',
-        2: 'from-slate-300 via-slate-200 to-gray-100 border-slate-300 shadow-slate-500/30',
-        3: 'from-amber-600 via-orange-400 to-amber-300 border-orange-400 shadow-orange-500/30'
       };
 
       var badgeEl = document.getElementById('celebrationRankBadge');
       if (badgeEl) {
         badgeEl.innerText = badges[rank] || ('อันดับที่ ' + rank);
-        badgeEl.className = 'px-4 py-1 rounded-full text-xs font-black tracking-wider uppercase border mb-2 shadow-sm ' + (badgeStyles[rank] || '');
       }
 
       var titleEl = document.getElementById('celebrationTitle');
       if (titleEl) {
         titleEl.innerText = titles[rank] || ('ประกาศผลคะแนนรวมอันดับที่ ' + rank);
-      }
-
-      var iconWrapper = document.getElementById('celebrationMedalIconWrapper');
-      if (iconWrapper) {
-        iconWrapper.className = 'w-20 h-20 sm:w-24 sm:h-24 rounded-3xl bg-gradient-to-tr p-1 shadow-xl mb-3 flex items-center justify-center border-2 ' + (iconGradients[rank] || '');
-      }
-      var iconEl = document.getElementById('celebrationMedalIcon');
-      if (iconEl) {
-        iconEl.innerHTML = medalIcons[rank] || '<i class="fa-solid fa-trophy"></i>';
       }
 
       var teamImg = document.getElementById('celebrationTeamImg');
@@ -7747,22 +8045,13 @@
         teamNameEl.innerText = targetItem.user.name;
       }
 
-      // Set Score Pill with Total Score
-      var pillWrapper = document.getElementById('celebrationPillWrapper');
-      if (pillWrapper) {
-        pillWrapper.className = 'py-2.5 px-6 rounded-full bg-gradient-to-r from-amber-500 to-yellow-600 text-white font-black text-sm sm:text-base shadow-lg shadow-amber-500/30 inline-flex items-center justify-center gap-2 mb-4';
-      }
-      var pillIcon = document.getElementById('celebrationPillIcon');
-      if (pillIcon) {
-        pillIcon.className = 'fa-solid fa-trophy text-amber-200';
-      }
       var voteCountEl = document.getElementById('celebrationVoteCount');
       if (voteCountEl) {
         voteCountEl.innerText = 'ได้รับคะแนนรวม ' + Number(targetItem.totalNetScore || 0).toLocaleString('th-TH') + ' คะแนน';
       }
 
-      // Populate Team Members (Grid 2-3 คอลัมน์)
-      renderCelebrationMembers(targetItem.user);
+      // Populate Team Members (2 แถว)
+      renderCelebrationMembers(targetItem.user, theme);
 
       modal.style.display = 'flex';
 
@@ -7777,6 +8066,7 @@
       } catch (e) {}
     }
     window.showOverallCelebrationModal = showOverallCelebrationModal;
+
 
     // =========================================================================
     // BOOBY PRIZE (รางวัลบู้บี้) CONTROLLERS
@@ -8070,24 +8360,17 @@
       var modal = document.getElementById('voteCelebrationModal');
       if (!modal) return;
 
+      // Apply booby theme (ม่วง-อินดิโก้)
+      var theme = applyCelebrationTheme('booby');
+
       var badgeEl = document.getElementById('celebrationRankBadge');
       if (badgeEl) {
         badgeEl.innerText = '🎯 รางวัลบู้บี้ (อันดับที่ ' + boobyRank + ')';
-        badgeEl.className = 'px-4 py-1 rounded-full text-xs font-black tracking-wider uppercase border mb-2 shadow-sm bg-purple-100 text-purple-800 border-purple-300';
       }
 
       var titleEl = document.getElementById('celebrationTitle');
       if (titleEl) {
-        titleEl.innerText = '🎯 ขอแสดงความยินดี รางวัลบู้บี้!';
-      }
-
-      var iconWrapper = document.getElementById('celebrationMedalIconWrapper');
-      if (iconWrapper) {
-        iconWrapper.className = 'w-20 h-20 sm:w-24 sm:h-24 rounded-3xl bg-gradient-to-tr from-purple-500 via-pink-500 to-indigo-400 border-purple-400 shadow-purple-500/40 p-1 shadow-xl mb-3 flex items-center justify-center border-2';
-      }
-      var iconEl = document.getElementById('celebrationMedalIcon');
-      if (iconEl) {
-        iconEl.innerHTML = '<i class="fa-solid fa-bullseye text-white text-3xl sm:text-4xl drop-shadow-md"></i>';
+        titleEl.innerText = 'รางวัลบู้บี้ประจำการแข่งขัน';
       }
 
       var teamImg = document.getElementById('celebrationTeamImg');
@@ -8101,21 +8384,13 @@
         teamNameEl.innerText = targetItem.user.name;
       }
 
-      var pillWrapper = document.getElementById('celebrationPillWrapper');
-      if (pillWrapper) {
-        pillWrapper.className = 'py-2.5 px-6 rounded-full bg-gradient-to-r from-purple-600 via-pink-600 to-indigo-600 text-white font-black text-sm sm:text-base shadow-lg shadow-purple-500/30 inline-flex items-center justify-center gap-2 mb-4';
-      }
-      var pillIcon = document.getElementById('celebrationPillIcon');
-      if (pillIcon) {
-        pillIcon.className = 'fa-solid fa-trophy text-purple-200';
-      }
       var voteCountEl = document.getElementById('celebrationVoteCount');
       if (voteCountEl) {
         voteCountEl.innerText = 'ได้รับคะแนนรวม ' + Number(targetItem.totalNetScore || 0).toLocaleString('th-TH') + ' คะแนน';
       }
 
-      // Populate Team Members (Grid 2-3 คอลัมน์)
-      renderCelebrationMembers(targetItem.user);
+      // Populate Team Members (2 แถว)
+      renderCelebrationMembers(targetItem.user, theme);
 
       modal.style.display = 'flex';
 
@@ -8132,7 +8407,7 @@
     window.showBoobyCelebrationModal = showBoobyCelebrationModal;
 
 
-    // =========================================================================
+        // =========================================================================
     // POPULAR VOTE CEREMONY & CELEBRATION FUNCTIONS
     // =========================================================================
     function revealPodiumRank(rank) {
@@ -8206,50 +8481,29 @@
       var modal = document.getElementById('voteCelebrationModal');
       if (!modal) return;
 
+      // Apply theme for popular vote (popular1 = gold, popular2 = silver, popular3 = bronze)
+      var theme = applyCelebrationTheme('popular' + rank);
+
+      // Titles WITHOUT 🏆 emoji
       var titles = {
-        1: '🏆 ชนะเลิศอันดับ 1 ขวัญใจมหาชน',
-        2: '🥈 รองชนะเลิศอันดับ 1',
-        3: '🥉 รองชนะเลิศอันดับ 2'
+        1: 'รางวัลชนะเลิศอันดับ 1 ขวัญใจมหาชน',
+        2: 'รางวัลรองชนะเลิศอันดับ 1 ขวัญใจมหาชน',
+        3: 'รางวัลรองชนะเลิศอันดับ 2 ขวัญใจมหาชน'
       };
       var badges = {
         1: '🏆 ชนะเลิศอันดับ 1',
         2: '🥈 รองชนะเลิศอันดับ 1',
         3: '🥉 รองชนะเลิศอันดับ 2'
       };
-      var badgeStyles = {
-        1: 'bg-amber-100 text-amber-800 border-amber-300',
-        2: 'bg-slate-100 text-slate-800 border-slate-300',
-        3: 'bg-orange-100 text-orange-800 border-orange-300'
-      };
-      var medalIcons = {
-        1: '<i class="fa-solid fa-trophy text-amber-900"></i>',
-        2: '<i class="fa-solid fa-medal text-slate-800"></i>',
-        3: '<i class="fa-solid fa-award text-orange-900"></i>'
-      };
-      var iconGradients = {
-        1: 'from-amber-400 via-amber-300 to-yellow-200 border-amber-400 shadow-amber-500/40',
-        2: 'from-slate-300 via-slate-200 to-gray-100 border-slate-300 shadow-slate-500/30',
-        3: 'from-amber-600 via-orange-400 to-amber-300 border-orange-400 shadow-orange-500/30'
-      };
 
       var badgeEl = document.getElementById('celebrationRankBadge');
       if (badgeEl) {
         badgeEl.innerText = badges[rank] || ('อันดับที่ ' + rank);
-        badgeEl.className = 'px-4 py-1 rounded-full text-xs font-black tracking-wider uppercase border mb-2 shadow-sm ' + (badgeStyles[rank] || '');
       }
 
       var titleEl = document.getElementById('celebrationTitle');
       if (titleEl) {
         titleEl.innerText = titles[rank] || ('ประกาศผลอันดับที่ ' + rank);
-      }
-
-      var iconWrapper = document.getElementById('celebrationMedalIconWrapper');
-      if (iconWrapper) {
-        iconWrapper.className = 'w-20 h-20 sm:w-24 sm:h-24 rounded-3xl bg-gradient-to-tr p-1 shadow-xl mb-3 flex items-center justify-center border-2 ' + (iconGradients[rank] || '');
-      }
-      var iconEl = document.getElementById('celebrationMedalIcon');
-      if (iconEl) {
-        iconEl.innerHTML = medalIcons[rank] || '<i class="fa-solid fa-trophy"></i>';
       }
 
       var teamImg = document.getElementById('celebrationTeamImg');
@@ -8263,26 +8517,16 @@
         teamNameEl.innerText = targetItem.user.name;
       }
 
-      var pillWrapper = document.getElementById('celebrationPillWrapper');
-      if (pillWrapper) {
-        pillWrapper.className = 'py-2.5 px-6 rounded-full bg-gradient-to-r from-pink-500 to-rose-500 text-white font-black text-sm sm:text-base shadow-lg shadow-pink-500/30 inline-flex items-center justify-center gap-2 mb-4';
-      }
-      var pillIcon = document.getElementById('celebrationPillIcon');
-      if (pillIcon) {
-        pillIcon.className = 'fa-solid fa-heart text-rose-200';
-      }
-
       var voteCountEl = document.getElementById('celebrationVoteCount');
       if (voteCountEl) {
         voteCountEl.innerText = 'ได้รับคะแนนโหวต ' + targetItem.votesCount + ' คะแนน (' + targetItem.percentage + '%)';
       }
 
-      // Populate Team Members (Grid 2-3 คอลัมน์)
-      renderCelebrationMembers(targetItem.user);
+      // Populate Team Members (2 แถว)
+      renderCelebrationMembers(targetItem.user, theme);
 
       modal.style.display = 'flex';
 
-      // Confetti burst
       try {
         if (typeof confetti === 'function') {
           confetti({
@@ -8295,7 +8539,8 @@
     }
     window.showCelebrationModal = showCelebrationModal;
 
-    function closeVoteCelebrationModal() {
+
+        function closeVoteCelebrationModal() {
       var modal = document.getElementById('voteCelebrationModal');
       if (modal) modal.style.display = 'none';
     }
