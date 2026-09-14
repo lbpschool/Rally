@@ -1335,62 +1335,62 @@
 
   <!-- ================= MODAL: AWARD CELEBRATION (รูปแบบ ก: แบบเรียงแนวตั้งอลังการ) ================= -->
   <div id="voteCelebrationModal" style="display: none;" class="fixed inset-0 z-50 items-center justify-center bg-slate-950/85 backdrop-blur-md p-3 sm:p-4 animate-fade-in overflow-hidden" onclick="if(event.target === this) closeVoteCelebrationModal()">
-    <div id="celebrationModalCard" class="bg-white w-full max-w-3xl lg:max-w-4xl max-h-[96vh] rounded-3xl p-4 sm:p-6 relative shadow-2xl border-4 border-amber-400 overflow-hidden my-auto text-center flex flex-col items-center justify-between">
+    <div id="celebrationModalCard" class="bg-white w-[96vw] max-w-5xl lg:max-w-6xl max-h-[96vh] rounded-3xl sm:rounded-[36px] p-5 sm:p-7 relative shadow-2xl border-4 border-amber-400 overflow-hidden my-auto text-center flex flex-col items-center justify-between">
       <!-- Ambient Glow Effects (Dynamic per Theme) -->
-      <div id="celebrationGlowTop" class="absolute -top-24 -left-24 w-72 h-72 bg-amber-400/25 rounded-full blur-3xl pointer-events-none"></div>
-      <div id="celebrationGlowBottom" class="absolute -bottom-24 -right-24 w-72 h-72 bg-yellow-300/20 rounded-full blur-3xl pointer-events-none"></div>
+      <div id="celebrationGlowTop" class="absolute -top-24 -left-24 w-96 h-96 bg-amber-400/25 rounded-full blur-3xl pointer-events-none"></div>
+      <div id="celebrationGlowBottom" class="absolute -bottom-24 -right-24 w-96 h-96 bg-yellow-300/20 rounded-full blur-3xl pointer-events-none"></div>
 
       <!-- Close Button Top Right -->
-      <button type="button" onclick="closeVoteCelebrationModal()" class="absolute top-4 right-4 w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 flex items-center justify-center text-base sm:text-lg transition-colors cursor-pointer z-30 shadow-md" title="ปิดหน้าต่าง">
+      <button type="button" onclick="closeVoteCelebrationModal()" class="absolute top-4 right-4 sm:top-5 sm:right-5 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 flex items-center justify-center text-lg sm:text-xl transition-colors cursor-pointer z-30 shadow-md" title="ปิดหน้าต่าง">
         <i class="fa-solid fa-xmark"></i>
       </button>
 
-      <!-- 1. ถ้วยรางวัลสีจริง + ป้ายอันดับ + หัวข้อรางวัล (ไม่มี 🏆 หน้าชื่อรางวัล) -->
-      <div class="relative z-10 flex flex-col items-center mb-2 sm:mb-3 shrink-0">
-        <div id="celebrationMedalIconWrapper" class="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl sm:rounded-3xl p-1.5 shadow-xl mb-2 flex items-center justify-center border-2 shrink-0">
+      <!-- 1. ถ้วยรางวัลสีจริง + ป้ายอันดับ + หัวข้อรางวัล (ขยายใหญ่สง่างาม) -->
+      <div class="relative z-10 flex flex-col items-center mb-2.5 sm:mb-3 shrink-0">
+        <div id="celebrationMedalIconWrapper" class="w-20 h-20 sm:w-24 sm:h-24 rounded-3xl p-2 shadow-xl mb-2 flex items-center justify-center border-2 shrink-0">
           <div id="celebrationMedalIcon" class="flex items-center justify-center">
             <!-- Dynamic 3D Realistic Trophy SVG -->
           </div>
         </div>
 
-        <span id="celebrationRankBadge" class="px-3.5 py-1 rounded-full text-xs font-black tracking-wider uppercase border mb-1.5 shadow-xs">
+        <span id="celebrationRankBadge" class="px-5 py-1.5 rounded-full text-xs sm:text-sm font-black tracking-wider uppercase border mb-1.5 shadow-xs">
           🏆 ชนะเลิศอันดับ 1
         </span>
 
-        <h2 id="celebrationTitle" class="text-xl sm:text-2xl font-black bg-clip-text text-transparent mb-1">
+        <h2 id="celebrationTitle" class="text-2xl sm:text-3xl lg:text-4xl font-black bg-clip-text text-transparent mb-1">
           รางวัลชนะเลิศการแข่งขันคะแนนรวม
         </h2>
       </div>
 
-      <!-- 2. รูปรถ/รูปทีมตรงกลาง (สัดส่วนจริง ไม่ถูก crop + ไม่มีพื้นหลังทองหนา) -->
-      <div class="relative z-10 w-full max-w-xl sm:max-w-2xl flex items-center justify-center mb-2 sm:mb-3 shrink-0">
-        <div class="relative group cursor-pointer overflow-hidden rounded-2xl shadow-xl border border-slate-200/90 bg-slate-900/5 flex items-center justify-center p-1" onclick="openImageModal(document.getElementById('celebrationTeamImg').src, document.getElementById('celebrationTeamName').innerText)">
-          <img id="celebrationTeamImg" src="" class="max-h-44 sm:max-h-52 md:max-h-60 w-auto max-w-full object-contain rounded-xl group-hover:scale-105 transition-transform duration-300" alt="Team Photo">
-          <div class="absolute inset-0 bg-black/25 opacity-0 group-hover:opacity-100 transition-opacity rounded-xl flex items-center justify-center">
-            <span class="px-3 py-1.5 rounded-xl bg-black/60 text-white text-xs font-bold flex items-center gap-1.5 shadow-lg backdrop-blur-xs">
+      <!-- 2. รูปรถ/รูปทีมตรงกลาง (สัดส่วนจริง ใหญ่จุใจเต็มตา + ไม่มีพื้นหลังทองหนา) -->
+      <div class="relative z-10 w-full max-w-3xl lg:max-w-4xl flex items-center justify-center mb-2.5 sm:mb-3 shrink-0">
+        <div class="relative group cursor-pointer overflow-hidden rounded-2xl sm:rounded-3xl shadow-2xl border border-slate-200/90 bg-slate-900/5 flex items-center justify-center p-1" onclick="openImageModal(document.getElementById('celebrationTeamImg').src, document.getElementById('celebrationTeamName').innerText)">
+          <img id="celebrationTeamImg" src="" class="max-h-52 sm:max-h-64 md:max-h-72 lg:max-h-80 w-auto max-w-full object-contain rounded-xl sm:rounded-2xl group-hover:scale-105 transition-transform duration-300" alt="Team Photo">
+          <div class="absolute inset-0 bg-black/25 opacity-0 group-hover:opacity-100 transition-opacity rounded-xl sm:rounded-2xl flex items-center justify-center">
+            <span class="px-4 py-2 rounded-xl bg-black/60 text-white text-xs sm:text-sm font-bold flex items-center gap-2 shadow-lg backdrop-blur-xs">
               <i class="fa-solid fa-magnifying-glass-plus"></i> ดูรูปขนาดเต็ม
             </span>
           </div>
         </div>
       </div>
 
-      <!-- 3. ชื่อทีมเด่นชัด พร้อมแถบสรุปคะแนน -->
-      <div class="relative z-10 flex flex-col items-center mb-2 sm:mb-2.5 w-full shrink-0">
-        <h3 id="celebrationTeamName" class="text-xl sm:text-2xl font-black text-slate-800 line-clamp-1 mb-1.5">
+      <!-- 3. ชื่อทีมเด่นชัด พร้อมแถบสรุปคะแนน (ขยายขนาดตัวโต) -->
+      <div class="relative z-10 flex flex-col items-center mb-2.5 sm:mb-3 w-full shrink-0">
+        <h3 id="celebrationTeamName" class="text-2xl sm:text-3xl lg:text-4xl font-black text-slate-800 line-clamp-1 mb-1.5 sm:mb-2">
           ชื่อทีม
         </h3>
 
         <!-- Score / Votes Pill Wrapper -->
-        <div id="celebrationPillWrapper" class="py-1.5 px-5 rounded-full text-white font-black text-xs sm:text-sm shadow-md inline-flex items-center justify-center gap-2">
+        <div id="celebrationPillWrapper" class="py-2 sm:py-2.5 px-6 sm:px-8 rounded-full text-white font-black text-sm sm:text-base lg:text-lg shadow-md inline-flex items-center justify-center gap-2.5">
           <i id="celebrationPillIcon" class="fa-solid fa-trophy text-amber-200"></i>
           <span id="celebrationVoteCount">0 คะแนน (0.0%)</span>
         </div>
       </div>
 
-      <!-- 4. กล่องรายชื่อสมาชิกในทีม: 2 แถว ไม่มีแถบหัวข้อ 'สมาชิกในทีม 4 คน' -->
-      <div id="celebrationMembersSection" class="relative z-10 w-full max-w-2xl text-left shrink-0">
+      <!-- 4. กล่องรายชื่อสมาชิกในทีม: 2 แถว กว้างใหญ่สบายตา -->
+      <div id="celebrationMembersSection" class="relative z-10 w-full max-w-3xl lg:max-w-4xl text-left shrink-0">
         <!-- Grid for Members 1-5 in 2 rows -->
-        <div id="celebrationMembersList" class="grid grid-cols-2 sm:grid-cols-3 gap-2 text-left">
+        <div id="celebrationMembersList" class="grid grid-cols-2 sm:grid-cols-3 gap-2.5 sm:gap-3 text-left">
           <!-- Dynamic populated member items -->
         </div>
       </div>
@@ -7594,7 +7594,7 @@
     // =========================================================================
     function getRealisticTrophySvg(type) {
       if (type === 'gold' || type === 1) {
-        return '<svg class="w-12 h-12 sm:w-14 sm:h-14 drop-shadow-md" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">' +
+        return '<svg class="w-16 h-16 sm:w-20 sm:h-20 drop-shadow-lg" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">' +
           '<defs>' +
             '<linearGradient id="goldCupGrad" x1="16" y1="8" x2="48" y2="40" gradientUnits="userSpaceOnUse">' +
               '<stop offset="0%" stop-color="#FFF3B0"/>' +
@@ -7647,7 +7647,7 @@
           '<path d="M32 18L33.2 21.5H37L34 23.5L35.2 27L32 24.8L28.8 27L30 23.5L27 21.5H30.8L32 18Z" fill="#FFFFFF" opacity="0.85"/>' +
         '</svg>';
       } else if (type === 'silver' || type === 2) {
-        return '<svg class="w-12 h-12 sm:w-14 sm:h-14 drop-shadow-md" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">' +
+        return '<svg class="w-16 h-16 sm:w-20 sm:h-20 drop-shadow-lg" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">' +
           '<defs>' +
             '<linearGradient id="silverCupGrad" x1="16" y1="8" x2="48" y2="40" gradientUnits="userSpaceOnUse">' +
               '<stop offset="0%" stop-color="#FFFFFF"/>' +
@@ -7700,7 +7700,7 @@
           '<path d="M32 18L33.2 21.5H37L34 23.5L35.2 27L32 24.8L28.8 27L30 23.5L27 21.5H30.8L32 18Z" fill="#FFFFFF" opacity="0.9"/>' +
         '</svg>';
       } else if (type === 'bronze' || type === 3) {
-        return '<svg class="w-12 h-12 sm:w-14 sm:h-14 drop-shadow-md" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">' +
+        return '<svg class="w-16 h-16 sm:w-20 sm:h-20 drop-shadow-lg" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">' +
           '<defs>' +
             '<linearGradient id="bronzeCupGrad" x1="16" y1="8" x2="48" y2="40" gradientUnits="userSpaceOnUse">' +
               '<stop offset="0%" stop-color="#FFD1B3"/>' +
@@ -7753,7 +7753,7 @@
           '<path d="M32 18L33.2 21.5H37L34 23.5L35.2 27L32 24.8L28.8 27L30 23.5L27 21.5H30.8L32 18Z" fill="#FFFFFF" opacity="0.85"/>' +
         '</svg>';
       } else if (type === 'booby') {
-        return '<svg class="w-12 h-12 sm:w-14 sm:h-14 drop-shadow-md" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">' +
+        return '<svg class="w-16 h-16 sm:w-20 sm:h-20 drop-shadow-lg" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">' +
           '<defs>' +
             '<radialGradient id="targetRed" cx="32" cy="32" r="28" gradientUnits="userSpaceOnUse">' +
               '<stop offset="0%" stop-color="#EF4444"/>' +
@@ -7879,16 +7879,16 @@
 
       var glowTop = document.getElementById('celebrationGlowTop');
       if (glowTop) {
-        glowTop.className = 'absolute -top-24 -left-24 w-72 h-72 rounded-full blur-3xl pointer-events-none ' + theme.glowTop;
+        glowTop.className = 'absolute -top-24 -left-24 w-96 h-96 rounded-full blur-3xl pointer-events-none ' + theme.glowTop;
       }
       var glowBottom = document.getElementById('celebrationGlowBottom');
       if (glowBottom) {
-        glowBottom.className = 'absolute -bottom-24 -right-24 w-72 h-72 rounded-full blur-3xl pointer-events-none ' + theme.glowBottom;
+        glowBottom.className = 'absolute -bottom-24 -right-24 w-96 h-96 rounded-full blur-3xl pointer-events-none ' + theme.glowBottom;
       }
 
       var iconWrapper = document.getElementById('celebrationMedalIconWrapper');
       if (iconWrapper) {
-        iconWrapper.className = 'w-16 h-16 sm:w-20 sm:h-20 rounded-2xl sm:rounded-3xl p-1.5 shadow-xl mb-2 flex items-center justify-center border-2 shrink-0 ' + theme.iconBg;
+        iconWrapper.className = 'w-20 h-20 sm:w-24 sm:h-24 rounded-3xl p-2 shadow-xl mb-2 flex items-center justify-center border-2 shrink-0 ' + theme.iconBg;
       }
 
       var iconEl = document.getElementById('celebrationMedalIcon');
@@ -7898,17 +7898,17 @@
 
       var badgeEl = document.getElementById('celebrationRankBadge');
       if (badgeEl) {
-        badgeEl.className = 'px-3.5 py-1 rounded-full text-xs font-black tracking-wider uppercase border mb-1.5 shadow-xs ' + theme.rankBadge;
+        badgeEl.className = 'px-5 py-1.5 rounded-full text-xs sm:text-sm font-black tracking-wider uppercase border mb-1.5 shadow-xs ' + theme.rankBadge;
       }
 
       var titleEl = document.getElementById('celebrationTitle');
       if (titleEl) {
-        titleEl.className = 'text-xl sm:text-2xl font-black bg-gradient-to-r ' + theme.titleGradient + ' bg-clip-text text-transparent mb-1';
+        titleEl.className = 'text-2xl sm:text-3xl lg:text-4xl font-black bg-gradient-to-r ' + theme.titleGradient + ' bg-clip-text text-transparent mb-1';
       }
 
       var pillWrapper = document.getElementById('celebrationPillWrapper');
       if (pillWrapper) {
-        pillWrapper.className = 'py-1.5 px-5 rounded-full text-white font-black text-xs sm:text-sm shadow-md inline-flex items-center justify-center gap-2 ' + theme.pillBg;
+        pillWrapper.className = 'py-2 sm:py-2.5 px-6 sm:px-8 rounded-full text-white font-black text-sm sm:text-base lg:text-lg shadow-md inline-flex items-center justify-center gap-2.5 ' + theme.pillBg;
       }
 
       var pillIcon = document.getElementById('celebrationPillIcon');
