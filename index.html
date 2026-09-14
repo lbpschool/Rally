@@ -229,13 +229,44 @@
 <body class="relative min-h-screen bg-[#f4f6fb]">
 
   <!-- ================= Image Lightbox Fullscreen Modal ================= -->
-  <div id="imageModal" style="display: none;" class="fixed inset-0 z-50 items-center justify-center bg-slate-900/80 backdrop-blur-md p-4" onclick="closeImageModal()">
-    <div class="relative max-w-4xl max-h-[90vh] flex flex-col items-center justify-center" onclick="event.stopPropagation()">
-      <button onclick="closeImageModal()" class="absolute -top-10 right-0 text-white text-3xl hover:text-purple-300 transition-colors">
+  <div id="imageModal" style="display: none;" class="fixed inset-0 z-50 items-center justify-center bg-slate-950/85 backdrop-blur-md p-4 overflow-y-auto" onclick="closeImageModal()">
+    <div class="relative max-w-xl w-full max-h-[94vh] flex flex-col items-center my-auto py-3 overflow-y-auto modal-body-scroll" onclick="event.stopPropagation()">
+      <button onclick="closeImageModal()" class="self-end mb-2 w-9 h-9 rounded-full bg-slate-800/80 hover:bg-slate-700 text-white text-lg flex items-center justify-center transition-all z-10 cursor-pointer shadow-lg border border-white/20" title="ปิดหน้าต่าง">
         <i class="fa-solid fa-xmark"></i>
       </button>
-      <img id="imageModalSrc" src="" alt="Zoom Image" class="max-w-full max-h-[85vh] rounded-2xl object-contain shadow-2xl border border-white/20">
-      <p id="imageModalCaption" class="mt-3 text-slate-200 text-sm text-center font-medium"></p>
+      
+      <!-- Image Display -->
+      <img id="imageModalSrc" src="" alt="Zoom Image" class="max-w-full max-h-[50vh] sm:max-h-[58vh] rounded-2xl object-contain shadow-2xl border border-white/20">
+      
+      <!-- Caption for general non-car images -->
+      <p id="imageModalCaption" class="mt-2.5 text-slate-200 text-sm text-center font-medium"></p>
+
+      <!-- Team Members Card (แบบ ก + แบบ 1: เฉพาะชื่อทีมและรายชื่อผู้เล่น 1-5 คน) -->
+      <div id="imageModalMembersCard" style="display: none;" class="w-full mt-3 p-4 rounded-2xl bg-slate-900/90 border border-purple-400/30 backdrop-blur-xl shadow-2xl text-white animate-fade-in space-y-3">
+        
+        <!-- Header: Team Name (No carCode, No carColor) -->
+        <div class="flex items-center justify-between border-b border-white/10 pb-2.5">
+          <div class="flex items-center gap-2.5">
+            <span class="w-8 h-8 rounded-xl bg-purple-500/20 text-purple-300 flex items-center justify-center text-sm border border-purple-400/30 shadow-xs">
+              <i class="fa-solid fa-users"></i>
+            </span>
+            <div>
+              <div class="text-[10px] text-purple-300 font-bold uppercase tracking-wider">ทีมผู้เข้าแข่งขัน</div>
+              <h4 id="imageModalTeamName" class="text-sm sm:text-base font-black text-white leading-tight">ชื่อทีม</h4>
+            </div>
+          </div>
+          <span id="imageModalMemberCountBadge" class="px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-400/30">
+            4 คน
+          </span>
+        </div>
+
+        <!-- Members List: แบบ 1 (เรียงแยกเป็นรายการ คนที่ 1-5 พร้อมไอคอน 👤) -->
+        <div id="imageModalMembersList" class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+          <!-- Dynamically populated in openImageModal -->
+        </div>
+
+      </div>
+
     </div>
   </div>
 
@@ -2353,13 +2384,90 @@
       Swal.close();
     }
 
-    function openImageModal(src, caption) {
+    function openImageModal(src, caption, userOrMembers) {
       if (!src) return;
-      document.getElementById('imageModalSrc').src = src;
-      document.getElementById('imageModalCaption').innerText = caption || '';
+      var imgEl = document.getElementById('imageModalSrc');
+      var capEl = document.getElementById('imageModalCaption');
+      var cardEl = document.getElementById('imageModalMembersCard');
+      var teamNameEl = document.getElementById('imageModalTeamName');
+      var countBadgeEl = document.getElementById('imageModalMemberCountBadge');
+      var listEl = document.getElementById('imageModalMembersList');
+
+      if (imgEl) imgEl.src = src;
+
+      // Detect competitor car and get member list
+      var user = null;
+      var members = [];
+
+      if (userOrMembers && typeof userOrMembers === 'object') {
+        if (Array.isArray(userOrMembers)) {
+          members = userOrMembers;
+        } else {
+          user = userOrMembers;
+          if (user.members && Array.isArray(user.members)) members = user.members;
+        }
+      }
+
+      if (!user && (!members || members.length === 0) && typeof usersData !== 'undefined' && Array.isArray(usersData)) {
+        user = usersData.find(function(u) {
+          if (u.role !== 'User') return false;
+          if (src && u.profileUrl && u.profileUrl.trim() === src.trim()) return true;
+          if (caption && u.name && u.name.trim().toLowerCase() === caption.trim().toLowerCase()) return true;
+          if (caption && u.username && u.username.trim().toLowerCase() === caption.trim().toLowerCase()) return true;
+          return false;
+        });
+        if (user && user.members && Array.isArray(user.members)) {
+          members = user.members;
+        }
+      }
+
+      var isCompetitorCar = !!(user || (members && members.length > 0));
+
+      if (isCompetitorCar && cardEl) {
+        if (capEl) capEl.style.display = 'none';
+        cardEl.style.display = 'block';
+
+        var teamName = (user && user.name) ? user.name : (caption || 'ทีมผู้เข้าแข่งขัน');
+        if (teamNameEl) teamNameEl.innerText = teamName;
+
+        if (countBadgeEl) {
+          countBadgeEl.innerText = members.length > 0 ? (members.length + ' คน') : 'ยังไม่มีสมาชิก';
+          countBadgeEl.className = members.length > 0
+            ? 'px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-400/30'
+            : 'px-2.5 py-1 rounded-full text-[11px] font-medium bg-slate-500/20 text-slate-400 border border-slate-400/30';
+        }
+
+        if (listEl) {
+          if (members.length > 0) {
+            listEl.className = 'grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs';
+            listEl.innerHTML = members.map(function(m, idx) {
+              return '<div class="flex items-center gap-2 p-2 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-colors">' +
+                '<span class="w-6 h-6 rounded-lg bg-emerald-500/20 text-emerald-300 flex items-center justify-center text-[10px] font-black shrink-0 border border-emerald-400/30">' +
+                  (idx + 1) +
+                '</span>' +
+                '<div class="flex items-center gap-1.5 min-w-0 flex-1">' +
+                  '<i class="fa-solid fa-user text-emerald-400 text-[11px] shrink-0"></i>' +
+                  '<span class="text-xs font-semibold text-slate-100 truncate" title="' + escapeHTML(m) + '">' + escapeHTML(m) + '</span>' +
+                '</div>' +
+              '</div>';
+            }).join('');
+          } else {
+            listEl.className = 'w-full text-center py-2';
+            listEl.innerHTML = '<div class="text-slate-400 text-xs font-medium py-1"><i class="fa-solid fa-user-slash mr-1"></i> ยังไม่ได้ระบุรายชื่อสมาชิกในทีม</div>';
+          }
+        }
+      } else {
+        if (cardEl) cardEl.style.display = 'none';
+        if (capEl) {
+          capEl.style.display = 'block';
+          capEl.innerText = caption || '';
+        }
+      }
+
       var modal = document.getElementById('imageModal');
-      modal.style.display = 'flex';
+      if (modal) modal.style.display = 'flex';
     }
+    window.openImageModal = openImageModal;
 
     function closeImageModal() {
       var modal = document.getElementById('imageModal');
