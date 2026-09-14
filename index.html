@@ -494,22 +494,14 @@
         <div id="viewUserDashboard" style="display: block;" class="space-y-5 fade-in">
           
           <!-- 1. Top Welcome Header Banner (Picture 1 Royal Blue/Purple Gradient Banner Style) -->
-          <div class="rounded-3xl bg-gradient-to-r from-blue-700 via-indigo-600 to-purple-700 p-5 sm:p-6 text-white shadow-xl shadow-indigo-600/15 flex items-center justify-between relative overflow-hidden border border-white/10">
+          <div class="rounded-2xl sm:rounded-3xl bg-gradient-to-r from-blue-700 via-indigo-600 to-purple-700 p-4 sm:p-5 text-white shadow-lg shadow-indigo-600/15 flex items-center justify-between relative overflow-hidden border border-white/10">
             <!-- Left: Icon & Titles -->
             <div class="flex items-center gap-3.5 sm:gap-4 relative z-10 min-w-0">
-              <div class="w-12 h-12 rounded-2xl bg-white/15 backdrop-blur-md flex items-center justify-center text-xl shrink-0 shadow-inner border border-white/20">
+              <div class="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-white/15 backdrop-blur-md flex items-center justify-center text-xl shrink-0 shadow-inner border border-white/20">
                 <i class="fa-solid fa-chart-pie text-white"></i>
               </div>
               <div class="min-w-0 flex-1">
-                <div class="flex items-center gap-2 mb-1 flex-wrap">
-                  <span id="dashboardTopBadge" class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-white/20 backdrop-blur-md text-white border border-white/30 tracking-wide uppercase whitespace-nowrap">
-                    ภาพรวมการแข่งขัน (ADMIN)
-                  </span>
-                  <span id="dashboardCarColorBadge" style="display: none;" class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-white text-slate-800 shadow-sm border border-white/40 flex items-center gap-1.5 whitespace-nowrap">
-                    <i class="fa-solid fa-palette text-amber-500"></i> สี RC ที่ต้องหา: <span id="dashboardCarColorText" class="font-black text-purple-700">แดง</span>
-                  </span>
-                </div>
-                <h2 class="text-base sm:text-lg lg:text-xl font-black text-white leading-snug tracking-wide">ผู้ตรวจสอบและแดชบอร์ดสรุปผลรวม</h2>
+                <h2 id="dashboardMainTitle" class="text-base sm:text-lg lg:text-xl font-black text-white leading-snug tracking-wide">แดชบอร์ด</h2>
                 <p id="dashboardSubCount" class="text-xs text-blue-100/90 font-medium mt-0.5">
                   <i class="fa-solid fa-users text-blue-200 mr-1"></i> จำนวนรถที่เข้าแข่งขันทั้งหมด: 5 คัน
                 </p>
@@ -3589,15 +3581,17 @@
       var competitors = usersData.filter(function(u) { return u.role === 'User'; });
       
       // Update Top Card Headers & Badges
-      var topBadge = document.getElementById('dashboardTopBadge');
+      var mainTitle = document.getElementById('dashboardMainTitle');
       var subCount = document.getElementById('dashboardSubCount');
 
-      if (currentUser.role === 'Admin') {
-        if (topBadge) topBadge.innerText = 'ภาพรวมการแข่งขัน (ADMIN)';
-      } else if (currentUser.role === 'Sub-Admin') {
-        if (topBadge) topBadge.innerText = 'ภาพรวมการแข่งขัน (JUDGE)';
-      } else {
-        if (topBadge) topBadge.innerText = 'แดชบอร์ดผู้แข่งขัน (' + (currentUser.carCode || currentUser.username) + ')';
+      if (mainTitle) {
+        if (currentUser.role === 'Admin') {
+          mainTitle.innerText = 'แดชบอร์ด (ADMIN)';
+        } else if (currentUser.role === 'Sub-Admin') {
+          mainTitle.innerText = 'แดชบอร์ด (JUDGE)';
+        } else {
+          mainTitle.innerText = 'แดชบอร์ด';
+        }
       }
 
       // Update RC Color Banner & Badges (แสดงเฉพาะสีของรถตนเองเท่านั้น ห้ามให้เห็นสีรถคันอื่น)
