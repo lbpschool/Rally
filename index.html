@@ -2114,7 +2114,15 @@
             .then(function(res) {
               if (timeoutId) clearTimeout(timeoutId);
               if (!res.ok) throw new Error('HTTP ' + res.status + ' ' + res.statusText);
-              return res.json();
+              return res.text();
+            })
+            .then(function(text) {
+              try {
+                return JSON.parse(text);
+              } catch (parseErr) {
+                console.warn('[RallyApp] Non-JSON API response:', text.substring(0, 300));
+                throw new Error('เซิร์ฟเวอร์ตอบสนองไม่ถูกต้อง กรุณารอสักครู่แล้วลองใหม่อีกครั้ง');
+              }
             })
             .then(function(data) {
               if (typeof successHandler === 'function') successHandler(data);
@@ -2980,14 +2988,18 @@
       var p = pInput.value.trim();
 
       showLoading('กำลังตรวจสอบข้อมูลการเข้าสู่ระบบ...');
+      var loginFeedbackTimer = setTimeout(function() {
+        showLoading('กำลังเชื่อมต่อเซิร์ฟเวอร์ Google Apps Script...');
+      }, 2500);
 
       if (isMockMode) {
         setTimeout(function() {
+          clearTimeout(loginFeedbackTimer);
           hideLoading();
           var found = usersData.find(function(x) { return x.username === u && x.password === p; });
           if (found) {
             currentUser = found;
-            onLoginSuccess();
+            onLoginSuccess(false);
           } else {
             Swal.fire('ข้อผิดพลาด', 'ชื่อผู้ใช้งานหรือรหัสผ่านไม่ถูกต้อง', 'error');
           }
@@ -2996,6 +3008,7 @@
         if (typeof google !== 'undefined' && google.script && google.script.run) {
           google.script.run
             .withSuccessHandler(function(res) {
+              clearTimeout(loginFeedbackTimer);
               hideLoading();
               if (res.success) {
                 currentUser = res.user;
@@ -3006,17 +3019,31 @@
                 if (typeof res.isScoresHidden !== 'undefined') isScoresHidden = res.isScoresHidden;
                 if (typeof res.isVotesHidden !== 'undefined') isVotesHidden = res.isVotesHidden;
                 if (typeof res.isVotingOpen !== 'undefined') isVotingOpen = res.isVotingOpen;
-                onLoginSuccess();
+
+                // Direct single-roundtrip login: use bundled appData if available!
+                if (res.appData) {
+                  usersData = res.appData.users || [];
+                  activitiesData = res.appData.activities || [];
+                  submissionsData = res.appData.submissions || [];
+                  votesData = res.appData.votes || [];
+                  if (typeof res.appData.boobyRank !== 'undefined') boobyRank = Number(res.appData.boobyRank || 0);
+                  if (res.appData.currentUser) currentUser = res.appData.currentUser;
+                  onLoginSuccess(true); // Skip 2nd loadAppData round-trip
+                } else {
+                  onLoginSuccess(false);
+                }
               } else {
                 handleApiResponseError(res);
               }
             })
             .withFailureHandler(function(err) {
+              clearTimeout(loginFeedbackTimer);
               hideLoading();
               Swal.fire('ข้อผิดพลาดระบบ', err.message, 'error');
             })
             .apiLogin(u, p);
         } else {
+          clearTimeout(loginFeedbackTimer);
           hideLoading();
           Swal.fire('ข้อผิดพลาด', 'ไม่พบการเชื่อมต่อ Google Apps Script โปรดสลับเปิดโหมด Mock Data', 'warning');
         }
@@ -3024,7 +3051,7 @@
       return false;
     }
 
-    function onLoginSuccess() {
+    function onLoginSuccess(skipLoadAppData) {
       try {
         if (currentUser) {
           safeSetStorage('rally_session_user', JSON.stringify(currentUser));
@@ -3039,7 +3066,14 @@
       var wrapper = document.getElementById('mainAppWrapper');
       if (wrapper) wrapper.style.display = 'flex';
       switchView('UserDashboard');
-      loadAppData();
+
+      if (!skipLoadAppData) {
+        loadAppData();
+      } else {
+        // Data already loaded via single-roundtrip login! Render directly with 0ms delay!
+        renderUserDashboard();
+        renderAdminUsersTable();
+      }
 
       var teamName = currentUser.name || currentUser.username;
       Swal.fire({

@@ -137,27 +137,34 @@ function getSpreadsheet() {
   }
 }
 
+// In-Memory Request Sheet Cache for High-Speed Lookups
+let _sheetCache = {};
+
 /**
- * Safe Helper to get or create sheet without throwing sheet name conflict exceptions
+ * High-Speed Cached Helper to get or create sheet
  */
 function getOrCreateSheet(ss, sheetName) {
-  const sheets = ss.getSheets();
-  for (let i = 0; i < sheets.length; i++) {
-    if (sheets[i].getName().trim().toLowerCase() === sheetName.trim().toLowerCase()) {
-      return sheets[i];
+  const key = sheetName.trim().toLowerCase();
+  if (_sheetCache[key]) return _sheetCache[key];
+
+  let s = ss.getSheetByName(sheetName);
+  if (!s) {
+    const sheets = ss.getSheets();
+    for (let i = 0; i < sheets.length; i++) {
+      _sheetCache[sheets[i].getName().trim().toLowerCase()] = sheets[i];
+    }
+    s = _sheetCache[key];
+  }
+  if (!s) {
+    try {
+      s = ss.insertSheet(sheetName);
+    } catch (err) {
+      s = ss.getSheetByName(sheetName);
+      if (!s) throw err;
     }
   }
-  try {
-    return ss.insertSheet(sheetName);
-  } catch (err) {
-    const recheck = ss.getSheets();
-    for (let i = 0; i < recheck.length; i++) {
-      if (recheck[i].getName().trim().toLowerCase() === sheetName.trim().toLowerCase()) {
-        return recheck[i];
-      }
-    }
-    throw err;
-  }
+  _sheetCache[key] = s;
+  return s;
 }
 
 /**
@@ -165,6 +172,12 @@ function getOrCreateSheet(ss, sheetName) {
  */
 function setupDatabase() {
   const ss = getSpreadsheet();
+  
+  // Fast check: If Users sheet already exists and has data, DB is initialized -> 0ms exit!
+  const existingUsersSheet = ss.getSheetByName(SHEET_NAMES.USERS);
+  if (existingUsersSheet && existingUsersSheet.getLastRow() > 1) {
+    return;
+  }
   
   // 1. Users Sheet
   let usersSheet = getOrCreateSheet(ss, SHEET_NAMES.USERS);
@@ -438,25 +451,27 @@ function withLock(callback, timeoutMs) {
 }
 
 /**
- * API: Login Authentication
+ * API: Login Authentication (High-Speed Single Round-Trip with Bundled appData)
  */
 function apiLogin(username, password) {
-  setupDatabase();
   const ss = getSpreadsheet();
   const sheet = getOrCreateSheet(ss, SHEET_NAMES.USERS);
   const data = sheet.getDataRange().getValues();
+  const uTrim = String(username || '').trim().toLowerCase();
+  const pTrim = String(password || '').trim();
   
   for (let i = 1; i < data.length; i++) {
     const row = data[i];
-    if (row[0].toString().trim() === username.trim() && row[1].toString().trim() === password.trim()) {
-      // Get Settings via DAO Helper
-      const settings = getSettingsMap(ss);
-
+    if (String(row[0] || '').trim().toLowerCase() === uTrim && String(row[1] || '').trim() === pTrim) {
       const sessionToken = generateSessionToken(row[0], row[3]);
+      
+      // Load initial app data in the SAME call! (Eliminates second round-trip)
+      const initialData = apiGetInitialData(row[0], sessionToken);
+
       return {
         success: true,
         sessionToken: sessionToken,
-        user: {
+        user: initialData.currentUser || {
           username: row[0],
           name: row[2],
           role: row[3],
@@ -470,10 +485,11 @@ function apiLogin(username, password) {
             }
           })()
         },
-        isScoresHidden: settings.isScoresHidden,
-        isVotingOpen: settings.isVotingOpen,
-        isVotesHidden: settings.isVotesHidden,
-        boobyRank: settings.boobyRank || 0
+        appData: initialData,
+        isScoresHidden: initialData.isScoresHidden,
+        isVotingOpen: initialData.isVotingOpen,
+        isVotesHidden: initialData.isVotesHidden,
+        boobyRank: initialData.boobyRank || 0
       };
     }
   }
@@ -484,7 +500,6 @@ function apiLogin(username, password) {
  * API: Fetch Initial App Data
  */
 function apiGetInitialData(username, sessionToken) {
-  setupDatabase();
   const ss = getSpreadsheet();
   
   // Get Users
