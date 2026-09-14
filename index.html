@@ -2594,6 +2594,16 @@
     }
     window.toggleVoteVisibility = toggleVoteVisibility;
 
+    function renderAnalytics() {
+      try {
+        if (typeof renderAnalyticsScoreMatrix === 'function') renderAnalyticsScoreMatrix();
+        if (typeof renderAnalyticsCharts === 'function') renderAnalyticsCharts();
+      } catch (e) {
+        console.warn('renderAnalytics error:', e);
+      }
+    }
+    window.renderAnalytics = renderAnalytics;
+
     function toggleScoreVisibility() {
       if (!currentUser || currentUser.role !== 'Admin') {
         Swal.fire('ไม่มีสิทธิ์', 'เฉพาะผู้ดูแลระบบ (Admin) เท่านั้นที่สามารถเปลี่ยนโหมดแสดง/ซ่อนคะแนนได้', 'warning');
@@ -6504,6 +6514,7 @@
     window.editUser = editUser;
     window.deleteUser = deleteUser;
     window.renderAnalyticsCharts = renderAnalyticsCharts;
+    window.renderAnalytics = renderAnalytics;
     window.exportToExcel = exportToExcel;
     window.exportToPDF = exportToPDF;
     window.initMockDatabase = initMockDatabase;
