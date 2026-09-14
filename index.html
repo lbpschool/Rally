@@ -521,85 +521,92 @@
             <div class="absolute right-32 -top-10 w-24 h-24 rounded-full bg-white/5 pointer-events-none"></div>
           </div>
 
-          <!-- Non-Admin Score Hidden Alert Banner (Picture 1 Orange Alert Style) -->
-          <div id="scoreHiddenNoticeBanner" style="display: none;" class="p-4 rounded-2xl bg-white border border-slate-200/80 text-slate-700 text-xs font-bold flex items-center justify-between shadow-sm border-l-4 border-l-orange-500">
-            <div class="flex items-center gap-3">
-              <div class="w-9 h-9 rounded-xl bg-orange-100 text-orange-600 flex items-center justify-center shrink-0">
-                <i class="fa-solid fa-bell text-base"></i>
+          <!-- RC Color Assigned to Player's Car Banner (Responsive for Mobile, iPad, Notebook) -->
+          <div id="dashboardRcColorBanner" style="display: none;" class="p-3 sm:p-4 rounded-2xl bg-white border border-slate-200/80 text-slate-700 text-xs font-bold flex items-center justify-between shadow-sm border-l-4 border-l-purple-500 transition-all">
+            <div class="flex items-center gap-2.5 sm:gap-3.5 min-w-0">
+              <div id="rcColorBannerIconBox" class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-purple-100 text-purple-600 flex items-center justify-center shrink-0 text-base sm:text-lg shadow-xs">
+                <i class="fa-solid fa-palette"></i>
               </div>
-              <div>
-                <p class="font-bold text-slate-800 text-xs">ขณะนี้เปิดโหมดซ่อนการแสดงคะแนน</p>
-                <p class="text-[11px] text-slate-400 font-normal mt-0.5">ผู้ดูแลระบบทำการปิดการแสดงคะแนนของรถคันอื่นเพื่อความเป็นธรรม คะแนนจะถูกเปิดเผยหลังจบการแข่งขัน</p>
+              <div class="min-w-0">
+                <p class="text-xs sm:text-sm font-extrabold text-slate-800 flex items-center gap-1.5 flex-wrap leading-snug">
+                  <span>สี RC ที่ต้องหา :</span>
+                  <span id="rcColorBannerColorText" class="font-black text-sm sm:text-base text-purple-600">สีแดง</span>
+                </p>
+                <p id="rcColorBannerSubText" class="text-[11px] text-slate-500 font-medium mt-0.5 truncate">
+                  รถหมายเลข <span id="rcColorBannerCarCode" class="font-bold text-slate-700">C1</span> ค้นหาและทำภารกิจ RC เฉพาะสีนี้เท่านั้น
+                </p>
               </div>
             </div>
-            <span class="px-2.5 py-0.5 rounded-full bg-orange-500 text-white font-black text-xs shadow-sm">!</span>
+            <div id="rcColorBannerBadge" class="px-3 py-1 rounded-full text-xs font-black shadow-xs shrink-0 whitespace-nowrap ml-2 bg-purple-100 text-purple-700 border border-purple-200">
+              <span id="rcColorBannerBadgeText">สีแดง</span>
+            </div>
           </div>
 
-          <!-- 2. 4 METRIC CARDS GRID (Compact Height & Preserved Font Sizes) -->
-          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+          <!-- 2. 4 METRIC CARDS GRID (Compact 2x2 on Mobile, 4 Cols on Desktop & Preserved Font Sizes) -->
+          <div class="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
             
             <!-- Metric Card 1: RC (Cyan / Sky Blue Card) -->
-            <div class="rounded-2xl bg-gradient-to-br from-cyan-400 via-sky-500 to-blue-600 px-4 py-3 text-white shadow-lg shadow-sky-500/20 relative overflow-hidden flex flex-col justify-center h-28 border border-white/30">
+            <div class="rounded-2xl bg-gradient-to-br from-cyan-400 via-sky-500 to-blue-600 px-3 sm:px-4 py-2 sm:py-2.5 text-white shadow-lg shadow-sky-500/20 relative overflow-hidden flex flex-col justify-center h-22 sm:h-24 border border-white/30">
               <div class="flex items-center justify-between z-10 w-full">
-                <div class="w-8 h-8 rounded-lg bg-white/20 backdrop-blur-md flex items-center justify-center text-white text-sm shadow-inner shrink-0">
+                <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-white/20 backdrop-blur-md flex items-center justify-center text-white text-xs sm:text-sm shadow-inner shrink-0">
                   <i class="fa-solid fa-flag"></i>
                 </div>
                 <h3 id="statRcCount" class="text-2xl sm:text-3xl font-black text-white tracking-tight leading-none mx-auto text-center">1 / 10</h3>
-                <span class="text-[10px] sm:text-xs font-black bg-white/25 backdrop-blur-md px-2 py-0.5 rounded-full text-white tracking-wider uppercase shrink-0">RC</span>
+                <span class="text-[10px] sm:text-xs font-black bg-white/25 backdrop-blur-md px-1.5 sm:px-2 py-0.5 rounded-full text-white tracking-wider uppercase shrink-0">RC</span>
               </div>
-              <div class="z-10 text-center mt-1.5">
-                <p class="text-xs sm:text-sm font-extrabold text-white/95 leading-tight">หา RC (รวม)</p>
-                <p id="dashboardRcColorSub" class="text-[11px] text-white/90 font-bold mt-0.5">รายการส่งคำตอบทุกจุด RC</p>
+              <div class="z-10 text-center mt-1">
+                <p class="text-xs sm:text-sm font-extrabold text-white/95 leading-tight truncate">หา RC (รวม)</p>
+                <p id="dashboardRcColorSub" class="text-[10px] sm:text-[11px] text-white/90 font-bold mt-0.5 truncate">รายการส่งคำตอบทุกจุด RC</p>
               </div>
-              <div class="absolute -right-4 -bottom-4 w-20 h-20 rounded-full bg-white/10 pointer-events-none"></div>
+              <div class="absolute -right-4 -bottom-4 w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-white/10 pointer-events-none"></div>
             </div>
 
             <!-- Metric Card 2: Base (Purple / Violet Card) -->
-            <div class="rounded-2xl bg-gradient-to-br from-purple-500 via-indigo-500 to-purple-700 px-4 py-3 text-white shadow-lg shadow-purple-500/20 relative overflow-hidden flex flex-col justify-center h-28 border border-white/30">
+            <div class="rounded-2xl bg-gradient-to-br from-purple-500 via-indigo-500 to-purple-700 px-3 sm:px-4 py-2 sm:py-2.5 text-white shadow-lg shadow-purple-500/20 relative overflow-hidden flex flex-col justify-center h-22 sm:h-24 border border-white/30">
               <div class="flex items-center justify-between z-10 w-full">
-                <div class="w-8 h-8 rounded-lg bg-white/20 backdrop-blur-md flex items-center justify-center text-white text-sm shadow-inner shrink-0">
+                <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-white/20 backdrop-blur-md flex items-center justify-center text-white text-xs sm:text-sm shadow-inner shrink-0">
                   <i class="fa-solid fa-puzzle-piece"></i>
                 </div>
                 <h3 id="statBaseCount" class="text-2xl sm:text-3xl font-black text-white tracking-tight leading-none mx-auto text-center">1 / 5</h3>
-                <span class="text-[10px] sm:text-xs font-black bg-white/25 backdrop-blur-md px-2 py-0.5 rounded-full text-white tracking-wider uppercase shrink-0">BASE</span>
+                <span class="text-[10px] sm:text-xs font-black bg-white/25 backdrop-blur-md px-1.5 sm:px-2 py-0.5 rounded-full text-white tracking-wider uppercase shrink-0">BASE</span>
               </div>
-              <div class="z-10 text-center mt-1.5">
-                <p class="text-xs sm:text-sm font-extrabold text-white/95 leading-tight">กิจกรรมฐาน (รวม)</p>
-                <p class="text-[11px] text-white/80 font-semibold mt-0.5">รายการประเมินกิจกรรมฐาน</p>
+              <div class="z-10 text-center mt-1">
+                <p class="text-xs sm:text-sm font-extrabold text-white/95 leading-tight truncate">กิจกรรมฐาน (รวม)</p>
+                <p class="text-[10px] sm:text-[11px] text-white/80 font-semibold mt-0.5 truncate">รายการประเมินกิจกรรมฐาน</p>
               </div>
-              <div class="absolute -right-4 -bottom-4 w-20 h-20 rounded-full bg-white/10 pointer-events-none"></div>
+              <div class="absolute -right-4 -bottom-4 w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-white/10 pointer-events-none"></div>
             </div>
 
             <!-- Metric Card 3: Quiz (Vibrant Emerald Green Card) -->
-            <div class="rounded-2xl bg-gradient-to-br from-emerald-400 via-teal-500 to-emerald-600 px-4 py-3 text-white shadow-lg shadow-emerald-500/20 relative overflow-hidden flex flex-col justify-center h-28 border border-white/30">
+            <div class="rounded-2xl bg-gradient-to-br from-emerald-400 via-teal-500 to-emerald-600 px-3 sm:px-4 py-2 sm:py-2.5 text-white shadow-lg shadow-emerald-500/20 relative overflow-hidden flex flex-col justify-center h-22 sm:h-24 border border-white/30">
               <div class="flex items-center justify-between z-10 w-full">
-                <div class="w-8 h-8 rounded-lg bg-white/20 backdrop-blur-md flex items-center justify-center text-white text-sm shadow-inner shrink-0">
+                <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-white/20 backdrop-blur-md flex items-center justify-center text-white text-xs sm:text-sm shadow-inner shrink-0">
                   <i class="fa-solid fa-gamepad"></i>
                 </div>
                 <h3 id="statQuizCount" class="text-2xl sm:text-3xl font-black text-white tracking-tight leading-none mx-auto text-center">0 / 5</h3>
-                <span class="text-[10px] sm:text-xs font-black bg-white/25 backdrop-blur-md px-2 py-0.5 rounded-full text-white tracking-wider uppercase shrink-0">QUIZ</span>
+                <span class="text-[10px] sm:text-xs font-black bg-white/25 backdrop-blur-md px-1.5 sm:px-2 py-0.5 rounded-full text-white tracking-wider uppercase shrink-0">QUIZ</span>
               </div>
-              <div class="z-10 text-center mt-1.5">
-                <p class="text-xs sm:text-sm font-extrabold text-white/95 leading-tight">เกมส์คำถาม (รวม)</p>
-                <p class="text-[11px] text-white/80 font-semibold mt-0.5">รายการเกมส์คำถามส่งครบ</p>
+              <div class="z-10 text-center mt-1">
+                <p class="text-xs sm:text-sm font-extrabold text-white/95 leading-tight truncate">เกมส์คำถาม (รวม)</p>
+                <p class="text-[10px] sm:text-[11px] text-white/80 font-semibold mt-0.5 truncate">รายการเกมส์คำถามส่งครบ</p>
               </div>
-              <div class="absolute -right-4 -bottom-4 w-20 h-20 rounded-full bg-white/10 pointer-events-none"></div>
+              <div class="absolute -right-4 -bottom-4 w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-white/10 pointer-events-none"></div>
             </div>
 
             <!-- Metric Card 4: Total Score (Warm Amber / Orange Card) -->
-            <div class="rounded-2xl bg-gradient-to-br from-amber-400 via-orange-500 to-amber-600 px-4 py-3 text-white shadow-lg shadow-amber-500/20 relative overflow-hidden flex flex-col justify-center h-28 border border-white/30">
+            <div class="rounded-2xl bg-gradient-to-br from-amber-400 via-orange-500 to-amber-600 px-3 sm:px-4 py-2 sm:py-2.5 text-white shadow-lg shadow-amber-500/20 relative overflow-hidden flex flex-col justify-center h-22 sm:h-24 border border-white/30">
               <div class="flex items-center justify-between z-10 w-full">
-                <div class="w-8 h-8 rounded-lg bg-white/20 backdrop-blur-md flex items-center justify-center text-white text-sm shadow-inner shrink-0">
+                <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-white/20 backdrop-blur-md flex items-center justify-center text-white text-xs sm:text-sm shadow-inner shrink-0">
                   <i class="fa-solid fa-trophy"></i>
                 </div>
                 <h3 id="statTotalPoints" class="text-2xl sm:text-3xl font-black text-white tracking-tight leading-none mx-auto text-center">3100 / 10070</h3>
-                <span class="text-[10px] sm:text-xs font-black bg-white/25 backdrop-blur-md px-2 py-0.5 rounded-full text-white tracking-wider uppercase shrink-0">TOTAL</span>
+                <span class="text-[10px] sm:text-xs font-black bg-white/25 backdrop-blur-md px-1.5 sm:px-2 py-0.5 rounded-full text-white tracking-wider uppercase shrink-0">TOTAL</span>
               </div>
-              <div class="z-10 text-center mt-1.5">
-                <p class="text-xs sm:text-sm font-extrabold text-white/95 leading-tight">คะแนนรวมทั้งหมด</p>
-                <p class="text-[11px] text-white/80 font-semibold mt-0.5">คะแนนสะสมของตนเอง / คะแนนเต็มรวม</p>
+              <div class="z-10 text-center mt-1">
+                <p class="text-xs sm:text-sm font-extrabold text-white/95 leading-tight truncate">คะแนนรวมทั้งหมด</p>
+                <p class="text-[10px] sm:text-[11px] text-white/80 font-semibold mt-0.5 truncate">คะแนนสะสมของตนเอง / คะแนนเต็มรวม</p>
               </div>
-              <div class="absolute -right-4 -bottom-4 w-20 h-20 rounded-full bg-white/10 pointer-events-none"></div>
+              <div class="absolute -right-4 -bottom-4 w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-white/10 pointer-events-none"></div>
             </div>
 
           </div>
@@ -2645,6 +2652,64 @@
       return 'bg-purple-100 text-purple-700 border border-purple-200';
     }
 
+    function getCarColorThemeDetails(colorStr) {
+      var c = (colorStr || '').toLowerCase().trim();
+      if (c === 'red' || c === 'แดง') {
+        return {
+          borderLeftClass: 'border-l-red-500',
+          iconBoxClass: 'bg-red-100 text-red-600',
+          textColorClass: 'text-red-600',
+          badgeClass: 'bg-red-50 text-red-700 border border-red-200'
+        };
+      }
+      if (c === 'blue' || c === 'น้ำเงิน') {
+        return {
+          borderLeftClass: 'border-l-blue-500',
+          iconBoxClass: 'bg-blue-100 text-blue-600',
+          textColorClass: 'text-blue-600',
+          badgeClass: 'bg-blue-50 text-blue-700 border border-blue-200'
+        };
+      }
+      if (c === 'yellow' || c === 'เหลือง') {
+        return {
+          borderLeftClass: 'border-l-amber-500',
+          iconBoxClass: 'bg-amber-100 text-amber-600',
+          textColorClass: 'text-amber-600',
+          badgeClass: 'bg-amber-50 text-amber-700 border border-amber-200'
+        };
+      }
+      if (c === 'green' || c === 'เขียว') {
+        return {
+          borderLeftClass: 'border-l-emerald-500',
+          iconBoxClass: 'bg-emerald-100 text-emerald-600',
+          textColorClass: 'text-emerald-600',
+          badgeClass: 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+        };
+      }
+      if (c === 'purple' || c === 'ม่วง') {
+        return {
+          borderLeftClass: 'border-l-purple-500',
+          iconBoxClass: 'bg-purple-100 text-purple-600',
+          textColorClass: 'text-purple-600',
+          badgeClass: 'bg-purple-50 text-purple-700 border border-purple-200'
+        };
+      }
+      if (c === 'orange' || c === 'ส้ม') {
+        return {
+          borderLeftClass: 'border-l-orange-500',
+          iconBoxClass: 'bg-orange-100 text-orange-600',
+          textColorClass: 'text-orange-600',
+          badgeClass: 'bg-orange-50 text-orange-700 border border-orange-200'
+        };
+      }
+      return {
+        borderLeftClass: 'border-l-purple-500',
+        iconBoxClass: 'bg-purple-100 text-purple-600',
+        textColorClass: 'text-purple-600',
+        badgeClass: 'bg-purple-50 text-purple-700 border border-purple-200'
+      };
+    }
+
     function showPWAInstallGuide() {
       Swal.fire({
         title: '<div class="flex items-center justify-center gap-2 text-base font-bold text-slate-800"><i class="fa-solid fa-mobile-screen-button text-purple-600"></i> วิธีติดตั้งแอปบนหน้าจอโฮม</div>',
@@ -3526,37 +3591,67 @@
       // Update Top Card Headers & Badges
       var topBadge = document.getElementById('dashboardTopBadge');
       var subCount = document.getElementById('dashboardSubCount');
-      var noticeBanner = document.getElementById('scoreHiddenNoticeBanner');
 
       if (currentUser.role === 'Admin') {
         if (topBadge) topBadge.innerText = 'ภาพรวมการแข่งขัน (ADMIN)';
-        if (noticeBanner) noticeBanner.style.display = 'none';
+      } else if (currentUser.role === 'Sub-Admin') {
+        if (topBadge) topBadge.innerText = 'ภาพรวมการแข่งขัน (JUDGE)';
       } else {
-        if (noticeBanner) {
-          noticeBanner.style.display = isScoresHidden ? 'flex' : 'none';
-        }
-        if (currentUser.role === 'Sub-Admin') {
-          if (topBadge) topBadge.innerText = 'ภาพรวมการแข่งขัน (JUDGE)';
-        } else {
-          if (topBadge) topBadge.innerText = 'แดชบอร์ดผู้แข่งขัน (' + (currentUser.carCode || currentUser.username) + ')';
-        }
+        if (topBadge) topBadge.innerText = 'แดชบอร์ดผู้แข่งขัน (' + (currentUser.carCode || currentUser.username) + ')';
       }
 
-      // Populate RC Color on Dashboard (2 จุด: การ์ดบนสุด และ การ์ด RC สีฟ้า)
+      // Update RC Color Banner & Badges (แสดงเฉพาะสีของรถตนเองเท่านั้น ห้ามให้เห็นสีรถคันอื่น)
+      var rcColorBanner = document.getElementById('dashboardRcColorBanner');
+      var rcColorBannerIconBox = document.getElementById('rcColorBannerIconBox');
+      var rcColorBannerColorText = document.getElementById('rcColorBannerColorText');
+      var rcColorBannerSubText = document.getElementById('rcColorBannerSubText');
+      var rcColorBannerCarCode = document.getElementById('rcColorBannerCarCode');
+      var rcColorBannerBadge = document.getElementById('rcColorBannerBadge');
+      var rcColorBannerBadgeText = document.getElementById('rcColorBannerBadgeText');
+
       var carColorBadge = document.getElementById('dashboardCarColorBadge');
       var carColorText = document.getElementById('dashboardCarColorText');
       var rcColorSub = document.getElementById('dashboardRcColorSub');
 
       if (currentUser && currentUser.role === 'User') {
         var thaiColor = getCarColorThaiName(currentUser.carColor || '');
+        var colorTheme = getCarColorThemeDetails(currentUser.carColor || '');
+
+        // 1. แบนเนอร์แสดงสี RC ประจำรถตนเอง (เปลี่ยนจากโหมดซ่อนคะแนนเดิม)
+        if (rcColorBanner) {
+          rcColorBanner.style.display = 'flex';
+          rcColorBanner.className = 'p-3 sm:p-4 rounded-2xl bg-white border border-slate-200/80 text-slate-700 text-xs font-bold flex items-center justify-between shadow-sm border-l-4 transition-all ' + colorTheme.borderLeftClass;
+        }
+        if (rcColorBannerIconBox) {
+          rcColorBannerIconBox.className = 'w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center shrink-0 text-base sm:text-lg shadow-xs ' + colorTheme.iconBoxClass;
+        }
+        if (rcColorBannerColorText) {
+          rcColorBannerColorText.innerText = 'สี' + thaiColor;
+          rcColorBannerColorText.className = 'font-black text-sm sm:text-base ' + colorTheme.textColorClass;
+        }
+        if (rcColorBannerCarCode) {
+          rcColorBannerCarCode.innerText = currentUser.carCode || currentUser.username;
+        }
+        if (rcColorBannerBadge) {
+          rcColorBannerBadge.className = 'px-3 py-1 rounded-full text-xs font-black shadow-xs shrink-0 whitespace-nowrap ml-2 ' + colorTheme.badgeClass;
+        }
+        if (rcColorBannerBadgeText) {
+          rcColorBannerBadgeText.innerText = 'สี' + thaiColor;
+        }
+
+        // 2. ป้ายบนสุดและป้ายบนการ์ด RC
         if (carColorBadge) {
           carColorBadge.style.display = 'inline-flex';
-          if (carColorText) carColorText.innerText = thaiColor;
+          if (carColorText) {
+            carColorText.innerText = 'สี' + thaiColor;
+            carColorText.className = 'font-black ' + colorTheme.textColorClass;
+          }
         }
         if (rcColorSub) {
-          rcColorSub.innerHTML = '<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-white/25 backdrop-blur-xs text-white border border-white/30 text-[10px] font-black"><i class="fa-solid fa-palette"></i> สีที่ต้องหา: ' + escapeHTML(thaiColor) + '</span>';
+          rcColorSub.innerHTML = '<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-white/25 backdrop-blur-xs text-white border border-white/30 text-[10px] font-black"><i class="fa-solid fa-palette"></i> สีที่ต้องหา: สี' + escapeHTML(thaiColor) + '</span>';
         }
       } else {
+        if (rcColorBanner) rcColorBanner.style.display = 'none';
         if (carColorBadge) carColorBadge.style.display = 'none';
         if (rcColorSub) rcColorSub.innerText = 'รายการส่งคำตอบทุกจุด RC';
       }
@@ -3782,7 +3877,7 @@
             '<i class="fa-solid fa-magnifying-glass-plus text-white text-xl"></i>' +
             '</div></div>' +
             '<h4 class="text-sm font-extrabold text-slate-800 line-clamp-1 leading-tight">' + escapeHTML(item.user.name) + '</h4>' +
-            '<p class="text-xs text-slate-500 font-medium mt-0.5">ID: ' + escapeHTML(item.user.username) + ' (' + escapeHTML(getCarColorThaiName(item.user.carColor)) + ')</p>' +
+            '<p class="text-xs text-slate-500 font-medium mt-0.5">ID: ' + escapeHTML(item.user.username) + (item.user.carCode ? ' (' + escapeHTML(item.user.carCode) + ')' : '') + ((currentUser && currentUser.role === 'Admin') || (item.user.username === currentUser.username) ? ' • <span class="font-bold">' + escapeHTML(getCarColorThaiName(item.user.carColor)) + '</span>' : '') + '</p>' +
             (item.user.members && item.user.members.length > 0
               ? '<div class="text-[10px] text-slate-500 font-medium mt-1 truncate max-w-full px-1" title="' + escapeHTML(item.user.members.join(', ')) + '">' +
                 '<i class="fa-solid fa-users text-[9px] text-emerald-600 mr-1"></i>' + item.user.members.length + ' คน: ' + escapeHTML(item.user.members.join(', ')) +
