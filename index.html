@@ -1333,57 +1333,83 @@
   </div>
 
 
-  <!-- ================= MODAL: POPULAR VOTE CELEBRATION (อันดับ 1, 2, 3) ================= -->
-  <div id="voteCelebrationModal" style="display: none;" class="fixed inset-0 z-50 items-center justify-center bg-slate-950/80 backdrop-blur-md p-4 animate-fade-in" onclick="if(event.target === this) closeVoteCelebrationModal()">
-    <div class="bg-white max-w-lg w-full rounded-3xl p-6 sm:p-8 relative shadow-2xl border-4 border-amber-300 text-center overflow-hidden">
+  <!-- ================= MODAL: AWARD CELEBRATION (อันดับ 1, 2, 3, บู้บี้, คะแนนรวม) ================= -->
+  <div id="voteCelebrationModal" style="display: none;" class="fixed inset-0 z-50 items-center justify-center bg-slate-950/85 backdrop-blur-md p-3 sm:p-6 animate-fade-in overflow-y-auto" onclick="if(event.target === this) closeVoteCelebrationModal()">
+    <div class="bg-white w-full max-w-5xl lg:max-w-6xl max-h-[92vh] rounded-3xl p-5 sm:p-8 relative shadow-2xl border-4 border-amber-300 overflow-y-auto my-auto text-center flex flex-col">
       <!-- Ambient Glow Effects -->
-      <div class="absolute -top-24 -left-24 w-52 h-52 bg-amber-400/25 rounded-full blur-3xl pointer-events-none"></div>
-      <div class="absolute -bottom-24 -right-24 w-52 h-52 bg-pink-500/25 rounded-full blur-3xl pointer-events-none"></div>
+      <div class="absolute -top-24 -left-24 w-72 h-72 bg-amber-400/25 rounded-full blur-3xl pointer-events-none"></div>
+      <div class="absolute -bottom-24 -right-24 w-72 h-72 bg-pink-500/20 rounded-full blur-3xl pointer-events-none"></div>
 
       <!-- Close Button Top Right -->
-      <button onclick="closeVoteCelebrationModal()" class="absolute top-4 right-4 w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 flex items-center justify-center text-base transition-colors cursor-pointer z-20">
+      <button type="button" onclick="closeVoteCelebrationModal()" class="absolute top-4 right-4 w-10 h-10 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 flex items-center justify-center text-lg transition-colors cursor-pointer z-30 shadow-md" title="ปิดหน้าต่าง">
         <i class="fa-solid fa-xmark"></i>
       </button>
 
-      <!-- Trophy / Medal Badge -->
-      <div class="relative z-10 flex flex-col items-center">
-        <div id="celebrationMedalIconWrapper" class="w-20 h-20 sm:w-24 sm:h-24 rounded-3xl bg-gradient-to-tr from-amber-400 via-amber-300 to-yellow-200 p-1 shadow-xl shadow-amber-500/30 mb-3 flex items-center justify-center border-2">
-          <div id="celebrationMedalIcon" class="text-4xl sm:text-5xl text-amber-900 drop-shadow-md">
+      <!-- Trophy / Medal Badge & Header -->
+      <div class="relative z-10 flex flex-col items-center mb-4 sm:mb-6 shrink-0">
+        <div id="celebrationMedalIconWrapper" class="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl sm:rounded-3xl bg-gradient-to-tr from-amber-400 via-amber-300 to-yellow-200 p-1 shadow-xl shadow-amber-500/30 mb-2.5 flex items-center justify-center border-2">
+          <div id="celebrationMedalIcon" class="text-3xl sm:text-4xl text-amber-900 drop-shadow-md">
             <i class="fa-solid fa-trophy"></i>
           </div>
         </div>
 
-        <span id="celebrationRankBadge" class="px-4 py-1 rounded-full text-xs font-black tracking-wider uppercase bg-amber-100 text-amber-800 border border-amber-300 mb-2 shadow-sm">
+        <span id="celebrationRankBadge" class="px-4 py-1 rounded-full text-xs sm:text-sm font-black tracking-wider uppercase bg-amber-100 text-amber-800 border border-amber-300 mb-2 shadow-sm">
           🏆 ชนะเลิศอันดับ 1
         </span>
 
-        <h2 id="celebrationTitle" class="text-xl sm:text-2xl font-black bg-gradient-to-r from-amber-600 via-pink-600 to-purple-600 bg-clip-text text-transparent mb-4">
+        <h2 id="celebrationTitle" class="text-xl sm:text-2xl lg:text-3xl font-black bg-gradient-to-r from-amber-600 via-pink-600 to-purple-600 bg-clip-text text-transparent">
           ขอแสดงความยินดี!
         </h2>
+      </div>
 
-        <!-- Team Photo (Big & Crisp) -->
-        <div class="w-full max-w-sm h-48 sm:h-52 rounded-2xl overflow-hidden shadow-lg border-2 border-amber-300/80 mb-4 bg-slate-100 relative group cursor-pointer" onclick="openImageModal(document.getElementById('celebrationTeamImg').src, document.getElementById('celebrationTeamName').innerText)">
-          <img id="celebrationTeamImg" src="" class="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-300" alt="Team Photo">
-          <div class="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-            <i class="fa-solid fa-magnifying-glass-plus text-white text-2xl"></i>
+      <!-- Content Section: Two Columns on md/lg (รูปแบบ ข) -->
+      <div class="relative z-10 grid grid-cols-1 md:grid-cols-12 gap-5 sm:gap-6 items-center flex-1">
+        
+        <!-- Left Column: Photo (สัดส่วนจริงของภาพเดิม ไม่ถูก crop + กรอบทองหรูหรา) -->
+        <div class="md:col-span-6 lg:col-span-6 flex flex-col items-center justify-center">
+          <div class="w-full rounded-2xl sm:rounded-3xl p-2 sm:p-2.5 bg-gradient-to-tr from-amber-300 via-yellow-200 to-amber-400 shadow-2xl border-2 border-amber-300/80">
+            <div class="w-full rounded-xl sm:rounded-2xl overflow-hidden bg-slate-900/5 flex items-center justify-center relative group cursor-pointer" style="min-height: 220px; max-height: 48vh;" onclick="openImageModal(document.getElementById('celebrationTeamImg').src, document.getElementById('celebrationTeamName').innerText)">
+              <img id="celebrationTeamImg" src="" class="max-h-[44vh] w-auto max-w-full object-contain rounded-xl group-hover:scale-105 transition-transform duration-300" alt="Team Photo">
+              <div class="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity rounded-xl flex items-center justify-center">
+                <span class="px-3 py-1.5 rounded-xl bg-black/60 text-white text-xs font-bold flex items-center gap-1.5 shadow-lg backdrop-blur-xs">
+                  <i class="fa-solid fa-magnifying-glass-plus"></i> ดูรูปขนาดเต็ม
+                </span>
+              </div>
+            </div>
           </div>
         </div>
 
-        <!-- Team Name (NO CAR CODE, NO COLOR!) -->
-        <h3 id="celebrationTeamName" class="text-xl sm:text-2xl font-black text-slate-800 line-clamp-1 mb-3">
-          ชื่อทีม
-        </h3>
+        <!-- Right Column: Team Name, Score Badge, Members Grid -->
+        <div class="md:col-span-6 lg:col-span-6 flex flex-col items-center md:items-start text-center md:text-left">
+          <!-- Team Name (NO CAR CODE, NO COLOR!) -->
+          <h3 id="celebrationTeamName" class="text-2xl sm:text-3xl font-black text-slate-800 line-clamp-2 mb-2.5">
+            ชื่อทีม
+          </h3>
 
-        <!-- Votes Count Pill -->
-        <div id="celebrationPillWrapper" class="py-2 px-6 rounded-full bg-gradient-to-r from-pink-500 to-rose-500 text-white font-black text-sm shadow-lg shadow-pink-500/30 flex items-center justify-center gap-2 mb-6">
-          <i id="celebrationPillIcon" class="fa-solid fa-heart text-rose-200"></i>
-          <span id="celebrationVoteCount">0 คะแนน (0.0%)</span>
+          <!-- Score / Votes Pill Wrapper -->
+          <div id="celebrationPillWrapper" class="py-2.5 px-6 rounded-full bg-gradient-to-r from-pink-500 to-rose-500 text-white font-black text-sm sm:text-base shadow-lg shadow-pink-500/30 inline-flex items-center justify-center gap-2 mb-4">
+            <i id="celebrationPillIcon" class="fa-solid fa-heart text-rose-200"></i>
+            <span id="celebrationVoteCount">0 คะแนน (0.0%)</span>
+          </div>
+
+          <!-- Team Members Box (Grid 2-3 คอลัมน์) -->
+          <div id="celebrationMembersSection" class="w-full bg-slate-50/90 border border-slate-200/90 rounded-2xl p-4 shadow-sm text-left">
+            <div class="flex items-center justify-between gap-2 mb-3 pb-2 border-b border-slate-200/80">
+              <span class="text-xs sm:text-sm font-black text-slate-700 flex items-center gap-2">
+                <i class="fa-solid fa-users text-amber-500"></i> สมาชิกในทีม
+              </span>
+              <span id="celebrationMembersCount" class="text-xs font-extrabold px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-300">
+                0 คน
+              </span>
+            </div>
+
+            <!-- Grid for Members 1-5 -->
+            <div id="celebrationMembersList" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 text-left">
+              <!-- Dynamic populated member items -->
+            </div>
+          </div>
         </div>
 
-        <!-- Action Button -->
-        <button onclick="closeVoteCelebrationModal()" class="w-full sm:w-auto px-8 py-2.5 rounded-2xl bg-gradient-to-r from-purple-600 via-pink-600 to-rose-500 hover:from-purple-700 hover:to-rose-600 text-white font-extrabold text-sm shadow-xl shadow-pink-500/25 transition-all cursor-pointer active:scale-95 flex items-center justify-center gap-2">
-          <i class="fa-solid fa-sparkles"></i> ยอดเยี่ยม / ปิดหน้าต่าง
-        </button>
       </div>
     </div>
   </div>
@@ -7579,6 +7605,70 @@
     }
     window.resetPopularPodiumReveal = resetPopularPodiumReveal;
 
+    // Render Team Members in Celebration Modal (Grid 2-3 คอลัมน์, ป้ายหมายเลข 1-5, ไอคอน 👤)
+    function renderCelebrationMembers(user) {
+      var container = document.getElementById('celebrationMembersList');
+      var countEl = document.getElementById('celebrationMembersCount');
+      if (!container) return;
+
+      var members = [];
+      if (user && user.members) {
+        if (Array.isArray(user.members)) {
+          members = user.members.map(function(m) { return String(m || '').trim(); }).filter(Boolean);
+        } else if (typeof user.members === 'string') {
+          members = user.members.split(',').map(function(m) { return m.trim(); }).filter(Boolean);
+        }
+      }
+
+      // Fallback: If target user in usersData has members
+      if (members.length === 0 && user && user.username && typeof usersData !== 'undefined' && Array.isArray(usersData)) {
+        var fullUser = usersData.find(function(u) { return u.username === user.username; });
+        if (fullUser && fullUser.members) {
+          if (Array.isArray(fullUser.members)) {
+            members = fullUser.members.map(function(m) { return String(m || '').trim(); }).filter(Boolean);
+          } else if (typeof fullUser.members === 'string') {
+            members = fullUser.members.split(',').map(function(m) { return m.trim(); }).filter(Boolean);
+          }
+        }
+      }
+
+      if (countEl) {
+        countEl.innerText = members.length > 0 ? (members.length + ' คน') : '0 คน';
+      }
+
+      if (members.length === 0) {
+        container.className = 'w-full py-4 text-center text-slate-400 text-xs italic bg-white rounded-xl border border-dashed border-slate-200';
+        container.innerHTML = '<i class="fa-regular fa-id-badge mr-1 text-slate-300"></i> ไม่มีข้อมูลรายชื่อสมาชิกในทีม';
+        return;
+      }
+
+      // Render as 2-3 columns grid
+      container.className = 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-2.5 text-left';
+      container.innerHTML = members.map(function(m, idx) {
+        return '<div class="flex items-center gap-2 sm:gap-2.5 p-2 sm:p-2.5 rounded-xl bg-white border border-slate-200/90 shadow-xs hover:border-amber-400 hover:shadow-sm transition-all min-w-0">' +
+          '<span class="w-6 h-6 rounded-full bg-gradient-to-tr from-amber-400 via-amber-300 to-yellow-200 text-amber-950 font-black text-xs flex items-center justify-center shrink-0 border border-amber-300/80 shadow-xs">' + (idx + 1) + '</span>' +
+          '<div class="min-w-0 flex-1 flex items-center gap-1.5">' +
+            '<i class="fa-regular fa-user text-slate-400 text-xs shrink-0"></i>' +
+            '<span class="text-slate-800 font-bold text-xs sm:text-sm truncate" title="' + escapeHTML(m) + '">' + escapeHTML(m) + '</span>' +
+          '</div>' +
+        '</div>';
+      }).join('');
+    }
+    window.renderCelebrationMembers = renderCelebrationMembers;
+
+    // Support ESC key to close celebration modal
+    if (!window._celebrationEscBound) {
+      window._celebrationEscBound = true;
+      document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+          var modal = document.getElementById('voteCelebrationModal');
+          if (modal && modal.style.display !== 'none') {
+            closeVoteCelebrationModal();
+          }
+        }
+      });
+    }
+
     // Show Celebration Modal for Overall Competition Award (การแข่งขันคะแนนรวม)
     function showOverallCelebrationModal(rank) {
       var competitors = usersData.filter(function(u) { return u.role === 'User'; });
@@ -7665,7 +7755,7 @@
       // Set Score Pill with Total Score
       var pillWrapper = document.getElementById('celebrationPillWrapper');
       if (pillWrapper) {
-        pillWrapper.className = 'py-2 px-6 rounded-full bg-gradient-to-r from-amber-500 to-yellow-600 text-white font-black text-sm shadow-lg shadow-amber-500/30 flex items-center justify-center gap-2 mb-6';
+        pillWrapper.className = 'py-2.5 px-6 rounded-full bg-gradient-to-r from-amber-500 to-yellow-600 text-white font-black text-sm sm:text-base shadow-lg shadow-amber-500/30 inline-flex items-center justify-center gap-2 mb-4';
       }
       var pillIcon = document.getElementById('celebrationPillIcon');
       if (pillIcon) {
@@ -7675,6 +7765,9 @@
       if (voteCountEl) {
         voteCountEl.innerText = 'ได้รับคะแนนรวม ' + Number(targetItem.totalNetScore || 0).toLocaleString('th-TH') + ' คะแนน';
       }
+
+      // Populate Team Members (Grid 2-3 คอลัมน์)
+      renderCelebrationMembers(targetItem.user);
 
       modal.style.display = 'flex';
 
@@ -8015,7 +8108,7 @@
 
       var pillWrapper = document.getElementById('celebrationPillWrapper');
       if (pillWrapper) {
-        pillWrapper.className = 'py-2 px-6 rounded-full bg-gradient-to-r from-purple-600 via-pink-600 to-indigo-600 text-white font-black text-sm shadow-lg shadow-purple-500/30 flex items-center justify-center gap-2 mb-6';
+        pillWrapper.className = 'py-2.5 px-6 rounded-full bg-gradient-to-r from-purple-600 via-pink-600 to-indigo-600 text-white font-black text-sm sm:text-base shadow-lg shadow-purple-500/30 inline-flex items-center justify-center gap-2 mb-4';
       }
       var pillIcon = document.getElementById('celebrationPillIcon');
       if (pillIcon) {
@@ -8025,6 +8118,9 @@
       if (voteCountEl) {
         voteCountEl.innerText = 'ได้รับคะแนนรวม ' + Number(targetItem.totalNetScore || 0).toLocaleString('th-TH') + ' คะแนน';
       }
+
+      // Populate Team Members (Grid 2-3 คอลัมน์)
+      renderCelebrationMembers(targetItem.user);
 
       modal.style.display = 'flex';
 
@@ -8174,7 +8270,7 @@
 
       var pillWrapper = document.getElementById('celebrationPillWrapper');
       if (pillWrapper) {
-        pillWrapper.className = 'py-2 px-6 rounded-full bg-gradient-to-r from-pink-500 to-rose-500 text-white font-black text-sm shadow-lg shadow-pink-500/30 flex items-center justify-center gap-2 mb-6';
+        pillWrapper.className = 'py-2.5 px-6 rounded-full bg-gradient-to-r from-pink-500 to-rose-500 text-white font-black text-sm sm:text-base shadow-lg shadow-pink-500/30 inline-flex items-center justify-center gap-2 mb-4';
       }
       var pillIcon = document.getElementById('celebrationPillIcon');
       if (pillIcon) {
@@ -8185,6 +8281,9 @@
       if (voteCountEl) {
         voteCountEl.innerText = 'ได้รับคะแนนโหวต ' + targetItem.votesCount + ' คะแนน (' + targetItem.percentage + '%)';
       }
+
+      // Populate Team Members (Grid 2-3 คอลัมน์)
+      renderCelebrationMembers(targetItem.user);
 
       modal.style.display = 'flex';
 
