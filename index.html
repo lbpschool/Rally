@@ -229,20 +229,21 @@
 <body class="relative min-h-screen bg-[#f4f6fb]">
 
   <!-- ================= Image Lightbox Fullscreen Modal ================= -->
-  <div id="imageModal" style="display: none;" class="fixed inset-0 z-50 items-center justify-center bg-slate-950/85 backdrop-blur-md p-4 overflow-y-auto" onclick="closeImageModal()">
-    <div class="relative max-w-xl w-full max-h-[94vh] flex flex-col items-center my-auto py-3 overflow-y-auto modal-body-scroll" onclick="event.stopPropagation()">
-      <button onclick="closeImageModal()" class="self-end mb-2 w-9 h-9 rounded-full bg-slate-800/80 hover:bg-slate-700 text-white text-lg flex items-center justify-center transition-all z-10 cursor-pointer shadow-lg border border-white/20" title="ปิดหน้าต่าง">
+  <div id="imageModal" style="display: none;" class="fixed inset-0 z-50 items-center justify-center bg-slate-950/85 backdrop-blur-md p-3 sm:p-4 overflow-y-auto" onclick="closeImageModal()">
+    <div class="relative max-w-4xl w-full max-h-[94vh] flex flex-col items-center my-auto py-2 sm:py-3 overflow-y-auto modal-body-scroll" onclick="event.stopPropagation()">
+      <!-- Close Button -->
+      <button onclick="closeImageModal()" class="self-end mb-2 w-10 h-10 rounded-full bg-slate-900/80 hover:bg-slate-800 text-white text-xl flex items-center justify-center transition-all z-20 cursor-pointer shadow-xl border border-white/30 backdrop-blur-md sticky top-0" title="ปิดหน้าต่าง">
         <i class="fa-solid fa-xmark"></i>
       </button>
       
-      <!-- Image Display -->
-      <img id="imageModalSrc" src="" alt="Zoom Image" class="max-w-full max-h-[50vh] sm:max-h-[58vh] rounded-2xl object-contain shadow-2xl border border-white/20">
+      <!-- Image Display (Large Full View - Original Size Restored) -->
+      <img id="imageModalSrc" src="" alt="Zoom Image" class="max-w-full max-h-[80vh] sm:max-h-[85vh] rounded-2xl object-contain shadow-2xl border border-white/20">
       
       <!-- Caption for general non-car images -->
-      <p id="imageModalCaption" class="mt-2.5 text-slate-200 text-sm text-center font-medium"></p>
+      <p id="imageModalCaption" class="mt-3 text-slate-200 text-sm text-center font-medium"></p>
 
       <!-- Team Members Card (แบบ ก + แบบ 1: เฉพาะชื่อทีมและรายชื่อผู้เล่น 1-5 คน) -->
-      <div id="imageModalMembersCard" style="display: none;" class="w-full mt-3 p-4 rounded-2xl bg-slate-900/90 border border-purple-400/30 backdrop-blur-xl shadow-2xl text-white animate-fade-in space-y-3">
+      <div id="imageModalMembersCard" style="display: none;" class="w-full max-w-4xl mt-4 p-4 sm:p-5 rounded-2xl bg-slate-900/95 border border-purple-400/30 backdrop-blur-xl shadow-2xl text-white animate-fade-in space-y-3.5">
         
         <!-- Header: Team Name (No carCode, No carColor) -->
         <div class="flex items-center justify-between border-b border-white/10 pb-2.5">
@@ -261,7 +262,7 @@
         </div>
 
         <!-- Members List: แบบ 1 (เรียงแยกเป็นรายการ คนที่ 1-5 พร้อมไอคอน 👤) -->
-        <div id="imageModalMembersList" class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+        <div id="imageModalMembersList" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5 text-xs">
           <!-- Dynamically populated in openImageModal -->
         </div>
 
@@ -2439,7 +2440,7 @@
 
         if (listEl) {
           if (members.length > 0) {
-            listEl.className = 'grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs';
+            listEl.className = 'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5 text-xs';
             listEl.innerHTML = members.map(function(m, idx) {
               return '<div class="flex items-center gap-2 p-2 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-colors">' +
                 '<span class="w-6 h-6 rounded-lg bg-emerald-500/20 text-emerald-300 flex items-center justify-center text-[10px] font-black shrink-0 border border-emerald-400/30">' +
