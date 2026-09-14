@@ -3871,11 +3871,6 @@
             '<i class="fa-solid fa-magnifying-glass-plus text-white text-xl"></i>' +
             '</div></div>' +
             '<h4 class="text-sm font-extrabold text-slate-800 line-clamp-1 leading-tight">' + escapeHTML(item.user.name) + '</h4>' +
-            (item.user.members && item.user.members.length > 0
-              ? '<div class="text-[10px] text-slate-500 font-medium mt-1 truncate max-w-full px-1" title="' + escapeHTML(item.user.members.join(', ')) + '">' +
-                '<i class="fa-solid fa-users text-[9px] text-emerald-600 mr-1"></i>' + item.user.members.length + ' คน: ' + escapeHTML(item.user.members.join(', ')) +
-                '</div>'
-              : '') +
             '</div>' +
             scoreDisplayHTML +
             voteButtonHTML +
