@@ -322,9 +322,18 @@
       <div class="mt-4 text-center text-xs text-slate-400 border-t border-slate-100 pt-4">
         <p class="font-medium text-purple-600 mb-1">ตัวอย่างบัญชีสำหรับทดสอบ (Mock Data):</p>
         <div class="mt-2 grid grid-cols-3 gap-1.5 text-[11px]">
-          <button type="button" onclick="fillQuickLogin('car01','pass123')" class="p-2 rounded-xl bg-purple-50/80 text-purple-700 font-semibold hover:bg-purple-600 hover:text-white transition-all border border-purple-100 cursor-pointer text-center">User: car01</button>
-          <button type="button" onclick="fillQuickLogin('judge1','judge123')" class="p-2 rounded-xl bg-purple-50/80 text-purple-700 font-semibold hover:bg-purple-600 hover:text-white transition-all border border-purple-100 cursor-pointer text-center">Judge: judge1</button>
-          <button type="button" onclick="fillQuickLogin('admin','admin123')" class="p-2 rounded-xl bg-purple-50/80 text-purple-700 font-semibold hover:bg-purple-600 hover:text-white transition-all border border-purple-100 cursor-pointer text-center">Admin: admin</button>
+          <button type="button" onclick="fillQuickLogin('admin','admin123','ADM-00')" class="group p-2 rounded-xl bg-purple-50/80 text-purple-700 hover:bg-purple-600 hover:text-white transition-all border border-purple-100 cursor-pointer text-center flex flex-col items-center justify-center shadow-xs">
+            <span class="font-bold text-xs tracking-wide">ADM-00</span>
+            <span class="text-[10px] text-purple-500 font-normal group-hover:text-purple-100 transition-colors">Admin</span>
+          </button>
+          <button type="button" onclick="fillQuickLogin('judge1','judge123','SUB-01')" class="group p-2 rounded-xl bg-purple-50/80 text-purple-700 hover:bg-purple-600 hover:text-white transition-all border border-purple-100 cursor-pointer text-center flex flex-col items-center justify-center shadow-xs">
+            <span class="font-bold text-xs tracking-wide">SUB-01</span>
+            <span class="text-[10px] text-purple-500 font-normal group-hover:text-purple-100 transition-colors">Judge</span>
+          </button>
+          <button type="button" onclick="fillQuickLogin('car01','pass123','C1')" class="group p-2 rounded-xl bg-purple-50/80 text-purple-700 hover:bg-purple-600 hover:text-white transition-all border border-purple-100 cursor-pointer text-center flex flex-col items-center justify-center shadow-xs">
+            <span class="font-bold text-xs tracking-wide">C1</span>
+            <span class="text-[10px] text-purple-500 font-normal group-hover:text-purple-100 transition-colors">User</span>
+          </button>
         </div>
       </div>
     </div>
@@ -3008,7 +3017,7 @@
     // =========================================================================
     // SECTION 4: AUTHENTICATION & SESSION MANAGEMENT
     // =========================================================================
-    function fillQuickLogin(u, p) {
+    function fillQuickLogin(u, p, displayName) {
       var uInput = document.getElementById('loginUsername');
       var pInput = document.getElementById('loginPassword');
       if (uInput) {
@@ -3027,7 +3036,7 @@
           toast: true,
           position: 'top-end',
           icon: 'info',
-          title: 'เลือกบัญชี ' + u + ' เรียบร้อย',
+          title: 'เลือกบัญชี ' + (displayName || u) + ' เรียบร้อย',
           showConfirmButton: false,
           timer: 1200
         });
@@ -3053,7 +3062,12 @@
         setTimeout(function() {
           clearTimeout(loginFeedbackTimer);
           hideLoading();
-          var found = usersData.find(function(x) { return x.username === u && x.password === p; });
+          var uLower = u.toLowerCase();
+          var found = usersData.find(function(x) { 
+            return (String(x.username || '').toLowerCase() === uLower || 
+                    (x.carCode && String(x.carCode || '').toLowerCase() === uLower)) && 
+                   String(x.password || '') === p; 
+          });
           if (found) {
             currentUser = found;
             onLoginSuccess(false);
@@ -6676,7 +6690,7 @@
       usersData = [
         { username: 'admin', password: 'admin123', name: 'ผู้ดูแลระบบสูงสุด', role: 'Admin', carCode: 'ADM-00', carColor: 'Red', profileUrl: 'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&w=400&q=80', bonusPoints: 0 },
         { username: 'judge1', password: 'judge123', name: 'กรรมการประจำฐาน 1', role: 'Sub-Admin', carCode: 'SUB-01', carColor: 'Blue', profileUrl: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=400&q=80', bonusPoints: 0 },
-        { username: 'car01', password: 'pass123', name: 'บางระจินทร์', role: 'User', carCode: 'R1', carColor: 'Red', profileUrl: 'https://images.unsplash.com/photo-1544829099-b9a0c07fad1a?auto=format&fit=crop&w=400&q=80', bonusPoints: 0 },
+        { username: 'car01', password: 'pass123', name: 'บางระจินทร์', role: 'User', carCode: 'C1', carColor: 'Red', profileUrl: 'https://images.unsplash.com/photo-1544829099-b9a0c07fad1a?auto=format&fit=crop&w=400&q=80', bonusPoints: 0 },
         { username: 'car02', password: 'pass123', name: 'ดูหุ่นพี่ก่อน', role: 'User', carCode: 'B2', carColor: 'Blue', profileUrl: 'https://images.unsplash.com/photo-1552519507-da3b142c6e3d?auto=format&fit=crop&w=400&q=80', bonusPoints: 0 },
         { username: 'car03', password: 'pass123', name: 'เด็กม.ปลาย', role: 'User', carCode: 'Y3', carColor: 'Yellow', profileUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80', bonusPoints: 0 },
         { username: 'car4', password: 'pass123', name: 'เมดสาว', role: 'User', carCode: 'R2', carColor: 'Red', profileUrl: 'https://images.unsplash.com/photo-1580273916550-e323be2ae537?auto=format&fit=crop&w=400&q=80', bonusPoints: 0 },

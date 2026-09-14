@@ -190,7 +190,7 @@ function setupDatabase() {
     // Add Initial Default Data
     usersSheet.appendRow(['admin', 'admin123', 'ผู้ดูแลระบบสูงสุด', 'Admin', 'ADM-00', 'Red', 'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&w=400&q=80', 0]);
     usersSheet.appendRow(['judge1', 'judge123', 'กรรมการประจำฐาน 1', 'Sub-Admin', 'SUB-01', 'Blue', 'https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=400&q=80', 0]);
-    usersSheet.appendRow(['car01', 'pass123', 'ทีมสายฟ้าสีแดง', 'User', 'R-01', 'Red', 'https://images.unsplash.com/photo-1544829099-b9a0c07fad1a?auto=format&fit=crop&w=400&q=80', 5]);
+    usersSheet.appendRow(['car01', 'pass123', 'ทีมสายฟ้าสีแดง', 'User', 'C1', 'Red', 'https://images.unsplash.com/photo-1544829099-b9a0c07fad1a?auto=format&fit=crop&w=400&q=80', 5]);
     usersSheet.appendRow(['car02', 'pass123', 'ทีมมังกรสีน้ำเงิน', 'User', 'B-02', 'Blue', 'https://images.unsplash.com/photo-1552519507-da3b142c6e3d?auto=format&fit=crop&w=400&q=80', 0]);
     usersSheet.appendRow(['car03', 'pass123', 'ทีมสิงห์สีเหลือง', 'User', 'Y-03', 'Yellow', 'https://images.unsplash.com/photo-1580273916550-e323be2ae537?auto=format&fit=crop&w=400&q=80', 10]);
   }
@@ -462,17 +462,20 @@ function apiLogin(username, password) {
   
   for (let i = 1; i < data.length; i++) {
     const row = data[i];
-    if (String(row[0] || '').trim().toLowerCase() === uTrim && String(row[1] || '').trim() === pTrim) {
-      const sessionToken = generateSessionToken(row[0], row[3]);
+    const rowUser = String(row[0] || '').trim().toLowerCase();
+    const rowCarCode = String(row[4] || '').trim().toLowerCase();
+    if ((rowUser === uTrim || (rowCarCode && rowCarCode === uTrim)) && String(row[1] || '').trim() === pTrim) {
+      const canonicalUsername = String(row[0] || '').trim();
+      const sessionToken = generateSessionToken(canonicalUsername, row[3]);
       
       // Load initial app data in the SAME call! (Eliminates second round-trip)
-      const initialData = apiGetInitialData(row[0], sessionToken);
+      const initialData = apiGetInitialData(canonicalUsername, sessionToken);
 
       return {
         success: true,
         sessionToken: sessionToken,
         user: initialData.currentUser || {
-          username: row[0],
+          username: canonicalUsername,
           name: row[2],
           role: row[3],
           carCode: row[4],
