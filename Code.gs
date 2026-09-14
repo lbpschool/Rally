@@ -860,18 +860,19 @@ function apiSubmitAnswer(username, activityId, answerText, imageFileObj, session
       judgeNotes = 'รอการตรวจและให้คะแนนจากกรรมการ';
     }
 
-    // Append or Update Submission in Sheet
+    // Check if already submitted in Sheet (Strictly ONE submission allowed!)
     const subSheet = getOrCreateSheet(ss, SHEET_NAMES.SUBMISSIONS);
     const subData = subSheet.getDataRange().getValues();
-    let foundRow = -1;
     for (let i = 1; i < subData.length; i++) {
       if (subData[i][2] === username && subData[i][3] === activityId) {
-        foundRow = i + 1;
-        break;
+        return {
+          success: false,
+          message: 'ท่านได้ส่งคำตอบกิจกรรมนี้เรียบร้อยแล้ว (ระบบอนุญาตให้ส่งได้เพียง 1 ครั้ง)'
+        };
       }
     }
 
-    const subId = foundRow > 0 ? subData[foundRow - 1][0] : ('SUB-' + Date.now());
+    const subId = 'SUB-' + Date.now();
     const timestamp = new Date().toISOString();
     const rowContent = [
       subId,
@@ -889,11 +890,9 @@ function apiSubmitAnswer(username, activityId, answerText, imageFileObj, session
       status === 'passed' ? 'System' : ''
     ];
 
-    if (foundRow > 0) {
-      subSheet.getRange(foundRow, 1, 1, 13).setValues([rowContent]);
-    } else {
-      subSheet.appendRow(rowContent);
-    }
+    // High-speed write using setValues instead of slow appendRow
+    const nextRow = subSheet.getLastRow() + 1;
+    subSheet.getRange(nextRow, 1, 1, 13).setValues([rowContent]);
 
     return {
       success: true,

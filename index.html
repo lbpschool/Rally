@@ -501,9 +501,12 @@
                 <i class="fa-solid fa-chart-pie text-white"></i>
               </div>
               <div class="min-w-0 flex-1">
-                <div class="flex items-center gap-2 mb-1">
+                <div class="flex items-center gap-2 mb-1 flex-wrap">
                   <span id="dashboardTopBadge" class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-white/20 backdrop-blur-md text-white border border-white/30 tracking-wide uppercase whitespace-nowrap">
                     ภาพรวมการแข่งขัน (ADMIN)
+                  </span>
+                  <span id="dashboardCarColorBadge" style="display: none;" class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-white text-slate-800 shadow-sm border border-white/40 flex items-center gap-1.5 whitespace-nowrap">
+                    <i class="fa-solid fa-palette text-amber-500"></i> สี RC ที่ต้องหา: <span id="dashboardCarColorText" class="font-black text-purple-700">แดง</span>
                   </span>
                 </div>
                 <h2 class="text-base sm:text-lg lg:text-xl font-black text-white leading-snug tracking-wide">ผู้ตรวจสอบและแดชบอร์ดสรุปผลรวม</h2>
@@ -546,7 +549,7 @@
               </div>
               <div class="z-10 text-center mt-1.5">
                 <p class="text-xs sm:text-sm font-extrabold text-white/95 leading-tight">หา RC (รวม)</p>
-                <p class="text-[11px] text-white/80 font-semibold mt-0.5">รายการส่งคำตอบทุกจุด RC</p>
+                <p id="dashboardRcColorSub" class="text-[11px] text-white/90 font-bold mt-0.5">รายการส่งคำตอบทุกจุด RC</p>
               </div>
               <div class="absolute -right-4 -bottom-4 w-20 h-20 rounded-full bg-white/10 pointer-events-none"></div>
             </div>
@@ -3505,6 +3508,25 @@
         }
       }
 
+      // Populate RC Color on Dashboard (2 จุด: การ์ดบนสุด และ การ์ด RC สีฟ้า)
+      var carColorBadge = document.getElementById('dashboardCarColorBadge');
+      var carColorText = document.getElementById('dashboardCarColorText');
+      var rcColorSub = document.getElementById('dashboardRcColorSub');
+
+      if (currentUser && currentUser.role === 'User') {
+        var thaiColor = getCarColorThaiName(currentUser.carColor || '');
+        if (carColorBadge) {
+          carColorBadge.style.display = 'inline-flex';
+          if (carColorText) carColorText.innerText = thaiColor;
+        }
+        if (rcColorSub) {
+          rcColorSub.innerHTML = '<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-white/25 backdrop-blur-xs text-white border border-white/30 text-[10px] font-black"><i class="fa-solid fa-palette"></i> สีที่ต้องหา: ' + escapeHTML(thaiColor) + '</span>';
+        }
+      } else {
+        if (carColorBadge) carColorBadge.style.display = 'none';
+        if (rcColorSub) rcColorSub.innerText = 'รายการส่งคำตอบทุกจุด RC';
+      }
+
       if (subCount) {
         subCount.innerHTML = '<i class="fa-solid fa-users text-purple-500 mr-1"></i> จำนวนรถที่เข้าแข่งขันทั้งหมด: ' + competitors.length + ' คัน';
       }
@@ -3848,36 +3870,50 @@
           // ใน role admin ไม่ต้องแสดงช่องพิมพ์คำตอบและปุ่มกดส่งคำตอบ
           cardFooterHTML = adminSolutionHTML;
         } else {
-          var submittedSuccessBox = '';
+          // ตรวจสอบว่าผู้เล่นส่งคำตอบกิจกรรมนี้แล้วหรือไม่ (ล็อคส่งได้เพียง 1 ครั้ง!)
           if (sub) {
-            submittedSuccessBox = '<div class="mt-3 p-3 rounded-2xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-800">' +
-              '<p class="font-extrabold flex items-center gap-1.5"><i class="fa-solid fa-circle-check text-emerald-600"></i> ทำภารกิจสำเร็จเรียบร้อยแล้ว!</p>' +
-              (sub.answerText ? '<p class="mt-1 text-slate-700">คำตอบที่ส่ง: "' + escapeHTML(sub.answerText) + '"</p>' : '') +
-              (sub.imageUrl ? '<button type="button" onclick="openImageModal(\'' + escapeHTML(sub.imageUrl) + '\', \'' + escapeHTML(act.title) + '\')" class="mt-1.5 text-purple-700 underline font-bold hover:text-purple-900 flex items-center gap-1 text-[11px]"><i class="fa-solid fa-image"></i> เปิดดูรูปผลงานที่ส่งแล้ว</button>' : '') +
-              '</div>';
-          }
+            var statusIcon = sub.status === 'passed'
+              ? '<i class="fa-solid fa-circle-check text-emerald-600 text-sm"></i>'
+              : (sub.status === 'failed' ? '<i class="fa-solid fa-circle-xmark text-rose-600 text-sm"></i>' : '<i class="fa-solid fa-clock text-amber-600 text-sm"></i>');
+            var statusTitle = sub.status === 'passed'
+              ? 'ทำภารกิจสำเร็จเรียบร้อยแล้ว!'
+              : (sub.status === 'failed' ? 'ส่งคำตอบแล้ว (คำตอบไม่ถูกต้อง)' : 'ส่งงานเรียบร้อยแล้ว รอการตรวจคะแนน');
+            var boxStyle = sub.status === 'passed'
+              ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
+              : (sub.status === 'failed' ? 'bg-rose-50 border-rose-200 text-rose-800' : 'bg-amber-50 border-amber-200 text-amber-800');
 
-          var formHTML = '';
-          if (act.scoringType === 'AUTO') {
-            formHTML = '<form onsubmit="handleUserSubmit(event, \'' + act.id + '\')" class="mt-2.5 space-y-2">' +
-              '<input type="text" id="inputAns_' + act.id + '" required placeholder="พิมพ์คำตอบคำใบ้ที่นี่..." value="' + (sub ? escapeHTML(sub.answerText || '') : '') + '" class="w-full px-3.5 py-2.5 rounded-xl border-2 border-purple-300 focus:border-purple-600 bg-white text-slate-800 text-xs font-semibold shadow-sm focus:ring-2 focus:ring-purple-200 outline-none transition-all">' +
-              '<button type="submit" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 hover:opacity-95 text-white font-bold text-xs transition-all shadow-md flex items-center justify-center gap-1.5">' +
-              '<i class="fa-solid fa-paper-plane"></i> ' + (sub ? 'ส่งคำตอบอีกครั้ง / แก้ไขคำตอบ' : 'ส่งคำตอบ') +
-              '</button></form>';
-          } else if (act.scoringType === 'MANUAL') {
-            formHTML = '<div class="mt-2 p-3 rounded-2xl bg-purple-50 border border-purple-200 text-purple-700 text-xs flex items-center gap-2 font-bold">' +
-              '<i class="fa-solid fa-gavel text-purple-600 text-sm"></i>' +
-              '<span>ประเมินและให้คะแนนโดยกรรมการประจำฐาน</span>' +
+            cardFooterHTML = '<div class="mt-3 p-3.5 rounded-2xl border text-xs ' + boxStyle + ' shadow-xs">' +
+              '<p class="font-extrabold flex items-center gap-1.5">' + statusIcon + ' ' + statusTitle + '</p>' +
+              (sub.answerText ? '<p class="mt-1 text-slate-700 font-bold">คำตอบที่ส่ง: "' + escapeHTML(sub.answerText) + '"</p>' : '') +
+              (sub.imageUrl ? '<button type="button" onclick="openImageModal(\'' + escapeHTML(sub.imageUrl) + '\', \'' + escapeHTML(act.title) + '\')" class="mt-1.5 text-purple-700 underline font-bold hover:text-purple-900 flex items-center gap-1 text-[11px] cursor-pointer"><i class="fa-solid fa-image"></i> เปิดดูรูปผลงานที่ส่งแล้ว</button>' : '') +
+              '<div class="mt-2 pt-1.5 border-t border-slate-200/60 flex items-center gap-1.5 text-[10px] text-slate-500 font-bold">' +
+                '<i class="fa-solid fa-lock text-slate-400"></i>' +
+                '<span>บันทึกคำตอบแล้ว (ส่งได้เพียง 1 ครั้ง ไม่สามารถแก้ไขได้)</span>' +
+              '</div>' +
               '</div>';
-          } else if (act.scoringType === 'IMAGE') {
-            formHTML = '<form onsubmit="handleUserSubmit(event, \'' + act.id + '\')" class="mt-2.5 space-y-2">' +
-              '<div class="space-y-1"><label class="block text-[11px] font-semibold text-slate-600">' + (sub && sub.imageUrl ? 'อัปโหลดรูปภาพใหม่ส่งเข้าระบบ:' : 'เลือกรูปถ่ายผลงาน:') + '</label>' +
-              '<input type="file" id="inputFile_' + act.id + '" accept="image/*" class="w-full px-3 py-2 rounded-xl border-2 border-purple-300 focus:border-purple-600 bg-white text-xs text-slate-600 shadow-sm outline-none transition-all"></div>' +
-              '<button type="submit" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 hover:opacity-95 text-white font-bold text-xs transition-all shadow-md flex items-center justify-center gap-1.5">' +
-              '<i class="fa-solid fa-cloud-arrow-up"></i> ' + (sub && sub.imageUrl ? 'อัปโหลดรูปภาพใหม่' : 'อัปโหลดภาพส่งเข้าระบบ') + '</button></form>';
+          } else {
+            // ยังไม่เคยส่งคำตอบ: แสดงแบบฟอร์มให้ส่ง
+            var formHTML = '';
+            if (act.scoringType === 'AUTO') {
+              formHTML = '<form onsubmit="handleUserSubmit(event, \'' + act.id + '\')" class="mt-2.5 space-y-2">' +
+                '<input type="text" id="inputAns_' + act.id + '" required placeholder="พิมพ์คำตอบคำใบ้ที่นี่..." class="w-full px-3.5 py-2.5 rounded-xl border-2 border-purple-300 focus:border-purple-600 bg-white text-slate-800 text-xs font-semibold shadow-sm focus:ring-2 focus:ring-purple-200 outline-none transition-all">' +
+                '<button type="submit" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 hover:opacity-95 text-white font-bold text-xs transition-all shadow-md flex items-center justify-center gap-1.5 cursor-pointer active:scale-98">' +
+                '<i class="fa-solid fa-paper-plane"></i> ส่งคำตอบ' +
+                '</button></form>';
+            } else if (act.scoringType === 'MANUAL') {
+              formHTML = '<div class="mt-2 p-3 rounded-2xl bg-purple-50 border border-purple-200 text-purple-700 text-xs flex items-center gap-2 font-bold">' +
+                '<i class="fa-solid fa-gavel text-purple-600 text-sm"></i>' +
+                '<span>ประเมินและให้คะแนนโดยกรรมการประจำฐาน</span>' +
+                '</div>';
+            } else if (act.scoringType === 'IMAGE') {
+              formHTML = '<form onsubmit="handleUserSubmit(event, \'' + act.id + '\')" class="mt-2.5 space-y-2">' +
+                '<div class="space-y-1"><label class="block text-[11px] font-semibold text-slate-600">เลือกรูปถ่ายผลงาน:</label>' +
+                '<input type="file" id="inputFile_' + act.id + '" accept="image/*" required class="w-full px-3 py-2 rounded-xl border-2 border-purple-300 focus:border-purple-600 bg-white text-xs text-slate-600 shadow-sm outline-none transition-all"></div>' +
+                '<button type="submit" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 hover:opacity-95 text-white font-bold text-xs transition-all shadow-md flex items-center justify-center gap-1.5 cursor-pointer active:scale-98">' +
+                '<i class="fa-solid fa-cloud-arrow-up"></i> อัปโหลดภาพส่งเข้าระบบ</button></form>';
+            }
+            cardFooterHTML = formHTML;
           }
-
-          cardFooterHTML = submittedSuccessBox + formHTML;
         }
 
         var catBgColor = 'from-blue-400 to-sky-500';
@@ -4193,9 +4229,9 @@
           hideLoading();
           Swal.fire({
             icon: status === 'passed' ? 'success' : (status === 'failed' ? 'error' : 'info'),
-            title: status === 'passed' ? 'ตอบถูก!' : (status === 'failed' ? 'ตอบไม่ถูก' : 'บันทึกสำเร็จ'),
-            text: status === 'passed' ? ('ได้รับ ' + score + ' คะแนน') : (status === 'failed' ? 'ลองใหม่อีกครั้ง' : 'ส่งงานเรียบร้อยแล้ว รอการตรวจคะแนน'),
-            timer: 2000,
+            title: status === 'passed' ? 'ตอบถูก!' : (status === 'failed' ? 'ส่งคำตอบแล้ว' : 'บันทึกสำเร็จ'),
+            text: status === 'passed' ? ('ได้รับ ' + score + ' คะแนน') : (status === 'failed' ? 'คำตอบไม่ถูกต้อง (ส่งได้ 1 ครั้ง)' : 'ส่งงานเรียบร้อยแล้ว รอการตรวจคะแนน'),
+            timer: 2200,
             showConfirmButton: false
           });
         }, 300);
@@ -4205,10 +4241,19 @@
             .withSuccessHandler(function(res) {
               hideLoading();
               if (res.success) {
-                Swal.fire('สำเร็จ', res.message, res.status === 'passed' ? 'success' : 'info');
-                loadAppData();
+                Swal.fire({
+                  icon: status === 'passed' ? 'success' : (status === 'failed' ? 'warning' : 'info'),
+                  title: status === 'passed' ? 'ตอบถูก!' : (status === 'failed' ? 'ส่งคำตอบแล้ว' : 'บันทึกสำเร็จ'),
+                  text: res.message || (status === 'passed' ? ('ได้รับ ' + score + ' คะแนน') : 'บันทึกการส่งงานเรียบร้อยแล้ว'),
+                  timer: 2200,
+                  showConfirmButton: false
+                });
+                // ไม่ต้องสั่ง loadAppData() ทั้งระบบซ้ำ เพราะหน้าเว็บทำการอัปเดตสถานะและคะแนนในเครื่องทันทีแล้ว!
               } else {
+                // หาก backend แจ้งว่าเคยส่งแล้วหรือมี error
                 handleApiResponseError(res);
+                renderUserDashboard();
+                renderUserMissionsGrid();
               }
             })
             .withFailureHandler(function(err) {
@@ -4226,6 +4271,16 @@
     function handleUserSubmit(e, actId) {
       if (e && e.preventDefault) e.preventDefault();
       if (!ensureAuthenticated()) return;
+
+      // ตรวจสอบว่าเคยส่งกิจกรรมนี้ไปแล้วหรือไม่ (ล็อคส่งได้เพียง 1 ครั้ง!)
+      var alreadySubmitted = submissionsData.some(function(s) {
+        return s.username === currentUser.username && s.activityId === actId;
+      });
+      if (alreadySubmitted) {
+        Swal.fire('แจ้งเตือน', 'ท่านได้ส่งคำตอบกิจกรรมนี้เรียบร้อยแล้ว (ระบบอนุญาตให้ส่งได้เพียง 1 ครั้ง)', 'info');
+        return false;
+      }
+
       var act = activitiesData.find(function(a) { return a.id === actId; });
       if (!act) return false;
 
