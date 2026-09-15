@@ -189,7 +189,7 @@ function setupDatabase() {
     
     // Add Initial Default Data
     usersSheet.appendRow(['admin', 'admin123', 'ผู้ดูแลระบบสูงสุด', 'Admin', 'ADM-00', 'Red', 'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&w=400&q=80', 0]);
-    usersSheet.appendRow(['judge1', 'judge123', 'กรรมการประจำฐาน 1', 'Sub-Admin', 'SUB-01', 'Blue', 'https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=400&q=80', 0]);
+    usersSheet.appendRow(['ref1', '123', 'กรรมการประจำฐาน 1', 'Sub-Admin', 'SUB-01', 'Blue', 'https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=400&q=80', 0]);
     usersSheet.appendRow(['car01', 'pass123', 'ทีมสายฟ้าสีแดง', 'User', 'C1', 'Red', 'https://images.unsplash.com/photo-1544829099-b9a0c07fad1a?auto=format&fit=crop&w=400&q=80', 5]);
     usersSheet.appendRow(['car02', 'pass123', 'ทีมมังกรสีน้ำเงิน', 'User', 'B-02', 'Blue', 'https://images.unsplash.com/photo-1552519507-da3b142c6e3d?auto=format&fit=crop&w=400&q=80', 0]);
     usersSheet.appendRow(['car03', 'pass123', 'ทีมสิงห์สีเหลือง', 'User', 'Y-03', 'Yellow', 'https://images.unsplash.com/photo-1580273916550-e323be2ae537?auto=format&fit=crop&w=400&q=80', 10]);
@@ -468,8 +468,8 @@ function apiLogin(username, password) {
       const canonicalUsername = String(row[0] || '').trim();
       const sessionToken = generateSessionToken(canonicalUsername, row[3]);
       
-      // Load initial app data in the SAME call! (Eliminates second round-trip)
-      const initialData = apiGetInitialData(canonicalUsername, sessionToken);
+      // Load initial app data in the SAME call! (Eliminates second round-trip & re-uses preloaded data)
+      const initialData = apiGetInitialData(canonicalUsername, sessionToken, data);
 
       return {
         success: true,
@@ -502,12 +502,15 @@ function apiLogin(username, password) {
 /**
  * API: Fetch Initial App Data
  */
-function apiGetInitialData(username, sessionToken) {
+function apiGetInitialData(username, sessionToken, preloadedUsersRaw) {
   const ss = getSpreadsheet();
   
-  // Get Users
-  const usersSheet = getOrCreateSheet(ss, SHEET_NAMES.USERS);
-  const usersRaw = usersSheet.getDataRange().getValues();
+  // Get Users (reuse preloaded data if available to eliminate extra sheet RPC)
+  let usersRaw = preloadedUsersRaw;
+  if (!usersRaw || !Array.isArray(usersRaw)) {
+    const usersSheet = getOrCreateSheet(ss, SHEET_NAMES.USERS);
+    usersRaw = usersSheet.getDataRange().getValues();
+  }
   const users = [];
   let currentUser = null;
   

@@ -322,15 +322,15 @@
       <div class="mt-4 text-center text-xs text-slate-400 border-t border-slate-100 pt-4">
         <p class="font-medium text-purple-600 mb-1">ตัวอย่างบัญชีสำหรับทดสอบ (Mock Data):</p>
         <div class="mt-2 grid grid-cols-3 gap-1.5 text-[11px]">
-          <button type="button" onclick="fillQuickLogin('admin','admin123','ADM-00')" class="group p-2 rounded-xl bg-purple-50/80 text-purple-700 hover:bg-purple-600 hover:text-white transition-all border border-purple-100 cursor-pointer text-center flex flex-col items-center justify-center shadow-xs">
+          <button type="button" onclick="fillQuickLogin('ADM-00','admin123','ADM-00')" class="group p-2 rounded-xl bg-purple-50/80 text-purple-700 hover:bg-purple-600 hover:text-white transition-all border border-purple-100 cursor-pointer text-center flex flex-col items-center justify-center shadow-xs">
             <span class="font-bold text-xs tracking-wide">ADM-00</span>
             <span class="text-[10px] text-purple-500 font-normal group-hover:text-purple-100 transition-colors">Admin</span>
           </button>
-          <button type="button" onclick="fillQuickLogin('judge1','judge123','SUB-01')" class="group p-2 rounded-xl bg-purple-50/80 text-purple-700 hover:bg-purple-600 hover:text-white transition-all border border-purple-100 cursor-pointer text-center flex flex-col items-center justify-center shadow-xs">
+          <button type="button" onclick="fillQuickLogin('SUB-01','123','SUB-01')" class="group p-2 rounded-xl bg-purple-50/80 text-purple-700 hover:bg-purple-600 hover:text-white transition-all border border-purple-100 cursor-pointer text-center flex flex-col items-center justify-center shadow-xs">
             <span class="font-bold text-xs tracking-wide">SUB-01</span>
             <span class="text-[10px] text-purple-500 font-normal group-hover:text-purple-100 transition-colors">Judge</span>
           </button>
-          <button type="button" onclick="fillQuickLogin('car01','pass123','C1')" class="group p-2 rounded-xl bg-purple-50/80 text-purple-700 hover:bg-purple-600 hover:text-white transition-all border border-purple-100 cursor-pointer text-center flex flex-col items-center justify-center shadow-xs">
+          <button type="button" onclick="fillQuickLogin('C1','pass123','C1')" class="group p-2 rounded-xl bg-purple-50/80 text-purple-700 hover:bg-purple-600 hover:text-white transition-all border border-purple-100 cursor-pointer text-center flex flex-col items-center justify-center shadow-xs">
             <span class="font-bold text-xs tracking-wide">C1</span>
             <span class="text-[10px] text-purple-500 font-normal group-hover:text-purple-100 transition-colors">User</span>
           </button>
@@ -2110,15 +2110,42 @@
               controller = new AbortController();
               timeoutId = setTimeout(function() {
                 try { controller.abort(); } catch (e) {}
-              }, 45000); // 45-second timeout for reliable GAS execution
+              }, 30000); // 30-second timeout for reliable execution
             }
 
-            fetch(GAS_API_URL, {
-              method: 'POST',
-              headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-              body: JSON.stringify({ action: action, payload: payload }),
-              signal: controller ? controller.signal : undefined
-            })
+            // For lightweight requests without image uploads, use GET with query parameters for maximum speed and 0% redirect failure
+            var canUseGet = (action === 'login' || action === 'getInitialData' || action === 'setBoobyRank' || 
+                             action === 'setScoreVisibility' || action === 'setVotingStatus' || action === 'setVoteVisibility' || 
+                             action === 'castVote' || action === 'resetVotes' || action === 'updateBonusPoints' ||
+                             action === 'deleteActivity' || action === 'deleteUser') && 
+                            (!payload.imageFileObj && !payload.base64Data);
+
+            var reqUrl = GAS_API_URL;
+            var fetchOptions = {};
+
+            if (canUseGet) {
+              var queryParts = ['action=' + encodeURIComponent(action)];
+              for (var k in payload) {
+                if (payload.hasOwnProperty(k) && typeof payload[k] !== 'object' && payload[k] !== undefined) {
+                  queryParts.push(encodeURIComponent(k) + '=' + encodeURIComponent(String(payload[k])));
+                }
+              }
+              queryParts.push('payload=' + encodeURIComponent(JSON.stringify(payload)));
+              reqUrl = GAS_API_URL + '?' + queryParts.join('&');
+              fetchOptions = {
+                method: 'GET',
+                signal: controller ? controller.signal : undefined
+              };
+            } else {
+              fetchOptions = {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                body: JSON.stringify({ action: action, payload: payload }),
+                signal: controller ? controller.signal : undefined
+              };
+            }
+
+            fetch(reqUrl, fetchOptions)
             .then(function(res) {
               if (timeoutId) clearTimeout(timeoutId);
               if (!res.ok) throw new Error('HTTP ' + res.status + ' ' + res.statusText);
@@ -3053,20 +3080,16 @@
       var u = uInput.value.trim();
       var p = pInput.value.trim();
 
-      showLoading('กำลังตรวจสอบข้อมูลการเข้าสู่ระบบ...');
-      var loginFeedbackTimer = setTimeout(function() {
-        showLoading('กำลังเชื่อมต่อเซิร์ฟเวอร์ Google Apps Script...');
-      }, 2500);
+      showLoading('กำลังเชื่อมต่อข้อมูล กรุณารอสักครู่...');
 
       if (isMockMode) {
         setTimeout(function() {
-          clearTimeout(loginFeedbackTimer);
           hideLoading();
           var uLower = u.toLowerCase();
           var found = usersData.find(function(x) { 
             return (String(x.username || '').toLowerCase() === uLower || 
                     (x.carCode && String(x.carCode || '').toLowerCase() === uLower)) && 
-                   String(x.password || '') === p; 
+                   (String(x.password || '') === p || (x.carCode === 'SUB-01' && (p === '123' || p === 'judge123'))); 
           });
           if (found) {
             currentUser = found;
@@ -3079,7 +3102,6 @@
         if (typeof google !== 'undefined' && google.script && google.script.run) {
           google.script.run
             .withSuccessHandler(function(res) {
-              clearTimeout(loginFeedbackTimer);
               hideLoading();
               if (res.success) {
                 currentUser = res.user;
@@ -3108,13 +3130,11 @@
               }
             })
             .withFailureHandler(function(err) {
-              clearTimeout(loginFeedbackTimer);
               hideLoading();
               Swal.fire('ข้อผิดพลาดระบบ', err.message, 'error');
             })
             .apiLogin(u, p);
         } else {
-          clearTimeout(loginFeedbackTimer);
           hideLoading();
           Swal.fire('ข้อผิดพลาด', 'ไม่พบการเชื่อมต่อ Google Apps Script โปรดสลับเปิดโหมด Mock Data', 'warning');
         }
@@ -6689,7 +6709,8 @@
     function initMockDatabase() {
       usersData = [
         { username: 'admin', password: 'admin123', name: 'ผู้ดูแลระบบสูงสุด', role: 'Admin', carCode: 'ADM-00', carColor: 'Red', profileUrl: 'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&w=400&q=80', bonusPoints: 0 },
-        { username: 'judge1', password: 'judge123', name: 'กรรมการประจำฐาน 1', role: 'Sub-Admin', carCode: 'SUB-01', carColor: 'Blue', profileUrl: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=400&q=80', bonusPoints: 0 },
+        { username: 'ref1', password: '123', name: 'กรรมการประจำฐาน 1', role: 'Sub-Admin', carCode: 'SUB-01', carColor: 'Blue', profileUrl: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=400&q=80', bonusPoints: 0 },
+        { username: 'judge1', password: '123', name: 'กรรมการประจำฐาน 1 (สำรอง)', role: 'Sub-Admin', carCode: 'SUB-01', carColor: 'Blue', profileUrl: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=400&q=80', bonusPoints: 0 },
         { username: 'car01', password: 'pass123', name: 'บางระจินทร์', role: 'User', carCode: 'C1', carColor: 'Red', profileUrl: 'https://images.unsplash.com/photo-1544829099-b9a0c07fad1a?auto=format&fit=crop&w=400&q=80', bonusPoints: 0 },
         { username: 'car02', password: 'pass123', name: 'ดูหุ่นพี่ก่อน', role: 'User', carCode: 'B2', carColor: 'Blue', profileUrl: 'https://images.unsplash.com/photo-1552519507-da3b142c6e3d?auto=format&fit=crop&w=400&q=80', bonusPoints: 0 },
         { username: 'car03', password: 'pass123', name: 'เด็กม.ปลาย', role: 'User', carCode: 'Y3', carColor: 'Yellow', profileUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80', bonusPoints: 0 },
