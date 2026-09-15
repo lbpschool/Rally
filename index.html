@@ -3402,7 +3402,7 @@
         if (title) title.innerHTML = '<i class="fa-solid fa-list-check text-purple-600"></i> รายการภารกิจและกิจกรรมทั้งหมด';
       }
       if ((!activitiesData || activitiesData.length === 0) && currentUser) {
-        loadAppData();
+        loadAppData(true);
       }
     }
 
@@ -3538,13 +3538,19 @@
     }
     window.showSyncSuccessToast = showSyncSuccessToast;
 
-    function loadAppData() {
+    function loadAppData(isSilent) {
       if (!currentUser) return;
-      showLoading('กำลังซิงค์ข้อมูลล่าสุด...');
+      var refreshIcon = document.getElementById('headerRefreshIcon');
+      if (refreshIcon) refreshIcon.classList.add('fa-spin');
+
+      if (!isSilent) {
+        showLoading('กำลังซิงค์ข้อมูลล่าสุด...');
+      }
 
       if (isMockMode) {
         setTimeout(function() {
-          hideLoading();
+          if (!isSilent) hideLoading();
+          if (refreshIcon) refreshIcon.classList.remove('fa-spin');
           setupNavigation();
           renderUserDashboard();
           renderAdminUsersTable();
@@ -3554,7 +3560,8 @@
         if (typeof google !== 'undefined' && google.script && google.script.run) {
           google.script.run
             .withSuccessHandler(function(res) {
-              hideLoading();
+              if (!isSilent) hideLoading();
+              if (refreshIcon) refreshIcon.classList.remove('fa-spin');
               if (res.success) {
                 usersData = res.users;
                 activitiesData = res.activities;
@@ -3596,17 +3603,19 @@
                 }
                 showSyncSuccessToast();
               } else {
-                Swal.fire('ข้อผิดพลาด', 'ไม่สามารถโหลดข้อมูลระบบได้', 'error');
+                if (!isSilent) Swal.fire('ข้อผิดพลาด', 'ไม่สามารถโหลดข้อมูลระบบได้', 'error');
               }
             })
             .withFailureHandler(function(err) {
-              hideLoading();
-              Swal.fire('ข้อผิดพลาดระบบ', err.message, 'error');
+              if (!isSilent) hideLoading();
+              if (refreshIcon) refreshIcon.classList.remove('fa-spin');
+              if (!isSilent) Swal.fire('ข้อผิดพลาดระบบ', err.message, 'error');
             })
             .apiGetInitialData(currentUser.username, sessionToken);
         } else {
-          hideLoading();
-          Swal.fire('ข้อผิดพลาด', 'ไม่พบ Google Apps Script Environment โปรดสลับเปิดโหมด Mock Data', 'warning');
+          if (!isSilent) hideLoading();
+          if (refreshIcon) refreshIcon.classList.remove('fa-spin');
+          if (!isSilent) Swal.fire('ข้อผิดพลาด', 'ไม่พบ Google Apps Script Environment โปรดสลับเปิดโหมด Mock Data', 'warning');
         }
       }
     }
@@ -9089,7 +9098,8 @@
           if (savedUser && savedUser.username) {
             currentUser = savedUser;
             sessionToken = safeGetStorage('rally_session_token') || '';
-            onLoginSuccess();
+            onLoginSuccess(true);
+            loadAppData(true);
             return;
           }
         }

@@ -76,53 +76,144 @@ function handleApiRequest(action, payload) {
   if (!payload) payload = {};
   const token = payload.sessionToken || payload.token || '';
 
+  let result;
   switch (action) {
     case 'login':
-      return apiLogin(payload.username, payload.password);
+      result = apiLogin(payload.username, payload.password);
+      break;
     case 'getInitialData':
-      return apiGetInitialData(payload.username, token);
+      result = apiGetInitialData(payload.username, token);
+      break;
     case 'setBoobyRank':
-      return apiSetBoobyRank(payload.boobyRank, token);
+      result = apiSetBoobyRank(payload.boobyRank, token);
+      break;
     case 'setScoreVisibility':
-      return apiSetScoreVisibility(payload.isScoresHidden, token);
+      result = apiSetScoreVisibility(payload.isScoresHidden, token);
+      break;
     case 'setVotingStatus':
-      return apiSetVotingStatus(payload.isVotingOpen, token);
+      result = apiSetVotingStatus(payload.isVotingOpen, token);
+      break;
     case 'setVoteVisibility':
-      return apiSetVoteVisibility(payload.isVotesHidden, token);
+      result = apiSetVoteVisibility(payload.isVotesHidden, token);
+      break;
     case 'castVote':
-      return apiCastVote(payload.voterUsername, payload.targetUsername, token);
+      result = apiCastVote(payload.voterUsername, payload.targetUsername, token);
+      break;
     case 'resetVotes':
-      return apiResetVotes(token);
+      result = apiResetVotes(token);
+      break;
     case 'submitAnswer':
-      return apiSubmitAnswer(payload.username, payload.activityId, payload.answerText, payload.imageFileObj, token);
+      result = apiSubmitAnswer(payload.username, payload.activityId, payload.answerText, payload.imageFileObj, token);
+      break;
     case 'gradeSubmission':
-      return apiGradeSubmission(payload.submissionId, payload.score, payload.judgeNotes, payload.judgeUsername, payload.username, payload.activityId, token);
+      result = apiGradeSubmission(payload.submissionId, payload.score, payload.judgeNotes, payload.judgeUsername, payload.username, payload.activityId, token);
+      break;
     case 'updateBonusPoints':
-      return apiUpdateBonusPoints(payload.carUsername, payload.bonusPoints, token);
+      result = apiUpdateBonusPoints(payload.carUsername, payload.bonusPoints, token);
+      break;
     case 'saveActivity':
-      return apiSaveActivity(payload.activityData, token);
+      result = apiSaveActivity(payload.activityData, token);
+      break;
     case 'deleteActivity':
-      return apiDeleteActivity(payload.activityId, token);
+      result = apiDeleteActivity(payload.activityId, token);
+      break;
     case 'saveUser':
-      return apiSaveUser(payload.userData, token);
+      result = apiSaveUser(payload.userData, token);
+      break;
     case 'deleteUser':
-      return apiDeleteUser(payload.username, token);
+      result = apiDeleteUser(payload.username, token);
+      break;
     case 'swapCars':
-      return apiSwapCars(payload.usernameA, payload.usernameB, token);
+      result = apiSwapCars(payload.usernameA, payload.usernameB, token);
+      break;
     case 'updateSelfProfile':
-      return apiUpdateSelfProfile(payload.username, payload.name, payload.profileUrl, token);
+      result = apiUpdateSelfProfile(payload.username, payload.name, payload.profileUrl, token);
+      break;
     case 'clearAllSubmissions':
-      return apiClearAllSubmissions(token);
+      result = apiClearAllSubmissions(token);
+      break;
     case 'batchGradeActivity':
-      return apiBatchGradeActivity(payload.activityId, payload.score, token);
+      result = apiBatchGradeActivity(payload.activityId, payload.score, token);
+      break;
     case 'resetCompetitorProfiles':
-      return apiResetCompetitorProfiles(token);
+      result = apiResetCompetitorProfiles(token);
+      break;
     case 'uploadFileToDrive':
-      return uploadFileToDrive(payload.base64Data, payload.fileName, payload.mimeType);
+      result = uploadFileToDrive(payload.base64Data, payload.fileName, payload.mimeType);
+      break;
     case 'uploadSolutionImage':
-      return apiUploadSolutionImage(payload.activityId, payload.imageFileObj, token);
+      result = apiUploadSolutionImage(payload.activityId, payload.imageFileObj, token);
+      break;
     default:
-      return { success: false, message: 'Unknown API action: ' + action };
+      result = { success: false, message: 'Unknown API action: ' + action };
+      break;
+  }
+
+  // Automatic Cache Invalidation on Data Modifications
+  const writeActions = [
+    'setBoobyRank', 'setScoreVisibility', 'setVotingStatus', 'setVoteVisibility',
+    'castVote', 'resetVotes', 'submitAnswer', 'gradeSubmission', 'batchGradeActivity',
+    'updateBonusPoints', 'saveActivity', 'deleteActivity', 'saveUser', 'deleteUser',
+    'swapCars', 'updateSelfProfile', 'clearAllSubmissions', 'resetCompetitorProfiles'
+  ];
+  if (writeActions.indexOf(action) !== -1 && result && result.success !== false) {
+    invalidateAppDataCache();
+  }
+
+  return result;
+}
+
+/**
+ * Script Cache Helpers for Ultra-Fast Data Sync (< 0.5s)
+ */
+function getCacheVersion() {
+  try {
+    const cache = CacheService.getScriptCache();
+    let v = cache.get('rally_cache_ver');
+    if (!v) {
+      v = String(Date.now());
+      cache.put('rally_cache_ver', v, 21600); // 6 hours
+    }
+    return v;
+  } catch (e) {
+    return 'v1';
+  }
+}
+
+function invalidateAppDataCache() {
+  try {
+    _sheetCache = {};
+    const cache = CacheService.getScriptCache();
+    cache.put('rally_cache_ver', String(Date.now()), 21600);
+  } catch (e) {}
+}
+
+function getCachedAppData(username) {
+  try {
+    const cache = CacheService.getScriptCache();
+    const ver = getCacheVersion();
+    const key = 'appdata_' + (username || 'guest') + '_' + ver;
+    const cachedStr = cache.get(key);
+    if (cachedStr) {
+      return JSON.parse(cachedStr);
+    }
+  } catch (e) {
+    Logger.log('Cache read error: ' + e);
+  }
+  return null;
+}
+
+function setCachedAppData(username, data) {
+  try {
+    const cache = CacheService.getScriptCache();
+    const ver = getCacheVersion();
+    const key = 'appdata_' + (username || 'guest') + '_' + ver;
+    const str = JSON.stringify(data);
+    if (str.length < 95000) {
+      cache.put(key, str, 300); // 5 minutes TTL
+    }
+  } catch (e) {
+    Logger.log('Cache write error: ' + e);
   }
 }
 
@@ -503,6 +594,14 @@ function apiLogin(username, password) {
  * API: Fetch Initial App Data
  */
 function apiGetInitialData(username, sessionToken, preloadedUsersRaw) {
+  // 1. Check cache first for lightning-fast 0.2s sync response
+  if (!preloadedUsersRaw) {
+    const cached = getCachedAppData(username);
+    if (cached && cached.success) {
+      return cached;
+    }
+  }
+
   const ss = getSpreadsheet();
   
   // Get Users (reuse preloaded data if available to eliminate extra sheet RPC)
@@ -624,7 +723,7 @@ function apiGetInitialData(username, sessionToken, preloadedUsersRaw) {
     });
   }
 
-  return {
+  const result = {
     success: true,
     currentUser: currentUser,
     users: users,
@@ -636,6 +735,11 @@ function apiGetInitialData(username, sessionToken, preloadedUsersRaw) {
     boobyRank: settings.boobyRank || 0,
     votes: votes
   };
+
+  // 2. Store in cache for subsequent syncs
+  setCachedAppData(username, result);
+
+  return result;
 }
 
 /**
