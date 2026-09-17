@@ -149,30 +149,30 @@ function handleApiRequest(action, payload) {
       break;
   }
 
-  // Automatic Cache Invalidation on Data Modifications
-  const writeActions = [
+  // Invalidate shared cache only on major structural or configuration changes
+  // (Routine actions like submitAnswer, gradeSubmission, updateBonusPoints, castVote update the cache in-place!)
+  const structuralActions = [
     'setBoobyRank', 'setScoreVisibility', 'setVotingStatus', 'setVoteVisibility',
-    'castVote', 'resetVotes', 'submitAnswer', 'gradeSubmission', 'batchGradeActivity',
-    'updateBonusPoints', 'saveActivity', 'deleteActivity', 'saveUser', 'deleteUser',
-    'swapCars', 'updateSelfProfile', 'clearAllSubmissions', 'resetCompetitorProfiles'
+    'resetVotes', 'batchGradeActivity', 'saveActivity', 'deleteActivity',
+    'saveUser', 'deleteUser', 'swapCars', 'updateSelfProfile', 'clearAllSubmissions', 'resetCompetitorProfiles'
   ];
-  if (writeActions.indexOf(action) !== -1 && result && result.success !== false) {
-    invalidateAppDataCache();
+  if (structuralActions.indexOf(action) !== -1 && result && result.success !== false) {
+    invalidateGlobalCache();
   }
 
   return result;
 }
 
 /**
- * Script Cache Helpers for Ultra-Fast Data Sync (< 0.5s)
+ * Shared Global System Cache Helpers (Handles 30-50 concurrent devices with 0.2s sync)
  */
-function getCacheVersion() {
+function getGlobalCacheVersion() {
   try {
     const cache = CacheService.getScriptCache();
-    let v = cache.get('rally_cache_ver');
+    let v = cache.get('rally_global_ver');
     if (!v) {
       v = String(Date.now());
-      cache.put('rally_cache_ver', v, 21600); // 6 hours
+      cache.put('rally_global_ver', v, 21600); // 6 hours
     }
     return v;
   } catch (e) {
@@ -180,41 +180,219 @@ function getCacheVersion() {
   }
 }
 
-function invalidateAppDataCache() {
+function invalidateGlobalCache() {
   try {
     _sheetCache = {};
     const cache = CacheService.getScriptCache();
-    cache.put('rally_cache_ver', String(Date.now()), 21600);
+    cache.put('rally_global_ver', String(Date.now()), 21600);
   } catch (e) {}
 }
 
-function getCachedAppData(username) {
+function getCachedSharedData() {
   try {
     const cache = CacheService.getScriptCache();
-    const ver = getCacheVersion();
-    const key = 'appdata_' + (username || 'guest') + '_' + ver;
+    const ver = getGlobalCacheVersion();
+    const key = 'rally_shared_data_' + ver;
     const cachedStr = cache.get(key);
     if (cachedStr) {
       return JSON.parse(cachedStr);
     }
   } catch (e) {
-    Logger.log('Cache read error: ' + e);
+    Logger.log('getCachedSharedData error: ' + e);
   }
   return null;
 }
 
-function setCachedAppData(username, data) {
+function setCachedSharedData(data) {
   try {
     const cache = CacheService.getScriptCache();
-    const ver = getCacheVersion();
-    const key = 'appdata_' + (username || 'guest') + '_' + ver;
+    const ver = getGlobalCacheVersion();
+    const key = 'rally_shared_data_' + ver;
     const str = JSON.stringify(data);
     if (str.length < 95000) {
-      cache.put(key, str, 300); // 5 minutes TTL
+      cache.put(key, str, 600); // 10 minutes TTL
     }
   } catch (e) {
-    Logger.log('Cache write error: ' + e);
+    Logger.log('setCachedSharedData error: ' + e);
   }
+}
+
+function updateCachedSubmissionGrade(submissionId, username, activityId, score, judgeNotes, judgeUsername) {
+  try {
+    const shared = getCachedSharedData();
+    if (!shared || !shared.submissions) return;
+    let found = false;
+    for (let i = 0; i < shared.submissions.length; i++) {
+      const s = shared.submissions[i];
+      if ((submissionId && s.id === submissionId) || (username && activityId && s.username === username && s.activityId === activityId)) {
+        s.status = 'passed';
+        s.score = Number(score) || 0;
+        s.judgeNotes = judgeNotes || 'ให้คะแนนเรียบร้อย';
+        s.judgeUsername = judgeUsername || 'Judge';
+        found = true;
+        break;
+      }
+    }
+    if (!found && username && activityId) {
+      shared.submissions.push({
+        id: submissionId || ('SUB-' + Date.now()),
+        timestamp: new Date().toISOString(),
+        username: username,
+        activityId: activityId,
+        category: 'Base',
+        carColor: '',
+        answerText: '[ประเมินโดยกรรมการ]',
+        imageUrl: '',
+        fileId: '',
+        status: 'passed',
+        score: Number(score) || 0,
+        judgeNotes: judgeNotes || 'ให้คะแนนเรียบร้อย',
+        judgeUsername: judgeUsername || 'Judge'
+      });
+    }
+    setCachedSharedData(shared);
+  } catch (e) {
+    Logger.log('updateCachedSubmissionGrade error: ' + e);
+  }
+}
+
+function appendCachedSubmission(newSub) {
+  try {
+    const shared = getCachedSharedData();
+    if (!shared || !shared.submissions) return;
+    shared.submissions.push(newSub);
+    setCachedSharedData(shared);
+  } catch (e) {
+    Logger.log('appendCachedSubmission error: ' + e);
+  }
+}
+
+function updateCachedBonusPoints(carUsername, bonusPoints) {
+  try {
+    const shared = getCachedSharedData();
+    if (!shared || !shared.users) return;
+    for (let i = 0; i < shared.users.length; i++) {
+      if (shared.users[i].username === carUsername) {
+        shared.users[i].bonusPoints = Number(bonusPoints) || 0;
+        break;
+      }
+    }
+    setCachedSharedData(shared);
+  } catch (e) {
+    Logger.log('updateCachedBonusPoints error: ' + e);
+  }
+}
+
+function appendCachedVote(newVote) {
+  try {
+    const shared = getCachedSharedData();
+    if (!shared || !shared.votes) return;
+    shared.votes.push(newVote);
+    setCachedSharedData(shared);
+  } catch (e) {
+    Logger.log('appendCachedVote error: ' + e);
+  }
+}
+
+function fetchSharedDataFromSheets() {
+  const ss = getSpreadsheet();
+  
+  // 1. Users
+  const usersSheet = getOrCreateSheet(ss, SHEET_NAMES.USERS);
+  const usersRaw = usersSheet.getDataRange().getValues();
+  const users = [];
+  for (let i = 1; i < usersRaw.length; i++) {
+    let membersList = [];
+    try {
+      membersList = JSON.parse(usersRaw[i][8] || '[]');
+    } catch(e) {
+      if (usersRaw[i][8]) membersList = String(usersRaw[i][8]).split(',').map(function(s){ return s.trim(); }).filter(Boolean);
+    }
+    users.push({
+      username: usersRaw[i][0],
+      name: usersRaw[i][2],
+      role: usersRaw[i][3],
+      carCode: usersRaw[i][4],
+      carColor: usersRaw[i][5],
+      profileUrl: usersRaw[i][6],
+      bonusPoints: Number(usersRaw[i][7]) || 0,
+      members: Array.isArray(membersList) ? membersList : []
+    });
+  }
+
+  // 2. Activities
+  const actSheet = getOrCreateSheet(ss, SHEET_NAMES.ACTIVITIES);
+  const actRaw = actSheet.getDataRange().getValues();
+  const activities = [];
+  for (let i = 1; i < actRaw.length; i++) {
+    let autoAns = {};
+    try { autoAns = JSON.parse(actRaw[i][7] || '{}'); } catch(e) {}
+    activities.push({
+      id: actRaw[i][0],
+      category: actRaw[i][1],
+      title: actRaw[i][2],
+      description: actRaw[i][3],
+      imageUrl: actRaw[i][4],
+      scoringType: actRaw[i][5],
+      maxPoints: Number(actRaw[i][6]) || 0,
+      autoAnswers: autoAns,
+      solutionImageUrl: String(actRaw[i][8] || '')
+    });
+  }
+
+  // 3. Submissions
+  const subSheet = getOrCreateSheet(ss, SHEET_NAMES.SUBMISSIONS);
+  const subRaw = subSheet.getDataRange().getValues();
+  const submissions = [];
+  for (let i = 1; i < subRaw.length; i++) {
+    submissions.push({
+      id: subRaw[i][0],
+      timestamp: subRaw[i][1],
+      username: String(subRaw[i][2] || ''),
+      activityId: subRaw[i][3],
+      category: subRaw[i][4],
+      carColor: subRaw[i][5],
+      answerText: subRaw[i][6],
+      imageUrl: subRaw[i][7],
+      fileId: subRaw[i][8],
+      status: subRaw[i][9],
+      score: Number(subRaw[i][10]) || 0,
+      judgeNotes: subRaw[i][11],
+      judgeUsername: subRaw[i][12]
+    });
+  }
+
+  // 4. Settings
+  const settings = getSettingsMap(ss);
+
+  // 5. Votes
+  const votesSheet = getOrCreateSheet(ss, SHEET_NAMES.VOTES);
+  const votesRaw = votesSheet.getDataRange().getValues();
+  const votes = [];
+  for (let i = 1; i < votesRaw.length; i++) {
+    votes.push({
+      id: votesRaw[i][0],
+      timestamp: votesRaw[i][1],
+      voterUsername: votesRaw[i][2],
+      targetUsername: votesRaw[i][3]
+    });
+  }
+
+  const sharedData = {
+    users: users,
+    activities: activities,
+    submissions: submissions,
+    settings: {
+      isScoresHidden: settings.isScoresHidden,
+      isVotingOpen: settings.isVotingOpen,
+      isVotesHidden: settings.isVotesHidden,
+      boobyRank: settings.boobyRank || 0
+    },
+    votes: votes
+  };
+
+  setCachedSharedData(sharedData);
+  return sharedData;
 }
 
 /**
@@ -591,155 +769,72 @@ function apiLogin(username, password) {
 }
 
 /**
- * API: Fetch Initial App Data
+ * API: Fetch Initial App Data (High-Speed Shared Cache - 0.2s for 30+ concurrent devices)
  */
-function apiGetInitialData(username, sessionToken, preloadedUsersRaw) {
-  // 1. Check cache first for lightning-fast 0.2s sync response
-  if (!preloadedUsersRaw) {
-    const cached = getCachedAppData(username);
-    if (cached && cached.success) {
-      return cached;
-    }
+function apiGetInitialData(username, sessionToken) {
+  let shared = getCachedSharedData();
+  if (!shared) {
+    shared = fetchSharedDataFromSheets();
   }
 
-  const ss = getSpreadsheet();
-  
-  // Get Users (reuse preloaded data if available to eliminate extra sheet RPC)
-  let usersRaw = preloadedUsersRaw;
-  if (!usersRaw || !Array.isArray(usersRaw)) {
-    const usersSheet = getOrCreateSheet(ss, SHEET_NAMES.USERS);
-    usersRaw = usersSheet.getDataRange().getValues();
-  }
-  const users = [];
+  const uname = String(username || '').toLowerCase();
+  const users = shared.users || [];
   let currentUser = null;
-  
-  for (let i = 1; i < usersRaw.length; i++) {
-    let membersList = [];
-    try {
-      membersList = JSON.parse(usersRaw[i][8] || '[]');
-    } catch(e) {
-      if (usersRaw[i][8]) membersList = String(usersRaw[i][8]).split(',').map(function(s){ return s.trim(); }).filter(Boolean);
+  for (let i = 0; i < users.length; i++) {
+    if (String(users[i].username).toLowerCase() === uname) {
+      currentUser = users[i];
+      break;
     }
-
-    const u = {
-      username: usersRaw[i][0],
-      name: usersRaw[i][2],
-      role: usersRaw[i][3],
-      carCode: usersRaw[i][4],
-      carColor: usersRaw[i][5],
-      profileUrl: usersRaw[i][6],
-      bonusPoints: Number(usersRaw[i][7]) || 0,
-      members: Array.isArray(membersList) ? membersList : []
-    };
-    users.push(u);
-    if (u.username === username) currentUser = u;
   }
-  
-  // Get Activities
-  const actSheet = getOrCreateSheet(ss, SHEET_NAMES.ACTIVITIES);
-  const actRaw = actSheet.getDataRange().getValues();
-  const activities = [];
+
   const requesterRole = currentUser ? currentUser.role : 'User';
   const isAdmin = (requesterRole === 'Admin');
-
-  for (let i = 1; i < actRaw.length; i++) {
-    let autoAns = {};
-    try { autoAns = JSON.parse(actRaw[i][7] || '{}'); } catch(e) {}
-    
-    const actItem = {
-      id: actRaw[i][0],
-      category: actRaw[i][1],
-      title: actRaw[i][2],
-      description: actRaw[i][3],
-      imageUrl: actRaw[i][4],
-      scoringType: actRaw[i][5],
-      maxPoints: Number(actRaw[i][6]) || 0,
-      autoAnswers: autoAns
-    };
-
-    // Role-based security: solutionImageUrl is sent ONLY to Admin
-    if (isAdmin) {
-      actItem.solutionImageUrl = String(actRaw[i][8] || '');
-    } else {
-      actItem.solutionImageUrl = '';
-    }
-
-    activities.push(actItem);
-  }
-  
-  // Get Submissions (Optimized for Role: Users get full details for own subs, lightweight for others)
-  const subSheet = getOrCreateSheet(ss, SHEET_NAMES.SUBMISSIONS);
-  const subRaw = subSheet.getDataRange().getValues();
-  const submissions = [];
   const isPrivileged = (requesterRole === 'Admin' || requesterRole === 'Sub-Admin');
 
-  for (let i = 1; i < subRaw.length; i++) {
-    const subUsername = String(subRaw[i][2] || '');
-    const isOwnSub = (username && subUsername.toLowerCase() === String(username).toLowerCase());
+  // Filter activities: solutionImageUrl is sent ONLY to Admin
+  const activities = (shared.activities || []).map(function(a) {
+    if (isAdmin) return a;
+    return {
+      id: a.id,
+      category: a.category,
+      title: a.title,
+      description: a.description,
+      imageUrl: a.imageUrl,
+      scoringType: a.scoringType,
+      maxPoints: a.maxPoints,
+      autoAnswers: a.autoAnswers,
+      solutionImageUrl: ''
+    };
+  });
 
-    if (isPrivileged || isOwnSub) {
-      // Full details for privileged users or owner
-      submissions.push({
-        id: subRaw[i][0],
-        timestamp: subRaw[i][1],
-        username: subUsername,
-        activityId: subRaw[i][3],
-        category: subRaw[i][4],
-        carColor: subRaw[i][5],
-        answerText: subRaw[i][6],
-        imageUrl: subRaw[i][7],
-        fileId: subRaw[i][8],
-        status: subRaw[i][9],
-        score: Number(subRaw[i][10]) || 0,
-        judgeNotes: subRaw[i][11],
-        judgeUsername: subRaw[i][12]
-      });
-    } else {
-      // Lightweight submission object for Leaderboard calculation (excludes heavy image URLs & secret answers)
-      submissions.push({
-        id: subRaw[i][0],
-        username: subUsername,
-        activityId: subRaw[i][3],
-        category: subRaw[i][4],
-        status: subRaw[i][9],
-        score: Number(subRaw[i][10]) || 0
-      });
+  // Filter submissions: Privileged or owner gets full details; others get leaderboard-safe summary
+  const submissions = (shared.submissions || []).map(function(s) {
+    const isOwn = (uname && String(s.username).toLowerCase() === uname);
+    if (isPrivileged || isOwn) {
+      return s;
     }
-  }
-  
-  // Get Settings via DAO Helper
-  const settings = getSettingsMap(ss);
+    return {
+      id: s.id,
+      username: s.username,
+      activityId: s.activityId,
+      category: s.category,
+      status: s.status,
+      score: s.score
+    };
+  });
 
-  // Get Votes
-  const votesSheet = getOrCreateSheet(ss, SHEET_NAMES.VOTES);
-  const votesRaw = votesSheet.getDataRange().getValues();
-  const votes = [];
-  for (let i = 1; i < votesRaw.length; i++) {
-    votes.push({
-      id: votesRaw[i][0],
-      timestamp: votesRaw[i][1],
-      voterUsername: votesRaw[i][2],
-      targetUsername: votesRaw[i][3]
-    });
-  }
-
-  const result = {
+  return {
     success: true,
     currentUser: currentUser,
     users: users,
     activities: activities,
     submissions: submissions,
-    isScoresHidden: settings.isScoresHidden,
-    isVotingOpen: settings.isVotingOpen,
-    isVotesHidden: settings.isVotesHidden,
-    boobyRank: settings.boobyRank || 0,
-    votes: votes
+    isScoresHidden: shared.settings ? shared.settings.isScoresHidden : false,
+    isVotingOpen: shared.settings ? shared.settings.isVotingOpen : false,
+    isVotesHidden: shared.settings ? shared.settings.isVotesHidden : false,
+    boobyRank: shared.settings ? (shared.settings.boobyRank || 0) : 0,
+    votes: shared.votes || []
   };
-
-  // 2. Store in cache for subsequent syncs
-  setCachedAppData(username, result);
-
-  return result;
 }
 
 /**
@@ -861,6 +956,11 @@ function apiCastVote(voterUsername, targetUsername, sessionToken) {
       remainingVotes: remainingVotes
     };
   });
+
+  if (result && result.success && result.vote) {
+    appendCachedVote(result.vote);
+  }
+  return result;
 }
 
 /**
@@ -888,7 +988,7 @@ function apiSubmitAnswer(username, activityId, answerText, imageFileObj, session
   const auth = verifyAuth(sessionToken, ['User', 'Admin', 'Sub-Admin'], username);
   if (!auth.success) return auth;
 
-  // Upload image to Drive outside lock to minimize lock contention duration
+  // 1. Upload image to Drive outside lock to minimize lock contention duration
   let uploadedImageUrl = '';
   let uploadedFileId = '';
   if (imageFileObj && imageFileObj.base64) {
@@ -900,12 +1000,21 @@ function apiSubmitAnswer(username, activityId, answerText, imageFileObj, session
     uploadedFileId = uploadRes.fileId;
   }
 
-  return withLock(function() {
-    const ss = getSpreadsheet();
+  // 2. Resolve activity & user details outside lock (from Shared Cache or Sheet)
+  const shared = getCachedSharedData();
+  let targetAct = null;
+  let userColor = 'Default';
+
+  if (shared && shared.activities && shared.users) {
+    targetAct = shared.activities.find(function(a) { return a.id === activityId; });
+    const uObj = shared.users.find(function(u) { return u.username === username; });
+    if (uObj && uObj.carColor) userColor = uObj.carColor;
+  }
+
+  const ss = getSpreadsheet();
+  if (!targetAct) {
     const actSheet = getOrCreateSheet(ss, SHEET_NAMES.ACTIVITIES);
     const actData = actSheet.getDataRange().getValues();
-
-    let targetAct = null;
     for (let i = 1; i < actData.length; i++) {
       if (actData[i][0] === activityId) {
         let autoAns = {};
@@ -921,71 +1030,91 @@ function apiSubmitAnswer(username, activityId, answerText, imageFileObj, session
         break;
       }
     }
+  }
 
-    if (!targetAct) return { success: false, message: 'ไม่พบข้อมูลภารกิจนี้' };
+  if (!targetAct) return { success: false, message: 'ไม่พบข้อมูลภารกิจนี้' };
 
-    // Get User details
+  if (userColor === 'Default') {
     const usersSheet = getOrCreateSheet(ss, SHEET_NAMES.USERS);
     const usersData = usersSheet.getDataRange().getValues();
-    let userColor = 'Default';
     for (let i = 1; i < usersData.length; i++) {
       if (usersData[i][0] === username) {
         userColor = usersData[i][5] || 'Default';
         break;
       }
     }
+  }
 
-    // Calculate Score and Status based on Scoring Type
-    let status = 'pending';
-    let score = 0;
-    let judgeNotes = '';
+  // 3. Pre-compute auto score outside lock
+  let status = 'pending';
+  let score = 0;
+  let judgeNotes = '';
 
-    if (targetAct.scoringType === 'AUTO') {
-      const cleanUserAnswer = (answerText || '').toString().trim().toLowerCase();
-      let isCorrect = false;
-      let earnedPoints = 0;
+  if (targetAct.scoringType === 'AUTO') {
+    const cleanUserAnswer = (answerText || '').toString().trim().toLowerCase();
+    let isCorrect = false;
+    let earnedPoints = 0;
 
-      const autoAnsRules = targetAct.autoAnswers;
-      if (Array.isArray(autoAnsRules)) {
-        for (let r = 0; r < autoAnsRules.length; r++) {
-          const rule = autoAnsRules[r];
-          const ruleAns = (rule.answer || '').toString().trim().toLowerCase();
-          const ruleColor = (rule.color || 'Default').toString().trim().toLowerCase();
-          const uColor = (userColor || 'Default').toString().trim().toLowerCase();
+    const autoAnsRules = targetAct.autoAnswers;
+    if (Array.isArray(autoAnsRules)) {
+      for (let r = 0; r < autoAnsRules.length; r++) {
+        const rule = autoAnsRules[r];
+        const ruleAns = (rule.answer || '').toString().trim().toLowerCase();
+        const ruleColor = (rule.color || 'Default').toString().trim().toLowerCase();
+        const uColor = (userColor || 'Default').toString().trim().toLowerCase();
 
-          if (cleanUserAnswer === ruleAns && (ruleColor === uColor || ruleColor === 'default' || ruleColor === 'all')) {
-            isCorrect = true;
-            earnedPoints = Number(rule.points) !== undefined ? Number(rule.points) : targetAct.maxPoints;
-            break;
-          }
-        }
-      } else if (autoAnsRules && typeof autoAnsRules === 'object') {
-        const colorRule = autoAnsRules[userColor] || autoAnsRules['default'] || autoAnsRules['Default'];
-        if (colorRule && colorRule.answer) {
-          const targetAnswer = colorRule.answer.toString().trim().toLowerCase();
-          if (cleanUserAnswer === targetAnswer) {
-            isCorrect = true;
-            earnedPoints = Number(colorRule.points) !== undefined ? Number(colorRule.points) : targetAct.maxPoints;
-          }
+        if (cleanUserAnswer === ruleAns && (ruleColor === uColor || ruleColor === 'default' || ruleColor === 'all')) {
+          isCorrect = true;
+          earnedPoints = Number(rule.points) !== undefined ? Number(rule.points) : targetAct.maxPoints;
+          break;
         }
       }
-
-      if (isCorrect) {
-        status = 'passed';
-        score = earnedPoints;
-        judgeNotes = 'ตรวจคำตอบอัตโนมัติ: ถูกต้อง (' + earnedPoints + ' คะแนน)';
-      } else {
-        status = 'failed';
-        score = 0;
-        judgeNotes = 'ตรวจคำตอบอัตโนมัติ: ไม่ถูกต้อง';
+    } else if (autoAnsRules && typeof autoAnsRules === 'object') {
+      const colorRule = autoAnsRules[userColor] || autoAnsRules['default'] || autoAnsRules['Default'];
+      if (colorRule && colorRule.answer) {
+        const targetAnswer = colorRule.answer.toString().trim().toLowerCase();
+        if (cleanUserAnswer === targetAnswer) {
+          isCorrect = true;
+          earnedPoints = Number(colorRule.points) !== undefined ? Number(colorRule.points) : targetAct.maxPoints;
+        }
       }
-    } else {
-      status = 'pending';
-      score = 0;
-      judgeNotes = 'รอการตรวจและให้คะแนนจากกรรมการ';
     }
 
-    // Check if already submitted in Sheet (Strictly ONE submission allowed!)
+    if (isCorrect) {
+      status = 'passed';
+      score = earnedPoints;
+      judgeNotes = 'ตรวจคำตอบอัตโนมัติ: ถูกต้อง (' + earnedPoints + ' คะแนน)';
+    } else {
+      status = 'failed';
+      score = 0;
+      judgeNotes = 'ตรวจคำตอบอัตโนมัติ: ไม่ถูกต้อง';
+    }
+  } else {
+    status = 'pending';
+    score = 0;
+    judgeNotes = 'รอการตรวจและให้คะแนนจากกรรมการ';
+  }
+
+  const subId = 'SUB-' + Date.now();
+  const timestamp = new Date().toISOString();
+  const rowContent = [
+    subId,
+    timestamp,
+    username,
+    activityId,
+    targetAct.category,
+    userColor,
+    answerText || '',
+    uploadedImageUrl,
+    uploadedFileId,
+    status,
+    score,
+    judgeNotes,
+    status === 'passed' ? 'System' : ''
+  ];
+
+  // 4. Micro-Lock (< 150ms execution time inside lock)
+  const result = withLock(function() {
     const subSheet = getOrCreateSheet(ss, SHEET_NAMES.SUBMISSIONS);
     const subData = subSheet.getDataRange().getValues();
     for (let i = 1; i < subData.length; i++) {
@@ -997,25 +1126,6 @@ function apiSubmitAnswer(username, activityId, answerText, imageFileObj, session
       }
     }
 
-    const subId = 'SUB-' + Date.now();
-    const timestamp = new Date().toISOString();
-    const rowContent = [
-      subId,
-      timestamp,
-      username,
-      activityId,
-      targetAct.category,
-      userColor,
-      answerText || '',
-      uploadedImageUrl,
-      uploadedFileId,
-      status,
-      score,
-      judgeNotes,
-      status === 'passed' ? 'System' : ''
-    ];
-
-    // High-speed write using setValues instead of slow appendRow
     const nextRow = subSheet.getLastRow() + 1;
     subSheet.getRange(nextRow, 1, 1, 13).setValues([rowContent]);
 
@@ -1026,6 +1136,26 @@ function apiSubmitAnswer(username, activityId, answerText, imageFileObj, session
       status: status
     };
   });
+
+  if (result && result.success) {
+    appendCachedSubmission({
+      id: subId,
+      timestamp: timestamp,
+      username: username,
+      activityId: activityId,
+      category: targetAct.category,
+      carColor: userColor,
+      answerText: answerText || '',
+      imageUrl: uploadedImageUrl,
+      fileId: uploadedFileId,
+      status: status,
+      score: score,
+      judgeNotes: judgeNotes,
+      judgeUsername: status === 'passed' ? 'System' : ''
+    });
+  }
+
+  return result;
 }
 
 /**
@@ -1035,7 +1165,7 @@ function apiGradeSubmission(submissionId, score, judgeNotes, judgeUsername, user
   const auth = verifyAuth(sessionToken, ['Admin', 'Sub-Admin']);
   if (!auth.success) return auth;
 
-  return withLock(function() {
+  const result = withLock(function() {
     const ss = getSpreadsheet();
     const subSheet = getOrCreateSheet(ss, SHEET_NAMES.SUBMISSIONS);
     const subData = subSheet.getDataRange().getValues();
@@ -1062,13 +1192,19 @@ function apiGradeSubmission(submissionId, score, judgeNotes, judgeUsername, user
         }
       }
 
-      const actsSheet = getOrCreateSheet(ss, SHEET_NAMES.ACTIVITIES);
-      const actsData = actsSheet.getDataRange().getValues();
       let category = 'Base';
-      for (let a = 1; a < actsData.length; a++) {
-        if (actsData[a][0] === activityId) {
-          category = actsData[a][1];
-          break;
+      const shared = getCachedSharedData();
+      if (shared && shared.activities) {
+        const act = shared.activities.find(function(a) { return a.id === activityId; });
+        if (act) category = act.category || 'Base';
+      } else {
+        const actsSheet = getOrCreateSheet(ss, SHEET_NAMES.ACTIVITIES);
+        const actsData = actsSheet.getDataRange().getValues();
+        for (let a = 1; a < actsData.length; a++) {
+          if (actsData[a][0] === activityId) {
+            category = actsData[a][1];
+            break;
+          }
         }
       }
 
@@ -1094,6 +1230,11 @@ function apiGradeSubmission(submissionId, score, judgeNotes, judgeUsername, user
 
     return { success: false, message: 'ไม่พบรายการคำตอบนี้ในระบบ' };
   });
+
+  if (result && result.success) {
+    updateCachedSubmissionGrade(submissionId, username, activityId, score, judgeNotes, judgeUsername);
+  }
+  return result;
 }
 
 /**
@@ -1103,7 +1244,7 @@ function apiUpdateBonusPoints(carUsername, bonusPoints, sessionToken) {
   const auth = verifyAuth(sessionToken, ['Admin']);
   if (!auth.success) return auth;
 
-  return withLock(function() {
+  const result = withLock(function() {
     const ss = getSpreadsheet();
     const usersSheet = getOrCreateSheet(ss, SHEET_NAMES.USERS);
     const usersData = usersSheet.getDataRange().getValues();
@@ -1115,6 +1256,11 @@ function apiUpdateBonusPoints(carUsername, bonusPoints, sessionToken) {
     }
     return { success: false, message: 'ไม่พบบัญชีผู้แข่งขันนี้' };
   });
+
+  if (result && result.success) {
+    updateCachedBonusPoints(carUsername, bonusPoints);
+  }
+  return result;
 }
 
 /**

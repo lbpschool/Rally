@@ -1265,7 +1265,7 @@
               </p>
             </div>
             <div class="relative z-10 flex items-center gap-2 self-start md:self-auto flex-wrap">
-              <button type="button" onclick="loadAppData()" class="px-4 py-2.5 rounded-2xl bg-white/20 hover:bg-white/30 backdrop-blur-md text-white font-bold text-xs flex items-center gap-2 transition-all cursor-pointer shadow-sm active:scale-95">
+              <button type="button" onclick="refreshWholeApp()" class="px-4 py-2.5 rounded-2xl bg-white/20 hover:bg-white/30 backdrop-blur-md text-white font-bold text-xs flex items-center gap-2 transition-all cursor-pointer shadow-sm active:scale-95">
                 <i class="fa-solid fa-rotate text-sm"></i> อัปเดตคะแนนล่าสุด
               </button>
             </div>
@@ -4733,7 +4733,7 @@
               hideLoading();
               if (res.success) {
                 Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: res.message, showConfirmButton: false, timer: 1500 });
-                loadAppData();
+                loadAppData(true);
               } else {
                 handleApiResponseError(res);
               }
@@ -5107,8 +5107,15 @@
               hideLoading();
               if (res.success) {
                 if (res.solutionImageUrl && newAct) newAct.solutionImageUrl = res.solutionImageUrl;
-                Swal.fire({ icon: 'success', title: res.message, timer: 1500, showConfirmButton: false });
-                loadAppData();
+                Swal.fire({
+                  toast: true,
+                  position: 'top-end',
+                  icon: 'success',
+                  title: res.message || 'บันทึกคะแนนเรียบร้อย',
+                  showConfirmButton: false,
+                  timer: 1500
+                });
+                loadAppData(true);
               } else {
                 handleApiResponseError(res);
               }
@@ -5465,7 +5472,7 @@
               hideLoading();
               if (res.success) {
                 Swal.fire({ icon: 'success', title: res.message, timer: 1500, showConfirmButton: false });
-                loadAppData();
+                loadAppData(true);
               } else {
                 handleApiResponseError(res);
               }
@@ -9030,16 +9037,30 @@
 
     // Active view state initialized in Section 3
 
+    var isAppRefreshing = false;
     function refreshWholeApp() {
       if (!currentUser) return;
+      if (isAppRefreshing) return;
+      isAppRefreshing = true;
+
       var refreshIcon = document.getElementById('headerRefreshIcon');
+      var refreshBtn = document.getElementById('btnHeaderRefreshApp');
       if (refreshIcon) refreshIcon.classList.add('fa-spin');
-      showLoading('กำลังรีเฟรชข้อมูลระบบล่าสุด...');
+      if (refreshBtn) {
+        refreshBtn.classList.add('opacity-70', 'pointer-events-none');
+      }
+
+      function resetRefreshBtn() {
+        setTimeout(function() {
+          isAppRefreshing = false;
+          if (refreshIcon) refreshIcon.classList.remove('fa-spin');
+          if (refreshBtn) refreshBtn.classList.remove('opacity-70', 'pointer-events-none');
+        }, 2500); // 2.5s debounce protection
+      }
 
       if (isMockMode) {
         setTimeout(function() {
-          hideLoading();
-          if (refreshIcon) refreshIcon.classList.remove('fa-spin');
+          resetRefreshBtn();
           setupNavigation();
           switchView(currentActiveViewName, currentActiveFilterCat);
           Swal.fire({
@@ -9056,14 +9077,14 @@
         if (typeof google !== 'undefined' && google.script && google.script.run) {
           google.script.run
             .withSuccessHandler(function(res) {
-              hideLoading();
-              if (refreshIcon) refreshIcon.classList.remove('fa-spin');
+              resetRefreshBtn();
               if (res && res.success) {
                 usersData = res.users;
                 activitiesData = res.activities;
                 submissionsData = res.submissions;
                 if (typeof res.isScoresHidden !== 'undefined') isScoresHidden = res.isScoresHidden;
                 if (typeof res.isVotingOpen !== 'undefined') isVotingOpen = res.isVotingOpen;
+                if (typeof res.boobyRank !== 'undefined') boobyRank = Number(res.boobyRank || 0);
                 if (res.votes) votesData = res.votes;
                 if (res.currentUser) {
                   currentUser = res.currentUser;
@@ -9077,11 +9098,12 @@
               }
             })
             .withFailureHandler(function(err) {
-              hideLoading();
-              if (refreshIcon) refreshIcon.classList.remove('fa-spin');
+              resetRefreshBtn();
               Swal.fire('ข้อผิดพลาดระบบ', err.message, 'error');
             })
             .apiGetInitialData(currentUser.username, sessionToken);
+        } else {
+          resetRefreshBtn();
         }
       }
     }
