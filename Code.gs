@@ -203,6 +203,36 @@ function getCachedSharedData() {
   return null;
 }
 
+const FIREBASE_DATABASE_URL = 'https://rally-scoring-system-default-rtdb.asia-southeast1.firebasedatabase.app';
+
+/**
+ * Real-time Push to Firebase Realtime Database (< 0.1s update on all client devices)
+ */
+function syncToFirebase(sharedData) {
+  try {
+    if (!sharedData) sharedData = getCachedSharedData();
+    if (!sharedData) return;
+
+    const firebaseUrl = FIREBASE_DATABASE_URL + '/live_rally_data.json';
+    const payload = JSON.stringify({
+      users: sharedData.users || [],
+      submissions: sharedData.submissions || [],
+      votes: sharedData.votes || [],
+      settings: sharedData.settings || {},
+      timestamp: Date.now()
+    });
+
+    UrlFetchApp.fetch(firebaseUrl, {
+      method: 'put',
+      contentType: 'application/json',
+      payload: payload,
+      muteHttpExceptions: true
+    });
+  } catch (e) {
+    Logger.log('Firebase sync error: ' + e);
+  }
+}
+
 function setCachedSharedData(data) {
   try {
     const cache = CacheService.getScriptCache();
@@ -215,6 +245,8 @@ function setCachedSharedData(data) {
   } catch (e) {
     Logger.log('setCachedSharedData error: ' + e);
   }
+  // Instant Real-time Broadcast to Firebase
+  syncToFirebase(data);
 }
 
 function updateCachedSubmissionGrade(submissionId, username, activityId, score, judgeNotes, judgeUsername) {

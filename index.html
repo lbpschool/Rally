@@ -225,6 +225,9 @@
       main { padding: 0 !important; }
     }
   </style>
+  <!-- Firebase App & Realtime Database SDK (Compat Version for 0.1s Realtime Sync) -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
 </head>
 <body class="relative min-h-screen bg-[#f4f6fb]">
 
@@ -9112,7 +9115,86 @@
     
 
 
+    var FIREBASE_RTDB_URL = "https://rally-scoring-system-default-rtdb.asia-southeast1.firebasedatabase.app";
+    var isFirebaseLiveActive = false;
+
+    function initFirebaseRealtimeSync() {
+      try {
+        if (typeof firebase === 'undefined') {
+          console.warn('[Firebase] SDK not loaded');
+          return;
+        }
+        if (!firebase.apps || !firebase.apps.length) {
+          firebase.initializeApp({
+            databaseURL: FIREBASE_RTDB_URL
+          });
+        }
+        var rtdb = firebase.database();
+        var liveRef = rtdb.ref('live_rally_data');
+        liveRef.on('value', function(snapshot) {
+          var live = snapshot.val();
+          if (!live) return;
+          isFirebaseLiveActive = true;
+          console.log('[Firebase Realtime] Live score update received at', new Date(live.timestamp || Date.now()).toLocaleTimeString());
+
+          if (live.users && Array.isArray(live.users)) {
+            usersData = live.users;
+            if (currentUser) {
+              var me = usersData.find(function(u) { return u.username.toLowerCase() === currentUser.username.toLowerCase(); });
+              if (me) {
+                currentUser.name = me.name;
+                currentUser.carCode = me.carCode;
+                currentUser.carColor = me.carColor;
+                currentUser.profileUrl = me.profileUrl;
+                currentUser.bonusPoints = me.bonusPoints;
+                currentUser.members = me.members;
+              }
+            }
+          }
+          if (live.submissions && Array.isArray(live.submissions)) {
+            submissionsData = live.submissions;
+          }
+          if (live.votes && Array.isArray(live.votes)) {
+            votesData = live.votes;
+          }
+          if (live.settings) {
+            if (typeof live.settings.isScoresHidden !== 'undefined') isScoresHidden = live.settings.isScoresHidden;
+            if (typeof live.settings.isVotingOpen !== 'undefined') isVotingOpen = live.settings.isVotingOpen;
+            if (typeof live.settings.isVotesHidden !== 'undefined') isVotesHidden = live.settings.isVotesHidden;
+            if (typeof live.settings.boobyRank !== 'undefined') boobyRank = Number(live.settings.boobyRank || 0);
+          }
+
+          if (currentUser) {
+            if (currentActiveViewName === 'UserMissions') {
+              renderUserMissionsGrid();
+            } else if (currentActiveViewName === 'AdminActivities') {
+              renderAdminActivitiesTable('', currentActiveFilterCat);
+            } else if (currentActiveViewName === 'UserHistory') {
+              renderUserHistoryTable(submissionsData);
+            } else if (currentActiveViewName === 'Leaderboard') {
+              renderLeaderboard();
+            } else if (currentActiveViewName === 'Grading') {
+              renderGradingList();
+            } else if (currentActiveViewName === 'VoteResults') {
+              renderVoteResults();
+            } else if (currentActiveViewName === 'Ceremony') {
+              renderCeremonyView();
+            } else {
+              renderUserDashboard();
+              renderAdminUsersTable();
+            }
+            showSyncSuccessToast();
+          }
+        });
+      } catch (err) {
+        console.warn('[Firebase] Realtime sync init error:', err);
+      }
+    }
+
     function initAppStartup() {
+      // Connect to Firebase Realtime Stream immediately
+      initFirebaseRealtimeSync();
+
       try {
         var savedUserStr = safeGetStorage('rally_session_user');
         if (savedUserStr) {
