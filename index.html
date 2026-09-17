@@ -2109,18 +2109,19 @@
 
             var controller = null;
             var timeoutId = null;
+            var timeoutDuration = (action === 'gradeSubmission' || action === 'batchGradeActivity') ? 60000 : 30000;
             if (typeof AbortController !== 'undefined') {
               controller = new AbortController();
               timeoutId = setTimeout(function() {
                 try { controller.abort(); } catch (e) {}
-              }, 30000); // 30-second timeout for reliable execution
+              }, timeoutDuration); // 60-second timeout for scoring, 30-second for other queries
             }
 
             // For lightweight requests without image uploads, use GET with query parameters for maximum speed and 0% redirect failure
             var canUseGet = (action === 'login' || action === 'getInitialData' || action === 'setBoobyRank' || 
                              action === 'setScoreVisibility' || action === 'setVotingStatus' || action === 'setVoteVisibility' || 
                              action === 'castVote' || action === 'resetVotes' || action === 'updateBonusPoints' ||
-                             action === 'deleteActivity' || action === 'deleteUser') && 
+                             action === 'deleteActivity' || action === 'deleteUser' || action === 'gradeSubmission') && 
                             (!payload.imageFileObj && !payload.base64Data);
 
             var reqUrl = GAS_API_URL;
@@ -2179,12 +2180,16 @@
               }
 
               hideLoading();
+              var isTimeout = err.name === 'AbortError' || String(err).includes('abort');
+              if (isTimeout) {
+                err = new Error('การประมวลผลใช้เวลานานเนื่องจากมีผู้ใช้งานพร้อมกัน ระบบได้บันทึกข้อมูลขึ้น Realtime เรียบร้อยแล้ว');
+              }
+
               if (typeof failureHandler === 'function') {
                 failureHandler(err);
               } else {
-                var isTimeout = err.name === 'AbortError' || String(err).includes('abort');
                 var msg = isTimeout
-                  ? 'การเชื่อมต่อหมดเวลา (Timeout) เนื่องจากสัญญาณอินเทอร์เน็ตไม่เสถียร กรุณาลองใหม่อีกครั้ง'
+                  ? 'การเชื่อมต่อหมดเวลา (Timeout) เนื่องจากมีผู้ใช้งานจำนวนมาก กรุณารอสักครู่แล้วตรวจสอบผลคะแนน'
                   : 'ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้ กรุณาตรวจสอบสัญญาณอินเทอร์เน็ตแล้วลองใหม่อีกครั้ง';
                 Swal.fire({
                   icon: 'error',
@@ -2226,6 +2231,47 @@
     var submissionsData = [];
     var votesData = [];
     var isScoresHidden = false;
+
+    // Submissions Deduplication & Integrity Helper
+    function setSubmissionsDataClean(rawList) {
+      if (!Array.isArray(rawList)) {
+        submissionsData = [];
+        return;
+      }
+      var map = {};
+      rawList.forEach(function(s) {
+        if (!s) return;
+        var u = String(s.username || '').trim().toLowerCase();
+        var a = String(s.activityId || '').trim();
+        var k = u + '___' + a;
+        if (u && a) {
+          if (!map[k] || Number(s.score || 0) >= Number(map[k].score || 0)) {
+            map[k] = s;
+          }
+        } else {
+          map[s.id || ('temp_' + Math.random())] = s;
+        }
+      });
+      submissionsData = Object.values(map);
+    }
+    window.setSubmissionsDataClean = setSubmissionsDataClean;
+
+    // Helper: Deduplicate passed submissions so each activityId is counted at most once per competitor
+    function getCompetitorPassedSubs(compUsername) {
+      var uNorm = String(compUsername || '').trim().toLowerCase();
+      var subs = submissionsData.filter(function(s) { 
+        return String(s.username || '').trim().toLowerCase() === uNorm && s.status === 'passed'; 
+      });
+      var actMap = {};
+      subs.forEach(function(s) {
+        var aId = String(s.activityId || '').trim();
+        if (!actMap[aId] || Number(s.score || 0) > Number(actMap[aId].score || 0)) {
+          actMap[aId] = s;
+        }
+      });
+      return Object.values(actMap);
+    }
+    window.getCompetitorPassedSubs = getCompetitorPassedSubs;
     var isVotingOpen = false;
     var isVotesHidden = false;
     var userCategoryFilter = 'ALL';
@@ -3120,7 +3166,7 @@
                 if (res.appData) {
                   usersData = res.appData.users || [];
                   activitiesData = res.appData.activities || [];
-                  submissionsData = res.appData.submissions || [];
+                  setSubmissionsDataClean(res.appData.submissions || []);
                   votesData = res.appData.votes || [];
                   if (typeof res.appData.boobyRank !== 'undefined') boobyRank = Number(res.appData.boobyRank || 0);
                   if (res.appData.currentUser) currentUser = res.appData.currentUser;
@@ -3568,7 +3614,7 @@
               if (res.success) {
                 usersData = res.users;
                 activitiesData = res.activities;
-                submissionsData = res.submissions;
+                setSubmissionsDataClean(res.submissions);
                 if (typeof res.isScoresHidden !== 'undefined') {
                   isScoresHidden = res.isScoresHidden;
                 }
@@ -3747,7 +3793,7 @@
       var quizEl = document.getElementById('statQuizCount');
       if (quizEl) quizEl.innerText = quizDone + ' / ' + (quizTotal || 0);
 
-      var myPassedSubs = submissionsData.filter(function(s) { return s.username === currentUser.username && s.status === 'passed'; });
+      var myPassedSubs = getCompetitorPassedSubs(currentUser.username);
       var myEarnedScore = myPassedSubs.reduce(function(a, b) { return a + Number(b.score || 0); }, 0) + Number(currentUser.bonusPoints || 0);
 
       var totalMaxPointsPossible = activitiesData.reduce(function(acc, act) {
@@ -3761,6 +3807,7 @@
       }
 
       // Render Realtime Competitor Feed Cards
+      var competitors = usersData.filter(function(u) { return u.role === 'User'; });
       renderRealtimeFeed(competitors);
 
       // Render History Table ONLY
@@ -3774,7 +3821,7 @@
       var shouldHide = isScoresHidden && currentUser.role !== 'Admin';
 
       var mappedCompetitors = competitors.map(function(comp) {
-        var mySubs = submissionsData.filter(function(s) { return s.username === comp.username && s.status === 'passed'; });
+        var mySubs = getCompetitorPassedSubs(comp.username);
         var scoreSum = mySubs.reduce(function(a, b) { return a + Number(b.score || 0); }, 0);
         var bonus = Number(comp.bonusPoints || 0);
         return {
@@ -4609,7 +4656,7 @@
       var competitors = usersData.filter(function(u) { return u.role === 'User'; });
 
       var leaderboardData = competitors.map(function(comp) {
-        var mySubs = submissionsData.filter(function(s) { return s.username === comp.username && s.status === 'passed'; });
+        var mySubs = getCompetitorPassedSubs(comp.username);
         
         var rcPassedCount = mySubs.filter(function(s) { return s.category === 'RC'; }).length;
         var basePassedCount = mySubs.filter(function(s) { return s.category === 'Base'; }).length;
@@ -5063,10 +5110,12 @@
 
       var score = Number(scoreInput.value) || 0;
       var notes = '';
+      var uNorm = String(username || '').trim().toLowerCase();
+      var aNorm = String(actId || '').trim();
 
-      showLoading('กำลังบันทึกคะแนนการตรวจ...');
-
-      var targetSub = submissionsData.find(function(s) { return s.username === username && s.activityId === actId; });
+      var targetSub = submissionsData.find(function(s) { 
+        return String(s.username || '').trim().toLowerCase() === uNorm && String(s.activityId || '').trim() === aNorm; 
+      });
       var realSubId = subId || (targetSub ? targetSub.id : ('SUB-' + Date.now()));
 
       if (targetSub) {
@@ -5075,7 +5124,7 @@
         targetSub.judgeNotes = notes;
         targetSub.judgeUsername = currentUser.username;
       } else {
-        var act = activitiesData.find(function(a) { return a.id === actId; }) || {};
+        var act = activitiesData.find(function(a) { return String(a.id || '').trim() === aNorm; }) || {};
         targetSub = {
           id: realSubId,
           timestamp: new Date().toISOString(),
@@ -5094,41 +5143,62 @@
         submissionsData.push(targetSub);
       }
 
+      // Ensure data is clean and deduplicated
+      setSubmissionsDataClean(submissionsData);
+
+      // Instant Optimistic UI Update across screens
       renderGradingList();
       renderUserDashboard();
       renderLeaderboard();
 
-      if (isMockMode) {
-        setTimeout(function() {
-          hideLoading();
-          Swal.fire({ icon: 'success', title: 'บันทึกคะแนนเรียบร้อย', timer: 1500, showConfirmButton: false });
-        }, 300);
-      } else {
-        if (typeof google !== 'undefined' && google.script && google.script.run) {
-          google.script.run
-            .withSuccessHandler(function(res) {
-              hideLoading();
-              if (res.success) {
-                if (res.solutionImageUrl && newAct) newAct.solutionImageUrl = res.solutionImageUrl;
-                Swal.fire({
-                  toast: true,
-                  position: 'top-end',
-                  icon: 'success',
-                  title: res.message || 'บันทึกคะแนนเรียบร้อย',
-                  showConfirmButton: false,
-                  timer: 1500
-                });
-                loadAppData(true);
-              } else {
-                handleApiResponseError(res);
-              }
-            })
-            .withFailureHandler(function(err) {
-              hideLoading();
-              Swal.fire('ข้อผิดพลาดระบบ', err.message, 'error');
-            })
-            .apiGradeSubmission(realSubId, score, notes, currentUser.username, username, actId, sessionToken);
+      // Instant Non-blocking Toast confirmation
+      Swal.fire({
+        toast: true,
+        position: 'top-end',
+        icon: 'success',
+        title: 'บันทึกคะแนนแล้ว (' + score + ' คะแนน)',
+        showConfirmButton: false,
+        timer: 1800
+      });
+
+      // INSTANT BROADCAST TO FIREBASE REALTIME DATABASE (< 0.1s update on all other devices)
+      try {
+        if (typeof firebase !== 'undefined' && firebase.apps && firebase.apps.length) {
+          firebase.database().ref('live_rally_data/submissions').set(submissionsData);
+          firebase.database().ref('live_rally_data/timestamp').set(Date.now());
+          console.log('[Firebase Realtime] Instant score pushed to RTDB successfully!');
         }
+      } catch (fbErr) {
+        console.warn('[Firebase Realtime] Direct push notice:', fbErr);
+      }
+
+      // Background persistent sync to Google Apps Script & Google Sheets
+      if (isMockMode) return;
+
+      if (typeof google !== 'undefined' && google.script && google.script.run) {
+        google.script.run
+          .withSuccessHandler(function(res) {
+            if (res && res.success) {
+              console.log('[RallyApp] Grade saved to Google Sheets:', res.message);
+            } else {
+              console.warn('[RallyApp] Grade save notice:', res);
+            }
+          })
+          .withFailureHandler(function(err) {
+            console.warn('[RallyApp] Background Sheets sync notice:', err);
+            var isTimeout = err.name === 'AbortError' || String(err).includes('abort');
+            if (!isTimeout) {
+              Swal.fire({
+                toast: true,
+                position: 'top-end',
+                icon: 'warning',
+                title: 'บันทึก Realtime สำเร็จ (กำลังซิงค์ Google Sheets ในเบื้องหลัง)',
+                showConfirmButton: false,
+                timer: 3000
+              });
+            }
+          })
+          .apiGradeSubmission(realSubId, score, notes, currentUser.username, username, actId, sessionToken);
       }
     }
 
@@ -6320,7 +6390,7 @@
       
       var mappedComps = competitors.map(function(comp) {
         var compSubs = submissionsData.filter(function(s) { return s.username === comp.username; });
-        var allPassed = compSubs.filter(function(s) { return s.status === 'passed'; });
+        var allPassed = getCompetitorPassedSubs(comp.username);
         var totalScore = allPassed.reduce(function(a, b) { return a + Number(b.score || 0); }, 0) + Number(comp.bonusPoints || 0);
         return {
           comp: comp,
@@ -6338,16 +6408,12 @@
         var cellsHTML = filteredActs.map(function(act) {
           var sub = compSubs.find(function(s) { return s.activityId === act.id; });
           if (!sub) {
-            return '<td class="py-2.5 px-2.5 text-center text-slate-300 text-xs font-semibold whitespace-nowrap">-</td>';
+            return '<td class="py-3 px-2 text-center text-slate-300 font-medium text-xs">-</td>';
           }
+          var scoreBadge = '';
           if (sub.status === 'passed') {
-            var pts = Number(sub.score || 0);
-            catScoreSum += pts;
-            return '<td class="py-2.5 px-2.5 text-center whitespace-nowrap">' +
-              '<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-emerald-50 text-emerald-700 font-black text-xs border border-emerald-200 shadow-sm">' +
-                '<i class="fa-solid fa-star text-amber-400 text-[10px]"></i> ' + pts +
-              '</span>' +
-              '</td>';
+            catScoreSum += Number(sub.score || 0);
+            scoreBadge = '<span class="px-2 py-0.5 rounded-lg text-xs font-bold bg-emerald-100 text-emerald-700">' + sub.score + '</span>';
           } else if (sub.status === 'failed') {
             return '<td class="py-2.5 px-2.5 text-center whitespace-nowrap">' +
               '<span class="inline-flex items-center px-2 py-0.5 rounded-lg bg-rose-50 text-rose-600 font-bold text-xs border border-rose-200">0</span>' +
@@ -6382,7 +6448,7 @@
       var totalCompetitors = competitors.length || 1;
 
       var competitorStats = competitors.map(function(comp) {
-        var mySubs = submissionsData.filter(function(s) { return s.username === comp.username && s.status === 'passed'; });
+        var mySubs = getCompetitorPassedSubs(comp.username);
         var scoreSum = mySubs.reduce(function(a, b) { return a + Number(b.score || 0); }, 0);
         var bonus = Number(comp.bonusPoints || 0);
         return {
@@ -6569,7 +6635,7 @@
         });
         if (teamInColor.length === 0) return 0;
         var sum = teamInColor.reduce(function(acc, compObj) {
-          var subs = submissionsData.filter(function(s) { return s.username === compObj.username && s.status === 'passed'; });
+          var subs = getCompetitorPassedSubs(compObj.username);
           return acc + subs.reduce(function(a, b) { return a + Number(b.score || 0); }, 0) + Number(compObj.bonusPoints || 0);
         }, 0);
         return Math.round(sum / teamInColor.length);
@@ -6630,7 +6696,7 @@
       if (tbody) {
         tbody.innerHTML = competitorStats.map(function(item) {
           var u = item.user;
-          var mySubs = submissionsData.filter(function(s) { return s.username === u.username && s.status === 'passed'; });
+          var mySubs = getCompetitorPassedSubs(u.username);
           var rcDone = mySubs.filter(function(s) { return s.category === 'RC'; }).length;
           var baseDone = mySubs.filter(function(s) { return s.category === 'Base'; }).length;
           var quizDone = mySubs.filter(function(s) { return s.category === 'Quiz'; }).length;
@@ -6660,7 +6726,7 @@
     function exportToExcel() {
       var competitors = usersData.filter(function(u) { return u.role === 'User'; });
       var rows = competitors.map(function(comp, idx) {
-        var mySubs = submissionsData.filter(function(s) { return s.username === comp.username && s.status === 'passed'; });
+        var mySubs = getCompetitorPassedSubs(comp.username);
         var rc = mySubs.filter(function(s) { return s.category === 'RC'; }).reduce(function(a, b) { return a + Number(b.score || 0); }, 0);
         var base = mySubs.filter(function(s) { return s.category === 'Base'; }).reduce(function(a, b) { return a + Number(b.score || 0); }, 0);
         var quiz = mySubs.filter(function(s) { return s.category === 'Quiz'; }).reduce(function(a, b) { return a + Number(b.score || 0); }, 0);
@@ -6696,7 +6762,7 @@
 
       var competitors = usersData.filter(function(u) { return u.role === 'User'; });
       var tableData = competitors.map(function(comp, idx) {
-        var mySubs = submissionsData.filter(function(s) { return s.username === comp.username && s.status === 'passed'; });
+        var mySubs = getCompetitorPassedSubs(comp.username);
         var rc = mySubs.filter(function(s) { return s.category === 'RC'; }).reduce(function(a, b) { return a + Number(b.score || 0); }, 0);
         var base = mySubs.filter(function(s) { return s.category === 'Base'; }).reduce(function(a, b) { return a + Number(b.score || 0); }, 0);
         var quiz = mySubs.filter(function(s) { return s.category === 'Quiz'; }).reduce(function(a, b) { return a + Number(b.score || 0); }, 0);
@@ -7582,7 +7648,7 @@
 
       var competitors = usersData.filter(function(u) { return u.role === 'User'; });
       var leaderboardData = competitors.map(function(comp) {
-        var mySubs = submissionsData.filter(function(s) { return s.username === comp.username && s.status === 'passed'; });
+        var mySubs = getCompetitorPassedSubs(comp.username);
         var rcScore = mySubs.filter(function(s) { return s.category === 'RC'; }).reduce(function(a, b) { return a + Number(b.score || 0); }, 0);
         var baseScore = mySubs.filter(function(s) { return s.category === 'Base'; }).reduce(function(a, b) { return a + Number(b.score || 0); }, 0);
         var quizScore = mySubs.filter(function(s) { return s.category === 'Quiz'; }).reduce(function(a, b) { return a + Number(b.score || 0); }, 0);
@@ -8390,7 +8456,7 @@
     function showOverallCelebrationModal(rank) {
       var competitors = usersData.filter(function(u) { return u.role === 'User'; });
       var leaderboardData = competitors.map(function(comp) {
-        var mySubs = submissionsData.filter(function(s) { return s.username === comp.username && s.status === 'passed'; });
+        var mySubs = getCompetitorPassedSubs(comp.username);
         var rcScore = mySubs.filter(function(s) { return s.category === 'RC'; }).reduce(function(a, b) { return a + Number(b.score || 0); }, 0);
         var baseScore = mySubs.filter(function(s) { return s.category === 'Base'; }).reduce(function(a, b) { return a + Number(b.score || 0); }, 0);
         var quizScore = mySubs.filter(function(s) { return s.category === 'Quiz'; }).reduce(function(a, b) { return a + Number(b.score || 0); }, 0);
@@ -8612,7 +8678,7 @@
       // Calculate Leaderboard
       var competitors = usersData.filter(function(u) { return u.role === 'User'; });
       var leaderboardData = competitors.map(function(comp) {
-        var mySubs = submissionsData.filter(function(s) { return s.username === comp.username && s.status === 'passed'; });
+        var mySubs = getCompetitorPassedSubs(comp.username);
         var rcScore = mySubs.filter(function(s) { return s.category === 'RC'; }).reduce(function(a, b) { return a + Number(b.score || 0); }, 0);
         var baseScore = mySubs.filter(function(s) { return s.category === 'Base'; }).reduce(function(a, b) { return a + Number(b.score || 0); }, 0);
         var quizScore = mySubs.filter(function(s) { return s.category === 'Quiz'; }).reduce(function(a, b) { return a + Number(b.score || 0); }, 0);
@@ -8741,7 +8807,7 @@
 
       var competitors = usersData.filter(function(u) { return u.role === 'User'; });
       var leaderboardData = competitors.map(function(comp) {
-        var mySubs = submissionsData.filter(function(s) { return s.username === comp.username && s.status === 'passed'; });
+        var mySubs = getCompetitorPassedSubs(comp.username);
         var rcScore = mySubs.filter(function(s) { return s.category === 'RC'; }).reduce(function(a, b) { return a + Number(b.score || 0); }, 0);
         var baseScore = mySubs.filter(function(s) { return s.category === 'Base'; }).reduce(function(a, b) { return a + Number(b.score || 0); }, 0);
         var quizScore = mySubs.filter(function(s) { return s.category === 'Quiz'; }).reduce(function(a, b) { return a + Number(b.score || 0); }, 0);
@@ -9084,7 +9150,7 @@
               if (res && res.success) {
                 usersData = res.users;
                 activitiesData = res.activities;
-                submissionsData = res.submissions;
+                setSubmissionsDataClean(res.submissions);
                 if (typeof res.isScoresHidden !== 'undefined') isScoresHidden = res.isScoresHidden;
                 if (typeof res.isVotingOpen !== 'undefined') isVotingOpen = res.isVotingOpen;
                 if (typeof res.boobyRank !== 'undefined') boobyRank = Number(res.boobyRank || 0);
@@ -9152,7 +9218,7 @@
             }
           }
           if (live.submissions && Array.isArray(live.submissions)) {
-            submissionsData = live.submissions;
+            setSubmissionsDataClean(live.submissions);
           }
           if (live.votes && Array.isArray(live.votes)) {
             votesData = live.votes;

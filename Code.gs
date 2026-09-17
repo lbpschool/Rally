@@ -253,10 +253,16 @@ function updateCachedSubmissionGrade(submissionId, username, activityId, score, 
   try {
     const shared = getCachedSharedData();
     if (!shared || !shared.submissions) return;
+    const uNorm = String(username || '').trim().toLowerCase();
+    const aNorm = String(activityId || '').trim();
+    const subIdNorm = String(submissionId || '').trim();
     let found = false;
     for (let i = 0; i < shared.submissions.length; i++) {
       const s = shared.submissions[i];
-      if ((submissionId && s.id === submissionId) || (username && activityId && s.username === username && s.activityId === activityId)) {
+      const sUNorm = String(s.username || '').trim().toLowerCase();
+      const sANorm = String(s.activityId || '').trim();
+      const sIdNorm = String(s.id || '').trim();
+      if ((subIdNorm && sIdNorm === subIdNorm) || (uNorm && aNorm && sUNorm === uNorm && sANorm === aNorm)) {
         s.status = 'passed';
         s.score = Number(score) || 0;
         s.judgeNotes = judgeNotes || 'ให้คะแนนเรียบร้อย';
@@ -372,16 +378,20 @@ function fetchSharedDataFromSheets() {
     });
   }
 
-  // 3. Submissions
+  // 3. Submissions (Deduplicated by username + activityId to prevent race duplicate rows)
   const subSheet = getOrCreateSheet(ss, SHEET_NAMES.SUBMISSIONS);
   const subRaw = subSheet.getDataRange().getValues();
   const submissions = [];
+  const seenSubMap = {};
   for (let i = 1; i < subRaw.length; i++) {
-    submissions.push({
-      id: subRaw[i][0],
+    const sId = String(subRaw[i][0] || '');
+    const uName = String(subRaw[i][2] || '').trim().toLowerCase();
+    const aId = String(subRaw[i][3] || '').trim();
+    const item = {
+      id: sId,
       timestamp: subRaw[i][1],
       username: String(subRaw[i][2] || ''),
-      activityId: subRaw[i][3],
+      activityId: aId,
       category: subRaw[i][4],
       carColor: subRaw[i][5],
       answerText: subRaw[i][6],
@@ -391,7 +401,14 @@ function fetchSharedDataFromSheets() {
       score: Number(subRaw[i][10]) || 0,
       judgeNotes: subRaw[i][11],
       judgeUsername: subRaw[i][12]
-    });
+    };
+    const key = uName + '___' + aId;
+    if (uName && aId && seenSubMap[key] !== undefined) {
+      submissions[seenSubMap[key]] = item;
+    } else {
+      if (uName && aId) seenSubMap[key] = submissions.length;
+      submissions.push(item);
+    }
   }
 
   // 4. Settings
@@ -1197,50 +1214,57 @@ function apiGradeSubmission(submissionId, score, judgeNotes, judgeUsername, user
   const auth = verifyAuth(sessionToken, ['Admin', 'Sub-Admin']);
   if (!auth.success) return auth;
 
+  const uNorm = String(username || '').trim().toLowerCase();
+  const aNorm = String(activityId || '').trim();
+  const subIdNorm = String(submissionId || '').trim();
+
+  // Generous 35-second lock timeout for simultaneous submissions from multiple station judges
   const result = withLock(function() {
     const ss = getSpreadsheet();
     const subSheet = getOrCreateSheet(ss, SHEET_NAMES.SUBMISSIONS);
     const subData = subSheet.getDataRange().getValues();
     const gradeValues = [['passed', Number(score) || 0, judgeNotes || 'ให้คะแนนเรียบร้อย', judgeUsername || 'Judge']];
 
-    if (submissionId) {
-      for (let i = 1; i < subData.length; i++) {
-        if (subData[i][0] === submissionId) {
-          const rowIndex = i + 1;
-          // Batch write contiguous cells (columns 10 to 13) in 1 call!
-          subSheet.getRange(rowIndex, 10, 1, 4).setValues(gradeValues);
-          return { success: true, message: 'บันทึกคะแนนเรียบร้อยแล้ว' };
-        }
+    // 1. Search for existing submission matching submissionId OR (username && activityId)
+    let matchedRowIndex = -1;
+    for (let i = 1; i < subData.length; i++) {
+      const rowSubId = String(subData[i][0] || '').trim();
+      const rowUname = String(subData[i][2] || '').trim().toLowerCase();
+      const rowActId = String(subData[i][3] || '').trim();
+
+      if ((subIdNorm && rowSubId === subIdNorm) || (uNorm && aNorm && rowUname === uNorm && rowActId === aNorm)) {
+        matchedRowIndex = i + 1;
+        break;
       }
     }
 
-    if (username && activityId) {
-      for (let i = 1; i < subData.length; i++) {
-        if (subData[i][2] === username && subData[i][3] === activityId) {
-          const rowIndex = i + 1;
-          // Batch write contiguous cells (columns 10 to 13) in 1 call!
-          subSheet.getRange(rowIndex, 10, 1, 4).setValues(gradeValues);
-          return { success: true, message: 'บันทึกคะแนนเรียบร้อยแล้ว' };
-        }
-      }
+    if (matchedRowIndex !== -1) {
+      // Existing row found: update columns 10 to 13 (passed, score, notes, judge)
+      subSheet.getRange(matchedRowIndex, 10, 1, 4).setValues(gradeValues);
+      // Immediately flush to disk so concurrent queued requests will see this update
+      SpreadsheetApp.flush();
+      return { success: true, message: 'บันทึกคะแนนเรียบร้อยแล้ว' };
+    }
 
+    // 2. If not found and we have username & activityId, append new row
+    if (username && activityId) {
       let category = 'Base';
       const shared = getCachedSharedData();
       if (shared && shared.activities) {
-        const act = shared.activities.find(function(a) { return a.id === activityId; });
+        const act = shared.activities.find(function(a) { return String(a.id).trim() === aNorm; });
         if (act) category = act.category || 'Base';
       } else {
         const actsSheet = getOrCreateSheet(ss, SHEET_NAMES.ACTIVITIES);
         const actsData = actsSheet.getDataRange().getValues();
         for (let a = 1; a < actsData.length; a++) {
-          if (actsData[a][0] === activityId) {
+          if (String(actsData[a][0]).trim() === aNorm) {
             category = actsData[a][1];
             break;
           }
         }
       }
 
-      const newSubId = submissionId || ('SUB-' + Date.now());
+      const newSubId = subIdNorm || ('SUB-' + Date.now());
       const rowContent = [
         newSubId,
         new Date().toISOString(),
@@ -1257,11 +1281,13 @@ function apiGradeSubmission(submissionId, score, judgeNotes, judgeUsername, user
         judgeUsername || 'Judge'
       ];
       subSheet.appendRow(rowContent);
+      // Immediately flush to disk so next concurrent execution reads this row
+      SpreadsheetApp.flush();
       return { success: true, message: 'บันทึกคะแนนเรียบร้อยแล้ว' };
     }
 
     return { success: false, message: 'ไม่พบรายการคำตอบนี้ในระบบ' };
-  });
+  }, 35000);
 
   if (result && result.success) {
     updateCachedSubmissionGrade(submissionId, username, activityId, score, judgeNotes, judgeUsername);
