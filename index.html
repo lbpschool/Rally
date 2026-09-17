@@ -239,8 +239,29 @@
         <i class="fa-solid fa-xmark"></i>
       </button>
       
-      <!-- Image Display (Large Full View - Original Size Restored) -->
-      <img id="imageModalSrc" src="" alt="Zoom Image" class="max-w-full max-h-[80vh] sm:max-h-[85vh] rounded-2xl object-contain shadow-2xl border border-white/20">
+      <!-- Zoomable Image Container with Touch & Pinch Gestures -->
+      <div id="imageZoomContainer" class="relative w-full flex items-center justify-center overflow-hidden rounded-2xl border border-white/20 bg-black/40 shadow-2xl select-none my-1" style="touch-action: none; min-height: 260px; max-height: 78vh;">
+        <img id="imageModalSrc" src="" alt="Zoom Image" class="max-w-full max-h-[78vh] object-contain cursor-grab active:cursor-grabbing will-change-transform" style="transform-origin: center center;">
+        
+        <!-- Floating Zoom Controls & Reset Pill (Always accessible on Mobile & Desktop) -->
+        <div class="absolute bottom-3 left-1/2 -translate-x-1/2 z-30 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-900/85 backdrop-blur-md border border-white/30 text-white shadow-xl text-xs font-semibold select-none">
+          <button type="button" onclick="zoomImageModal(-0.5)" class="w-7 h-7 rounded-full bg-white/10 hover:bg-white/25 active:scale-90 flex items-center justify-center transition-all cursor-pointer" title="ย่อรูป">
+            <i class="fa-solid fa-minus text-[11px]"></i>
+          </button>
+          <span id="imageModalZoomLevel" class="px-2 text-[11px] font-bold tracking-tight text-purple-200 min-w-[42px] text-center">100%</span>
+          <button type="button" onclick="zoomImageModal(0.5)" class="w-7 h-7 rounded-full bg-white/10 hover:bg-white/25 active:scale-90 flex items-center justify-center transition-all cursor-pointer" title="ขยายรูป">
+            <i class="fa-solid fa-plus text-[11px]"></i>
+          </button>
+          <button type="button" onclick="resetImageModalZoom(true)" class="ml-1 px-2.5 py-1 rounded-full bg-purple-600/90 hover:bg-purple-600 active:scale-95 text-[10px] font-bold flex items-center gap-1 transition-all cursor-pointer" title="รีเซ็ตขนาดปกติ">
+            <i class="fa-solid fa-rotate-left text-[9px]"></i> รีเซ็ต
+          </button>
+        </div>
+
+        <!-- Hint Badge (auto fades out) -->
+        <div id="imageZoomHint" class="absolute top-3 left-1/2 -translate-x-1/2 z-30 px-3 py-1 rounded-full bg-black/70 backdrop-blur-md border border-white/20 text-white/90 text-[11px] font-medium pointer-events-none transition-opacity duration-500">
+          <i class="fa-solid fa-hand-pointer mr-1 text-purple-300"></i> ใช้นิ้วถ่างขยายรูป หรือแตะ 2 ครั้ง
+        </div>
+      </div>
       
       <!-- Caption for general non-car images -->
       <p id="imageModalCaption" class="mt-3 text-slate-200 text-sm text-center font-medium"></p>
@@ -2490,9 +2511,190 @@
       Swal.close();
     }
 
+    // =========================================================================
+    // TOUCH PINCH-TO-ZOOM & PAN ENGINE FOR IMAGE MODAL
+    // =========================================================================
+    var imgZoomState = {
+      scale: 1,
+      minScale: 1,
+      maxScale: 5,
+      translateX: 0,
+      translateY: 0,
+      startX: 0,
+      startY: 0,
+      initialDistance: 0,
+      initialScale: 1,
+      isDragging: false,
+      isPinching: false,
+      lastTapTime: 0
+    };
+
+    function applyImageZoom(animate) {
+      var imgEl = document.getElementById('imageModalSrc');
+      var zoomLabel = document.getElementById('imageModalZoomLevel');
+      if (!imgEl) return;
+
+      if (animate) {
+        imgEl.style.transition = 'transform 0.25s cubic-bezier(0.25, 1, 0.5, 1)';
+      } else {
+        imgEl.style.transition = 'none';
+      }
+
+      imgEl.style.transform = 'translate(' + imgZoomState.translateX + 'px, ' + imgZoomState.translateY + 'px) scale(' + imgZoomState.scale + ')';
+      
+      if (zoomLabel) {
+        zoomLabel.innerText = Math.round(imgZoomState.scale * 100) + '%';
+      }
+    }
+
+    function resetImageModalZoom(animate) {
+      imgZoomState.scale = 1;
+      imgZoomState.translateX = 0;
+      imgZoomState.translateY = 0;
+      imgZoomState.isDragging = false;
+      imgZoomState.isPinching = false;
+      applyImageZoom(animate !== false);
+    }
+    window.resetImageModalZoom = resetImageModalZoom;
+
+    function zoomImageModal(delta) {
+      var newScale = Math.min(Math.max(imgZoomState.scale + delta, imgZoomState.minScale), imgZoomState.maxScale);
+      if (newScale <= 1) {
+        resetImageModalZoom(true);
+      } else {
+        imgZoomState.scale = newScale;
+        applyImageZoom(true);
+      }
+    }
+    window.zoomImageModal = zoomImageModal;
+
+    function initImageZoomGestures() {
+      var container = document.getElementById('imageZoomContainer');
+      var img = document.getElementById('imageModalSrc');
+      if (!container || !img) return;
+
+      // Touch handlers for mobile & iPad (Pinch-to-zoom & Pan)
+      container.addEventListener('touchstart', function(e) {
+        if (e.touches.length === 2) {
+          // Pinch gesture start
+          imgZoomState.isPinching = true;
+          imgZoomState.isDragging = false;
+          imgZoomState.initialDistance = Math.hypot(
+            e.touches[0].clientX - e.touches[1].clientX,
+            e.touches[0].clientY - e.touches[1].clientY
+          );
+          imgZoomState.initialScale = imgZoomState.scale;
+        } else if (e.touches.length === 1) {
+          // Double-tap zoom toggle
+          var now = Date.now();
+          if (now - imgZoomState.lastTapTime < 300) {
+            e.preventDefault();
+            if (imgZoomState.scale > 1.2) {
+              resetImageModalZoom(true);
+            } else {
+              imgZoomState.scale = 2.5;
+              var rect = container.getBoundingClientRect();
+              var tapX = e.touches[0].clientX - (rect.left + rect.width / 2);
+              var tapY = e.touches[0].clientY - (rect.top + rect.height / 2);
+              imgZoomState.translateX = -tapX * 0.8;
+              imgZoomState.translateY = -tapY * 0.8;
+              applyImageZoom(true);
+            }
+            imgZoomState.lastTapTime = 0;
+            return;
+          }
+          imgZoomState.lastTapTime = now;
+
+          // Drag/Pan start when zoomed
+          if (imgZoomState.scale > 1) {
+            imgZoomState.isDragging = true;
+            imgZoomState.startX = e.touches[0].clientX - imgZoomState.translateX;
+            imgZoomState.startY = e.touches[0].clientY - imgZoomState.translateY;
+          }
+        }
+      }, { passive: false });
+
+      container.addEventListener('touchmove', function(e) {
+        if (imgZoomState.isPinching && e.touches.length === 2) {
+          e.preventDefault();
+          var dist = Math.hypot(
+            e.touches[0].clientX - e.touches[1].clientX,
+            e.touches[0].clientY - e.touches[1].clientY
+          );
+          if (imgZoomState.initialDistance > 0) {
+            var ratio = dist / imgZoomState.initialDistance;
+            var targetScale = Math.min(Math.max(imgZoomState.initialScale * ratio, imgZoomState.minScale), imgZoomState.maxScale);
+            imgZoomState.scale = targetScale;
+            applyImageZoom(false); // High refresh rate (60/120fps) direct transform
+          }
+        } else if (imgZoomState.isDragging && e.touches.length === 1 && imgZoomState.scale > 1) {
+          e.preventDefault();
+          imgZoomState.translateX = e.touches[0].clientX - imgZoomState.startX;
+          imgZoomState.translateY = e.touches[0].clientY - imgZoomState.startY;
+
+          // Restrict translation bounds
+          var maxTranslate = Math.max(120, (imgZoomState.scale - 1) * 220);
+          imgZoomState.translateX = Math.max(-maxTranslate, Math.min(maxTranslate, imgZoomState.translateX));
+          imgZoomState.translateY = Math.max(-maxTranslate, Math.min(maxTranslate, imgZoomState.translateY));
+
+          applyImageZoom(false);
+        }
+      }, { passive: false });
+
+      container.addEventListener('touchend', function(e) {
+        if (e.touches.length < 2) {
+          imgZoomState.isPinching = false;
+        }
+        if (e.touches.length === 0) {
+          imgZoomState.isDragging = false;
+          if (imgZoomState.scale <= 1) {
+            resetImageModalZoom(true);
+          }
+        }
+      });
+
+      // Mouse wheel zoom (Desktop & Trackpad)
+      container.addEventListener('wheel', function(e) {
+        e.preventDefault();
+        var delta = e.deltaY < 0 ? 0.35 : -0.35;
+        zoomImageModal(delta);
+      }, { passive: false });
+
+      // Mouse drag pan (Desktop)
+      var mouseStart = { x: 0, y: 0 };
+      var isMouseDown = false;
+      container.addEventListener('mousedown', function(e) {
+        if (imgZoomState.scale > 1) {
+          isMouseDown = true;
+          mouseStart.x = e.clientX - imgZoomState.translateX;
+          mouseStart.y = e.clientY - imgZoomState.translateY;
+          e.preventDefault();
+        }
+      });
+      window.addEventListener('mousemove', function(e) {
+        if (isMouseDown && imgZoomState.scale > 1) {
+          imgZoomState.translateX = e.clientX - mouseStart.x;
+          imgZoomState.translateY = e.clientY - mouseStart.y;
+          applyImageZoom(false);
+        }
+      });
+      window.addEventListener('mouseup', function() {
+        isMouseDown = false;
+      });
+    }
+
     function openImageModal(src, caption, userOrMembers) {
       if (!src) return;
       var imgEl = document.getElementById('imageModalSrc');
+      resetImageModalZoom(false);
+      var hint = document.getElementById('imageZoomHint');
+      if (hint) {
+        hint.style.opacity = '1';
+        setTimeout(function() {
+          if (hint) hint.style.opacity = '0';
+        }, 2800);
+      }
+
       var capEl = document.getElementById('imageModalCaption');
       var cardEl = document.getElementById('imageModalMembersCard');
       var teamNameEl = document.getElementById('imageModalTeamName');
@@ -2576,8 +2778,9 @@
     window.openImageModal = openImageModal;
 
     function closeImageModal() {
+      resetImageModalZoom(false);
       var modal = document.getElementById('imageModal');
-      modal.style.display = 'none';
+      if (modal) modal.style.display = 'none';
     }
 
     function openSelfProfileModal() {
@@ -9260,6 +9463,8 @@
     function initAppStartup() {
       // Connect to Firebase Realtime Stream immediately
       initFirebaseRealtimeSync();
+      // Initialize Touch Pinch-to-zoom & Pan Gestures
+      initImageZoomGestures();
 
       try {
         var savedUserStr = safeGetStorage('rally_session_user');
