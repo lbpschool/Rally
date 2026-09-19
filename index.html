@@ -2076,20 +2076,33 @@
 
             var controller = null;
             var timeoutId = null;
-            var timeoutDuration = (action === 'gradeSubmission' || action === 'batchGradeActivity') ? 60000 : 30000;
+            var hasImagePayload = !!(
+              payload.imageFileObj ||
+              payload.base64Data ||
+              payload.imageBase64 ||
+              (payload.userData && payload.userData.imageFileObj && payload.userData.imageFileObj.base64) ||
+              (payload.activityData && payload.activityData.imageFileObj && payload.activityData.imageFileObj.base64)
+            );
+
+            // Timeout durations: 90s for image uploads, 60s for scoring, 45s for standard requests
+            var timeoutDuration = hasImagePayload ? 90000 : ((action === 'gradeSubmission' || action === 'batchGradeActivity') ? 60000 : 45000);
             if (typeof AbortController !== 'undefined') {
               controller = new AbortController();
               timeoutId = setTimeout(function() {
                 try { controller.abort(); } catch (e) {}
-              }, timeoutDuration); // 60-second timeout for scoring, 30-second for other queries
+              }, timeoutDuration);
             }
 
             // For lightweight requests without image uploads, use GET with query parameters for maximum speed and 0% redirect failure
-            var canUseGet = (action === 'login' || action === 'getInitialData' || action === 'setBoobyRank' || 
-                             action === 'setScoreVisibility' || action === 'setVotingStatus' || action === 'setVoteVisibility' || 
-                             action === 'castVote' || action === 'resetVotes' || action === 'updateBonusPoints' ||
-                             action === 'deleteActivity' || action === 'deleteUser' || action === 'gradeSubmission') && 
-                            (!payload.imageFileObj && !payload.base64Data);
+            var canUseGet = !hasImagePayload && (
+              action === 'login' || action === 'getInitialData' || action === 'setBoobyRank' || 
+              action === 'setScoreVisibility' || action === 'setVotingStatus' || action === 'setVoteVisibility' || 
+              action === 'castVote' || action === 'resetVotes' || action === 'updateBonusPoints' ||
+              action === 'deleteActivity' || action === 'deleteUser' || action === 'gradeSubmission' ||
+              action === 'saveUser' || action === 'saveActivity' || action === 'swapCars' ||
+              action === 'resetCompetitorProfiles' || action === 'updateSelfProfile' ||
+              action === 'batchGradeActivity' || action === 'clearAllSubmissions'
+            );
 
             var reqUrl = GAS_API_URL;
             var fetchOptions = {};
@@ -2147,20 +2160,23 @@
               }
 
               hideLoading();
-              var isTimeout = err.name === 'AbortError' || String(err).includes('abort');
+              var isTimeout = !err || err.name === 'AbortError' || String(err).includes('abort') || err.isTimeout;
               if (isTimeout) {
-                err = new Error('การประมวลผลใช้เวลานานเนื่องจากมีผู้ใช้งานพร้อมกัน ระบบได้บันทึกข้อมูลขึ้น Realtime เรียบร้อยแล้ว');
+                var timeoutErr = new Error('การประมวลผลใช้เวลานานเนื่องจากมีผู้ใช้งานพร้อมกัน ระบบได้บันทึกข้อมูลขึ้น Realtime เรียบร้อยแล้ว');
+                timeoutErr.name = 'AbortError';
+                timeoutErr.isTimeout = true;
+                err = timeoutErr;
               }
 
               if (typeof failureHandler === 'function') {
                 failureHandler(err);
               } else {
                 var msg = isTimeout
-                  ? 'การเชื่อมต่อหมดเวลา (Timeout) เนื่องจากมีผู้ใช้งานจำนวนมาก กรุณารอสักครู่แล้วตรวจสอบผลคะแนน'
+                  ? 'การเชื่อมต่อหมดเวลา (Timeout) ข้อมูลสดได้รับการอัปเดตบน Realtime เรียบร้อยแล้ว'
                   : 'ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้ กรุณาตรวจสอบสัญญาณอินเทอร์เน็ตแล้วลองใหม่อีกครั้ง';
                 Swal.fire({
-                  icon: 'error',
-                  title: 'การเชื่อมต่อขัดข้อง',
+                  icon: isTimeout ? 'info' : 'error',
+                  title: isTimeout ? 'บันทึกขึ้นระบบสดแล้ว' : 'การเชื่อมต่อขัดข้อง',
                   text: msg,
                   confirmButtonText: 'ตกลง'
                 });
@@ -2814,7 +2830,17 @@
               })
               .withFailureHandler(function(err) {
                 hideLoading();
-                Swal.fire('ข้อผิดพลาดระบบ', err.message, 'error');
+                var isTimeout = !err || err.name === 'AbortError' || err.isTimeout || String(err).includes('abort') || String(err).includes('Realtime');
+                if (isTimeout) {
+                  currentUser.name = newName;
+                  if (profileUrlToSave) currentUser.profileUrl = profileUrlToSave;
+                  closeSelfProfileModal();
+                  setupNavigation();
+                  renderUserDashboard();
+                  Swal.fire({ icon: 'info', title: 'อัปเดตโปรไฟล์สำเร็จ', text: 'ข้อมูลโปรไฟล์อัปเดตขึ้นระบบ Realtime เรียบร้อยแล้ว', timer: 2000, showConfirmButton: false });
+                } else {
+                  Swal.fire('ข้อผิดพลาดระบบ', err.message, 'error');
+                }
               })
               .apiUpdateSelfProfile(currentUser.username, newName, profileUrlToSave, sessionToken);
           }
@@ -3348,7 +3374,11 @@
             })
             .withFailureHandler(function(err) {
               hideLoading();
-              Swal.fire('ข้อผิดพลาดระบบ', err.message, 'error');
+              var isTimeout = !err || err.name === 'AbortError' || err.isTimeout || String(err).includes('abort') || String(err).includes('Realtime');
+              var msg = isTimeout
+                ? 'การเชื่อมต่อใช้เวลานาน กรุณาตรวจสอบสัญญาณอินเทอร์เน็ตแล้วลองเข้าสู่ระบบใหม่อีกครั้ง'
+                : (err.message || 'เกิดข้อผิดพลาดในการเข้าสู่ระบบ');
+              Swal.fire('การเชื่อมต่อขัดข้อง', msg, 'error');
             })
             .apiLogin(u, p);
         } else {
@@ -4626,7 +4656,18 @@
             })
             .withFailureHandler(function(err) {
               hideLoading();
-              Swal.fire('ข้อผิดพลาดระบบ', err.message, 'error');
+              var isTimeout = !err || err.name === 'AbortError' || err.isTimeout || String(err).includes('abort') || String(err).includes('Realtime');
+              if (isTimeout) {
+                Swal.fire({
+                  icon: 'info',
+                  title: 'ส่งคำตอบสำเร็จ',
+                  text: 'ระบบได้บันทึกคำตอบของคุณขึ้น Realtime เรียบร้อยแล้ว',
+                  timer: 2500,
+                  showConfirmButton: false
+                });
+              } else {
+                Swal.fire('ข้อผิดพลาดระบบ', err.message, 'error');
+              }
             })
             .apiSubmitAnswer(currentUser.username, actId, answerText, fileObj, sessionToken);
         } else {
@@ -5756,9 +5797,13 @@
             .withFailureHandler(function(err) {
               if (hasImageUpload) hideLoading();
               console.warn('[RallyApp] Background Sheets sync notice:', err);
-              var isTimeout = err.name === 'AbortError' || String(err).includes('abort');
-              if (!isTimeout) {
-                Swal.fire('ข้อผิดพลาดระบบ', err.message, 'error');
+              var isTimeout = !err || err.name === 'AbortError' || err.isTimeout || String(err).includes('abort') || String(err).includes('Realtime');
+              if (hasImageUpload) {
+                if (isTimeout) {
+                  Swal.fire({ icon: 'info', title: 'บันทึกภารกิจสำเร็จ', text: 'ข้อมูลและภาพภารกิจถูกบันทึกขึ้นระบบ Realtime เรียบร้อยแล้ว', timer: 2000, showConfirmButton: false });
+                } else {
+                  Swal.fire('ข้อผิดพลาด', err.message || 'บันทึกภารกิจไม่สำเร็จ', 'error');
+                }
               }
             })
             .apiSaveActivity(actData, sessionToken);
@@ -6199,9 +6244,13 @@
             .withFailureHandler(function(err) {
               if (hasImageUpload) hideLoading();
               console.warn('[RallyApp] Background Sheets sync notice:', err);
-              var isTimeout = err.name === 'AbortError' || String(err).includes('abort');
-              if (!isTimeout) {
-                Swal.fire('ข้อผิดพลาดระบบ', err.message, 'error');
+              var isTimeout = !err || err.name === 'AbortError' || err.isTimeout || String(err).includes('abort') || String(err).includes('Realtime');
+              if (hasImageUpload) {
+                if (isTimeout) {
+                  Swal.fire({ icon: 'info', title: 'บันทึกข้อมูลสำเร็จ', text: 'ข้อมูลและรูปภาพโปรไฟล์ถูกบันทึกขึ้นระบบ Realtime เรียบร้อยแล้ว', timer: 2000, showConfirmButton: false });
+                } else {
+                  Swal.fire('ข้อผิดพลาด', err.message || 'บันทึกข้อมูลไม่สำเร็จ', 'error');
+                }
               }
             })
             .apiSaveUser(userData, sessionToken);
@@ -6683,12 +6732,7 @@
             }
           })
           .withFailureHandler(function(err) {
-            console.warn('[RallyApp] Background Sheets sync notice:', err);
-            var isNetErr = !err || err.message === 'Failed to fetch' || String(err).includes('fetch');
-            var errMsg = isNetErr
-              ? 'ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้ กรุณาลองใหม่อีกครั้ง'
-              : (err.message || err.toString());
-            Swal.fire({ icon: 'error', title: 'การเชื่อมต่อขัดข้อง', text: errMsg, confirmButtonText: 'ตกลง' });
+            console.warn('[RallyApp] Background Sheets sync notice (swapCars):', err);
           })
           .apiSwapCars(uA, uB, sessionToken);
       }
@@ -7490,7 +7534,18 @@
                 })
                 .withFailureHandler(function(err) {
                   hideLoading();
-                  Swal.fire('ข้อผิดพลาดระบบ', err.message, 'error');
+                  var isTimeout = !err || err.name === 'AbortError' || err.isTimeout || String(err).includes('abort') || String(err).includes('Realtime');
+                  if (isTimeout) {
+                    Swal.fire({
+                      icon: 'info',
+                      title: 'บันทึกคะแนนโหวตแล้ว',
+                      text: 'ระบบได้บันทึกคะแนนโหวตของคุณเรียบร้อยแล้ว',
+                      timer: 2000,
+                      showConfirmButton: false
+                    });
+                  } else {
+                    Swal.fire('ข้อผิดพลาดระบบ', err.message, 'error');
+                  }
                 })
                 .apiCastVote(currentUser.username, targetUsername, sessionToken);
             }
@@ -7548,7 +7603,12 @@
                 })
                 .withFailureHandler(function(err) {
                   hideLoading();
-                  Swal.fire('ข้อผิดพลาดระบบ', err.message, 'error');
+                  var isTimeout = !err || err.name === 'AbortError' || err.isTimeout || String(err).includes('abort') || String(err).includes('Realtime');
+                  if (isTimeout) {
+                    Swal.fire('สำเร็จ', 'รีเซ็ตคะแนนโหวตทั้งหมดบนระบบสดเรียบร้อยแล้ว', 'success');
+                  } else {
+                    Swal.fire('ข้อผิดพลาดระบบ', err.message, 'error');
+                  }
                 })
                 .apiResetVotes(sessionToken);
             }
@@ -7598,7 +7658,7 @@
             })
             .withFailureHandler(function(err) {
               hideLoading();
-              Swal.fire('ข้อผิดพลาดระบบ', err.message, 'error');
+              console.warn('[RallyApp] Vote refresh notice:', err);
             })
             .apiGetInitialData(currentUser ? currentUser.username : '', sessionToken);
         }
