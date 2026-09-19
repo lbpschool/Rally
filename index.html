@@ -713,11 +713,20 @@
               <p class="text-xs text-slate-400 mt-1">เลือกภารกิจเพื่อส่งคำตอบ ตรวจข้อความ หรืออัปโหลดรูปภาพ</p>
             </div>
 
-            <div class="flex items-center gap-1 glass-card p-1 rounded-xl text-xs font-medium">
-              <button onclick="filterUserCategory('ALL')" id="tabUserALL" class="px-3 py-1 rounded-lg text-white bg-purple-600 transition-all">ทั้งหมด</button>
-              <button onclick="filterUserCategory('RC')" id="tabUserRC" class="px-3 py-1 rounded-lg text-slate-600 hover:text-purple-600 transition-all">จุด RC</button>
-              <button onclick="filterUserCategory('Base')" id="tabUserBase" class="px-3 py-1 rounded-lg text-slate-600 hover:text-purple-600 transition-all">กิจกรรมฐาน</button>
-              <button onclick="filterUserCategory('Quiz')" id="tabUserQuiz" class="px-3 py-1 rounded-lg text-slate-600 hover:text-purple-600 transition-all">เกมส์คำถาม</button>
+            <div class="flex items-center gap-2 flex-wrap">
+              <div class="flex items-center gap-1 glass-card p-1 rounded-xl text-xs font-medium">
+                <button onclick="filterUserCategory('ALL')" id="tabUserALL" class="px-3 py-1 rounded-lg text-white bg-purple-600 transition-all">ทั้งหมด</button>
+                <button onclick="filterUserCategory('RC')" id="tabUserRC" class="px-3 py-1 rounded-lg text-slate-600 hover:text-purple-600 transition-all">จุด RC</button>
+                <button onclick="filterUserCategory('Base')" id="tabUserBase" class="px-3 py-1 rounded-lg text-slate-600 hover:text-purple-600 transition-all">กิจกรรมฐาน</button>
+                <button onclick="filterUserCategory('Quiz')" id="tabUserQuiz" class="px-3 py-1 rounded-lg text-slate-600 hover:text-purple-600 transition-all">เกมส์คำถาม</button>
+              </div>
+
+              <!-- Admin Reset All Activities Button -->
+              <div id="userMissionsAdminResetContainer" style="display: none;">
+                <button type="button" onclick="resetAllActivities()" title="ลบภารกิจทั้งหมดและล้างคะแนนเพื่อเริ่มจัดกิจกรรมใหม่ (เฉพาะ Admin)" class="px-3.5 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold shadow-md transition-all flex items-center gap-1.5 cursor-pointer active:scale-95 whitespace-nowrap">
+                  <i class="fa-solid fa-trash-can text-xs"></i> รีเซ็ตภารกิจทั้งหมด
+                </button>
+              </div>
             </div>
           </div>
 
@@ -818,8 +827,11 @@
               <p class="text-xs text-slate-400 mt-1">เพิ่ม แก้ไข หรือลบภารกิจ พร้อมตั้งค่ารูปแบบการตรวจคะแนน</p>
             </div>
             
-            <div class="flex items-center gap-3">
+            <div class="flex items-center gap-2 flex-wrap">
               <input type="text" id="searchActivityInput" placeholder="ค้นหาภารกิจ..." class="px-4 py-2 rounded-xl glass-input text-xs">
+              <button onclick="resetAllActivities()" title="ลบภารกิจทั้งหมดและล้างคะแนนเพื่อเริ่มจัดกิจกรรมใหม่" class="px-3.5 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold shadow-md transition-all flex items-center gap-2 whitespace-nowrap cursor-pointer">
+                <i class="fa-solid fa-trash-can"></i> รีเซ็ตภารกิจทั้งหมด
+              </button>
               <button onclick="openActivityModal()" class="px-4 py-2 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white text-xs font-semibold shadow-md hover:opacity-90 flex items-center gap-2 whitespace-nowrap">
                 <i class="fa-solid fa-plus"></i> เพิ่มภารกิจใหม่
               </button>
@@ -2055,6 +2067,9 @@
             apiClearAllSubmissions: function() {
               callFetch('clearAllSubmissions', {});
             },
+            apiClearAllActivities: function() {
+              callFetch('clearAllActivities', {});
+            },
             apiBatchGradeActivity: function(activityId, score) {
               callFetch('batchGradeActivity', { activityId: activityId, score: score });
             },
@@ -2101,7 +2116,7 @@
               action === 'deleteActivity' || action === 'deleteUser' || action === 'gradeSubmission' ||
               action === 'saveUser' || action === 'saveActivity' || action === 'swapCars' ||
               action === 'resetCompetitorProfiles' || action === 'updateSelfProfile' ||
-              action === 'batchGradeActivity' || action === 'clearAllSubmissions'
+              action === 'batchGradeActivity' || action === 'clearAllSubmissions' || action === 'clearAllActivities'
             );
 
             var reqUrl = GAS_API_URL;
@@ -3165,6 +3180,101 @@
     }
     window.resetAllSubmissions = resetAllSubmissions;
 
+    function resetAllActivities() {
+      if (!currentUser || currentUser.role !== 'Admin') {
+        Swal.fire('ไม่มีสิทธิ์', 'เฉพาะผู้ดูแลระบบ (Admin) เท่านั้นที่สามารถรีเซ็ตภารกิจได้', 'warning');
+        return;
+      }
+
+      var currentCount = activitiesData ? activitiesData.length : 0;
+      Swal.fire({
+        title: '⚠️ ยืนยันลบทุกภารกิจ?',
+        html: '<div class="text-xs text-slate-600 text-left space-y-2 mt-2">' +
+          '<p class="font-bold text-rose-600">คำเตือน: คุณกำลังจะลบภารกิจทั้งหมด (' + currentCount + ' รายการ) ออกจากระบบ!</p>' +
+          '<p class="text-slate-600">• จุด RC, ฐานกิจกรรม และเกมส์คำถามทั้งหมดจะถูก<strong>ลบทิ้งจนเหลือ 0 รายการ</strong></p>' +
+          '<p class="text-slate-600">• ประวัติการส่งคำตอบและคะแนนของทุกทีมจะถูก<strong>ล้างออกทั้งหมด</strong>เพื่อให้เริ่มจัดกิจกรรมใหม่</p>' +
+          '<p class="text-rose-600 font-bold">• การดำเนินการนี้ไม่สามารถกู้คืนได้!</p>' +
+          '</div>',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#e11d48',
+        cancelButtonColor: '#64748b',
+        confirmButtonText: '<i class="fa-solid fa-trash-can mr-1"></i> ยืนยันลบทุกภารกิจ',
+        cancelButtonText: 'ยกเลิก'
+      }).then(function(result) {
+        if (result.isConfirmed) {
+          showLoading('กำลังลบภารกิจทั้งหมดและล้างคะแนนระบบ...');
+
+          // Optimistic instant local wipe
+          activitiesData = [];
+          submissionsData = [];
+
+          // INSTANT BROADCAST TO FIREBASE REALTIME DATABASE (< 0.1s update on all client devices)
+          try {
+            if (typeof firebase !== 'undefined' && firebase.apps && firebase.apps.length) {
+              firebase.database().ref('live_rally_data/activities').set([]);
+              firebase.database().ref('live_rally_data/submissions').set([]);
+              firebase.database().ref('live_rally_data/timestamp').set(Date.now());
+              console.log('[Firebase Realtime] All activities and submissions cleared in RTDB!');
+            }
+          } catch (fbErr) {
+            console.warn('[Firebase Realtime] Push error:', fbErr);
+          }
+
+          setupNavigation();
+          renderUserMissionsGrid();
+          renderAdminActivitiesTable();
+          renderUserDashboard();
+          renderLeaderboard();
+          renderGradingList();
+          renderAnalytics();
+
+          if (isMockMode) {
+            setTimeout(function() {
+              hideLoading();
+              Swal.fire('รีเซ็ตสำเร็จ!', 'ลบภารกิจทั้งหมดและล้างคะแนนเรียบร้อยแล้ว', 'success');
+            }, 300);
+          } else {
+            if (typeof google !== 'undefined' && google.script && google.script.run) {
+              google.script.run
+                .withSuccessHandler(function(res) {
+                  hideLoading();
+                  if (res && res.success) {
+                    Swal.fire({
+                      icon: 'success',
+                      title: 'ลบภารกิจทั้งหมดสำเร็จ!',
+                      text: res.message || 'ลบภารกิจทั้งหมดและล้างคะแนนระบบเรียบร้อยแล้ว พร้อมให้คุณสร้างภารกิจใหม่',
+                      timer: 2500,
+                      showConfirmButton: false
+                    });
+                    loadAppData(true);
+                  } else {
+                    handleApiResponseError(res);
+                  }
+                })
+                .withFailureHandler(function(err) {
+                  hideLoading();
+                  var isTimeout = !err || err.name === 'AbortError' || err.isTimeout || String(err).includes('abort') || String(err).includes('Realtime');
+                  if (isTimeout) {
+                    Swal.fire({
+                      icon: 'info',
+                      title: 'ลบภารกิจสำเร็จ',
+                      text: 'ระบบได้ลบภารกิจทั้งหมดและอัปเดตขึ้น Realtime เรียบร้อยแล้ว',
+                      timer: 2500,
+                      showConfirmButton: false
+                    });
+                  } else {
+                    Swal.fire('ข้อผิดพลาดระบบ', err.message || 'เกิดข้อผิดพลาดในการลบภารกิจ', 'error');
+                  }
+                })
+                .apiClearAllActivities(sessionToken);
+            }
+          }
+        }
+      });
+    }
+    window.resetAllActivities = resetAllActivities;
+
     function resetCompetitorProfiles() {
       if (!ensureAuthenticated()) return;
       Swal.fire({
@@ -3607,6 +3717,11 @@
       }
 
       if (mobileNav) mobileNav.innerHTML = linksHTML;
+
+      var adminResetMissionsBtn = document.getElementById('userMissionsAdminResetContainer');
+      if (adminResetMissionsBtn) {
+        adminResetMissionsBtn.style.display = (currentUser && currentUser.role === 'Admin') ? 'block' : 'none';
+      }
     }
 
     function closeMobileSidebar() {
@@ -4196,21 +4311,32 @@
       var container = document.getElementById('userMissionsGrid');
       if (!container) return;
 
-      var filtered = activitiesData;
+      var adminResetBtn = document.getElementById('userMissionsAdminResetContainer');
+      if (adminResetBtn) {
+        adminResetBtn.style.display = (currentUser && currentUser.role === 'Admin') ? 'block' : 'none';
+      }
+
+      var filtered = activitiesData || [];
       if (userCategoryFilter !== 'ALL') {
-        filtered = activitiesData.filter(function(a) { return a.category === userCategoryFilter; });
+        filtered = filtered.filter(function(a) { return a.category === userCategoryFilter; });
       }
 
       if (filtered.length === 0) {
-        if (!activitiesData || activitiesData.length === 0) {
+        if (!activitiesData) {
           container.innerHTML = '<div class="col-span-full text-center py-12 text-slate-500 rounded-3xl bg-white border border-slate-200 flex flex-col items-center justify-center gap-3 shadow-sm">' +
             '<i class="fa-solid fa-arrows-rotate fa-spin text-3xl text-purple-600"></i>' +
             '<p class="text-sm font-bold text-slate-700">กำลังเชื่อมต่อและโหลดข้อมูลภารกิจจากฐานข้อมูล...</p>' +
             '<button onclick="loadAppData()" class="mt-1 px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs transition-all shadow-md cursor-pointer flex items-center gap-1.5"><i class="fa-solid fa-arrows-rotate"></i> โหลดข้อมูลใหม่</button>' +
             '</div>';
-          if (currentUser) {
-            setTimeout(loadAppData, 200);
-          }
+        } else if (activitiesData.length === 0) {
+          container.innerHTML = '<div class="col-span-full text-center py-12 text-slate-500 rounded-3xl bg-white border border-slate-200 flex flex-col items-center justify-center gap-3 shadow-sm">' +
+            '<div class="w-14 h-14 rounded-2xl bg-purple-50 text-purple-600 flex items-center justify-center text-2xl mb-1 shadow-xs">' +
+            '<i class="fa-solid fa-flag-checkered"></i>' +
+            '</div>' +
+            '<p class="text-sm font-bold text-slate-700">ยังไม่มีรายการภารกิจในระบบ</p>' +
+            '<p class="text-xs text-slate-400 max-w-sm">ผู้ดูแลระบบสามารถกดปุ่ม "เพิ่มภารกิจใหม่" ในหน้าจัดการภารกิจเพื่อเริ่มสร้างจุด RC และฐานกิจกรรมได้ทันที</p>' +
+            ((currentUser && currentUser.role === 'Admin') ? '<button onclick="switchView(\'AdminActivities\'); openActivityModal();" class="mt-2 px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs transition-all shadow-md cursor-pointer flex items-center gap-1.5"><i class="fa-solid fa-plus"></i> เพิ่มภารกิจใหม่ตอนนี้</button>' : '') +
+            '</div>';
         } else {
           container.innerHTML = '<div class="col-span-full text-center py-8 text-slate-400 rounded-3xl bg-white border border-slate-200">ไม่พบรายการภารกิจในหมวดหมู่นี้</div>';
         }

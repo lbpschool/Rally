@@ -132,6 +132,9 @@ function handleApiRequest(action, payload) {
     case 'clearAllSubmissions':
       result = apiClearAllSubmissions(token);
       break;
+    case 'clearAllActivities':
+      result = apiClearAllActivities(token);
+      break;
     case 'batchGradeActivity':
       result = apiBatchGradeActivity(payload.activityId, payload.score, token);
       break;
@@ -153,7 +156,7 @@ function handleApiRequest(action, payload) {
   // (Routine actions like submitAnswer, gradeSubmission, updateBonusPoints, castVote, saveUser, deleteUser, saveActivity, deleteActivity, resetCompetitorProfiles update the cache in-place!)
   const structuralActions = [
     'setBoobyRank', 'setScoreVisibility', 'setVotingStatus', 'setVoteVisibility',
-    'resetVotes', 'batchGradeActivity', 'swapCars', 'updateSelfProfile', 'clearAllSubmissions'
+    'resetVotes', 'batchGradeActivity', 'swapCars', 'updateSelfProfile', 'clearAllSubmissions', 'clearAllActivities'
   ];
   if (structuralActions.indexOf(action) !== -1 && result && result.success !== false) {
     invalidateGlobalCache();
@@ -1880,6 +1883,33 @@ function apiClearAllSubmissions(sessionToken) {
       subSheet.getRange(2, 1, lastRow - 1, subSheet.getLastColumn()).clearContent();
     }
     return { success: true, message: 'ลบประวัติการส่งคำตอบของรถทุกคันเรียบร้อยแล้ว' };
+  });
+}
+
+/**
+ * API: Clear All Activities and Submissions (Reset All Missions - Admin Only)
+ */
+function apiClearAllActivities(sessionToken) {
+  const auth = verifyAuth(sessionToken, ['Admin']);
+  if (!auth.success) return auth;
+
+  return withLock(function() {
+    const ss = getSpreadsheet();
+    // 1. Clear Activities Sheet (keep header row 1)
+    const actSheet = getOrCreateSheet(ss, SHEET_NAMES.ACTIVITIES);
+    const actLastRow = actSheet.getLastRow();
+    if (actLastRow > 1) {
+      actSheet.getRange(2, 1, actLastRow - 1, actSheet.getLastColumn()).clearContent();
+    }
+
+    // 2. Clear Submissions Sheet (keep header row 1)
+    const subSheet = getOrCreateSheet(ss, SHEET_NAMES.SUBMISSIONS);
+    const subLastRow = subSheet.getLastRow();
+    if (subLastRow > 1) {
+      subSheet.getRange(2, 1, subLastRow - 1, subSheet.getLastColumn()).clearContent();
+    }
+
+    return { success: true, message: 'ลบภารกิจทั้งหมดและล้างคะแนนระบบเรียบร้อยแล้ว' };
   });
 }
 
