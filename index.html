@@ -858,7 +858,7 @@
             
             <div class="flex items-center gap-2 flex-wrap">
               <input type="text" id="searchUserInput" placeholder="ค้นหาผู้แข่งขัน..." class="px-4 py-2 rounded-xl glass-input text-xs">
-              <button onclick="resetCompetitorProfiles()" title="รีเซ็ตชื่อและรูปโปรไฟล์ของผู้แข่งขันทุกคันกลับเป็นค่าเริ่มต้น (Admin/Sub-Admin ไม่ถูกเปลี่ยน)" class="px-3.5 py-2 rounded-xl bg-pink-600 hover:bg-pink-700 text-white text-xs font-semibold shadow-md transition-all flex items-center gap-2 whitespace-nowrap cursor-pointer">
+              <button onclick="resetCompetitorProfiles()" title="รีเซ็ตชื่อ รูปโปรไฟล์ และล้างรายชื่อผู้เล่นประจำรถของผู้แข่งขันทุกคันกลับเป็นค่าเริ่มต้น (Admin/Sub-Admin ไม่ถูกเปลี่ยน)" class="px-3.5 py-2 rounded-xl bg-pink-600 hover:bg-pink-700 text-white text-xs font-semibold shadow-md transition-all flex items-center gap-2 whitespace-nowrap cursor-pointer">
                 <i class="fa-solid fa-user-gear"></i> รีเซ็ตชื่อ/รูปผู้แข่งขัน
               </button>
               <button onclick="openUserModal()" class="px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 text-white text-xs font-semibold shadow-md hover:opacity-90 flex items-center gap-2 whitespace-nowrap">
@@ -3200,21 +3200,22 @@
     function resetCompetitorProfiles() {
       if (!ensureAuthenticated()) return;
       Swal.fire({
-        title: '🖼️ รีเซ็ตรูปและชื่อผู้แข่งขัน?',
+        title: '🖼️ รีเซ็ตข้อมูลผู้แข่งขัน?',
         html: '<div class="text-xs text-slate-600 text-left space-y-2 mt-2">' +
-          '<p class="font-bold text-rose-600">คำเตือน: คุณกำลังจะลบรูปภาพและรีเซ็ตชื่อทีมของผู้แข่งขันทุกคันกลับเป็นค่าเริ่มต้น!</p>' +
+          '<p class="font-bold text-rose-600">คำเตือน: คุณกำลังจะลบรูปภาพ รีเซ็ตชื่อทีม และลบรายชื่อผู้เล่นประจำรถของผู้แข่งขันทุกคันกลับเป็นค่าเริ่มต้น!</p>' +
           '<p class="text-slate-500">• บัญชีผู้ดูแลระบบ (Admin) และ กรรมการ (Sub-Admin) <strong>จะไม่ถูกเปลี่ยน</strong></p>' +
           '<p class="text-slate-500">• บัญชีผู้แข่งขัน (User) จะถูกรีเซ็ตชื่อโปรไฟล์และรูปภาพกลับเป็นรูปเริ่มต้น</p>' +
+          '<p class="text-slate-500">• รายชื่อผู้เล่นประจำรถ (4-5 คน) ของรถทุกคันจะถูก<strong>ลบ/ล้างข้อมูลทั้งหมด</strong></p>' +
           '</div>',
         icon: 'warning',
         showCancelButton: true,
         confirmButtonColor: '#e11d48',
         cancelButtonColor: '#64748b',
-        confirmButtonText: '<i class="fa-solid fa-rotate-left mr-1.5"></i> ยืนยันรีเซ็ตชื่อและรูป',
+        confirmButtonText: '<i class="fa-solid fa-rotate-left mr-1.5"></i> ยืนยันรีเซ็ตชื่อ รูป และรายชื่อผู้เล่น',
         cancelButtonText: 'ยกเลิก'
       }).then(function(result) {
         if (result.isConfirmed) {
-          showLoading('กำลังรีเซ็ตชื่อและรูปภาพของผู้แข่งขันทุกคัน...');
+          showLoading('กำลังรีเซ็ตชื่อ รูปภาพ และรายชื่อผู้เล่นประจำรถของผู้แข่งขันทุกคัน...');
 
           var defaultProfileUrl = 'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&w=400&q=80';
 
@@ -3222,8 +3223,34 @@
             if (u.role === 'User') {
               u.name = 'ทีม ' + (u.carCode || u.username);
               u.profileUrl = defaultProfileUrl;
+              u.members = []; // ลบ/ล้างรายชื่อผู้เล่นประจำรถของทุกคัน
             }
           });
+
+          // ถ้าผู้ใช้งานปัจจุบันคือ User ให้รีเซ็ต currentUser ด้วย
+          if (currentUser && currentUser.role === 'User') {
+            currentUser.name = 'ทีม ' + (currentUser.carCode || currentUser.username);
+            currentUser.profileUrl = defaultProfileUrl;
+            currentUser.members = [];
+            try { safeSetStorage('rally_session_user', JSON.stringify(currentUser)); } catch (e) {}
+          }
+
+          // ล้างช่องกรอกรายชื่อผู้เล่นใน Modal ผู้ใช้งาน (หากเปิดค้างอยู่)
+          for (var m = 1; m <= 5; m++) {
+            var mInput = document.getElementById('userFormMember' + m);
+            if (mInput) mInput.value = '';
+          }
+
+          // INSTANT BROADCAST TO FIREBASE REALTIME DATABASE (< 0.1s update on all other devices)
+          try {
+            if (typeof firebase !== 'undefined' && firebase.apps && firebase.apps.length) {
+              firebase.database().ref('live_rally_data/users').set(usersData);
+              firebase.database().ref('live_rally_data/timestamp').set(Date.now());
+              console.log('[Firebase Realtime] Instant reset competitor profiles pushed to RTDB!');
+            }
+          } catch (fbErr) {
+            console.warn('[Firebase Realtime] Push error:', fbErr);
+          }
 
           try { renderUserDashboard(); } catch(e) {}
           try { renderLeaderboard(); } catch(e) {}
@@ -3234,8 +3261,8 @@
             hideLoading();
             Swal.fire({
               icon: 'success',
-              title: 'รีเซ็ตโปรไฟล์สำเร็จ!',
-              text: 'ลบรูปและรีเซ็ตชื่อของผู้เข้าแข่งขันทุกคันเรียบร้อยแล้ว (Admin และ Sub-Admin ไม่ถูกรีเซ็ต)',
+              title: 'รีเซ็ตข้อมูลสำเร็จ!',
+              text: 'ลบรูปภาพ รีเซ็ตชื่อทีม และล้างรายชื่อผู้เล่นประจำรถของผู้เข้าแข่งขันทุกคันเรียบร้อยแล้ว (Admin และ Sub-Admin ไม่ถูกรีเซ็ต)',
               timer: 2500,
               showConfirmButton: false
             });
@@ -5954,7 +5981,16 @@
         document.getElementById('userFormCarColor').value = u.carColor || 'Red';
         document.getElementById('userFormCarCode').value = u.carCode || '';
         
-        var members = (u && Array.isArray(u.members)) ? u.members : [];
+        var members = [];
+        if (u && u.members) {
+          if (Array.isArray(u.members)) {
+            members = u.members;
+          } else if (typeof u.members === 'string') {
+            try { members = JSON.parse(u.members); } catch(e) {
+              members = u.members.split(',').map(function(s){ return s.trim(); }).filter(Boolean);
+            }
+          }
+        }
         for (var i = 1; i <= 5; i++) {
           var el = document.getElementById('userFormMember' + i);
           if (el) el.value = members[i - 1] || '';

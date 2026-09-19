@@ -1854,16 +1854,22 @@ function apiBatchGradeActivity(activityId, score, sessionToken) {
 }
 
 /**
- * API: Reset Name and Profile Image for All Competitors (Admin Only)
+ * API: Reset Name, Profile Image, and Team Members for All Competitors (Admin Only)
  * Admin and Sub-Admin accounts are skipped/not modified.
  */
 function apiResetCompetitorProfiles(sessionToken) {
   const auth = verifyAuth(sessionToken, ['Admin']);
   if (!auth.success) return auth;
 
-  return withLock(function() {
+  const result = withLock(function() {
     const ss = getSpreadsheet();
     const usersSheet = getOrCreateSheet(ss, SHEET_NAMES.USERS);
+
+    // Ensure column 9 ('members') exists
+    if (usersSheet.getLastColumn() < 9) {
+      usersSheet.getRange(1, 9).setValue('members').setFontWeight('bold').setBackground('#1e293b').setFontColor('#ffffff');
+    }
+
     const usersData = usersSheet.getDataRange().getValues();
     const defaultProfileUrl = 'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&w=400&q=80';
     let changed = false;
@@ -1877,6 +1883,9 @@ function apiResetCompetitorProfiles(sessionToken) {
 
         usersData[i][2] = defaultName; // name (col 3)
         usersData[i][6] = defaultProfileUrl; // profileUrl (col 7)
+        if (usersData[i].length >= 9) {
+          usersData[i][8] = '[]'; // members (col 9) -> reset to empty array JSON!
+        }
         changed = true;
       }
     }
@@ -1886,6 +1895,19 @@ function apiResetCompetitorProfiles(sessionToken) {
       usersSheet.getRange(1, 1, usersData.length, usersData[0].length).setValues(usersData);
     }
 
-    return { success: true, message: 'รีเซ็ตชื่อและรูปโปรไฟล์ของผู้แข่งขันทุกคันเรียบร้อยแล้ว' };
+    return { success: true, message: 'รีเซ็ตชื่อ รูปโปรไฟล์ และรายชื่อผู้เข้าแข่งขันของรถทุกคันเรียบร้อยแล้ว' };
   });
+
+  if (result && result.success) {
+    try {
+      invalidateGlobalCache();
+      const freshShared = fetchSharedDataFromSheets();
+      syncToFirebase(freshShared);
+    } catch (e) {
+      Logger.log('apiResetCompetitorProfiles cache update error: ' + e);
+    }
+  }
+
+  return result;
 }
+

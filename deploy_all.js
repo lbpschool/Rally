@@ -30,7 +30,9 @@ try {
 } catch (e) {
   console.log('⚠️  GitHub API deploy error, กำลังใช้ git push origin main แทน...');
   try {
-    execSync(`git add index.html Code.gs deploy_all.js; git commit -m "${desc}"; git push origin main`, { stdio: 'inherit', cwd: __dirname });
+    execSync('git add index.html Code.gs deploy_all.js', { stdio: 'inherit', cwd: __dirname });
+    execSync(`git commit -m "${desc}"`, { stdio: 'inherit', cwd: __dirname });
+    execSync('git push origin main', { stdio: 'inherit', cwd: __dirname });
     console.log('✅ Push to GitHub Pages ผ่าน git push สำเร็จ!');
   } catch (gitErr) {
     console.error('⚠️  Git push error:', gitErr.message);
