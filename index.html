@@ -1661,85 +1661,31 @@
             <input type="text" id="userFormCarCode" placeholder="เช่น R-04" class="w-full px-3 py-2.5 rounded-xl glass-input">
           </div>
 
-          <!-- Team Players Section (ช่องเพิ่มผู้เล่น 1-5 คน) -->
+          <!-- Team Players Section (ช่องเพิ่มผู้เล่นประจำรถ) -->
           <div id="userFormMembersSection" class="p-4 rounded-2xl bg-gradient-to-br from-emerald-50/80 via-teal-50/40 to-slate-50/60 border border-emerald-200/90 space-y-3">
             <div class="flex items-center justify-between flex-wrap gap-1 pb-1 border-b border-emerald-100">
               <label class="font-black text-slate-800 flex items-center gap-1.5 text-xs">
                 <i class="fa-solid fa-users text-emerald-600"></i>
-                <span>รายชื่อผู้เล่นประจำรถ (4 - 5 คน)</span>
+                <span>รายชื่อผู้เล่นประจำรถ (4 คนขึ้นไป)</span>
               </label>
               <span class="text-[10px] text-emerald-700 font-bold px-2 py-0.5 rounded-full bg-emerald-100 border border-emerald-200">พิมพ์ค้นหาจาก 142 รายชื่อ</span>
             </div>
             
             <p class="text-[11px] text-slate-500 leading-snug">
-              พิมพ์ชื่อจริง นามสกุล หรือคำนำหน้า เพื่อค้นหาและเลือกรายชื่อบุคลากร (บางคันมี 4 คน หรือ 5 คน)
+              พิมพ์ชื่อจริง นามสกุล หรือคำนำหน้า เพื่อค้นหาและเลือกรายชื่อบุคลากร (สามารถกดปุ่มเพิ่มผู้เล่นได้มากกว่า 5 คน)
             </p>
 
-            <div class="space-y-2.5">
-              <!-- Player 1 -->
-              <div>
-                <label class="block text-[11px] font-bold text-slate-700 mb-1 flex items-center justify-between">
-                  <span>ผู้เล่นคนที่ 1 (คนขับ/หัวหน้าทีม)</span>
-                  <span class="text-rose-500 text-[10px] font-semibold">*จำเป็น</span>
-                </label>
-                <div class="relative">
-                  <input type="text" id="userFormMember1" list="personnelDatalist" placeholder="พิมพ์ชื่อเพื่อค้นหาผู้เล่นคนที่ 1..." class="w-full pl-8 pr-8 py-2 rounded-xl glass-input text-xs font-medium text-slate-800" autocomplete="off">
-                  <i class="fa-solid fa-user-tie text-emerald-600 absolute left-2.5 top-2.5 text-[11px]"></i>
-                  <button type="button" onclick="clearMemberSlot(1)" class="absolute right-2.5 top-2 text-slate-400 hover:text-rose-500 text-xs font-bold" title="ล้างชื่อ">✕</button>
-                </div>
-              </div>
+            <!-- Dynamic Member Slots Container -->
+            <div id="userFormMembersList" class="space-y-2.5">
+              <!-- Dynamically populated by renderUserFormMembers() -->
+            </div>
 
-              <!-- Player 2 -->
-              <div>
-                <label class="block text-[11px] font-bold text-slate-700 mb-1 flex items-center justify-between">
-                  <span>ผู้เล่นคนที่ 2</span>
-                  <span class="text-rose-500 text-[10px] font-semibold">*จำเป็น</span>
-                </label>
-                <div class="relative">
-                  <input type="text" id="userFormMember2" list="personnelDatalist" placeholder="พิมพ์ชื่อเพื่อค้นหาผู้เล่นคนที่ 2..." class="w-full pl-8 pr-8 py-2 rounded-xl glass-input text-xs font-medium text-slate-800" autocomplete="off">
-                  <i class="fa-solid fa-user text-teal-600 absolute left-2.5 top-2.5 text-[11px]"></i>
-                  <button type="button" onclick="clearMemberSlot(2)" class="absolute right-2.5 top-2 text-slate-400 hover:text-rose-500 text-xs font-bold" title="ล้างชื่อ">✕</button>
-                </div>
-              </div>
-
-              <!-- Player 3 -->
-              <div>
-                <label class="block text-[11px] font-bold text-slate-700 mb-1 flex items-center justify-between">
-                  <span>ผู้เล่นคนที่ 3</span>
-                  <span class="text-rose-500 text-[10px] font-semibold">*จำเป็น</span>
-                </label>
-                <div class="relative">
-                  <input type="text" id="userFormMember3" list="personnelDatalist" placeholder="พิมพ์ชื่อเพื่อค้นหาผู้เล่นคนที่ 3..." class="w-full pl-8 pr-8 py-2 rounded-xl glass-input text-xs font-medium text-slate-800" autocomplete="off">
-                  <i class="fa-solid fa-user text-teal-600 absolute left-2.5 top-2.5 text-[11px]"></i>
-                  <button type="button" onclick="clearMemberSlot(3)" class="absolute right-2.5 top-2 text-slate-400 hover:text-rose-500 text-xs font-bold" title="ล้างชื่อ">✕</button>
-                </div>
-              </div>
-
-              <!-- Player 4 -->
-              <div>
-                <label class="block text-[11px] font-bold text-slate-700 mb-1 flex items-center justify-between">
-                  <span>ผู้เล่นคนที่ 4</span>
-                  <span class="text-rose-500 text-[10px] font-semibold">*จำเป็น</span>
-                </label>
-                <div class="relative">
-                  <input type="text" id="userFormMember4" list="personnelDatalist" placeholder="พิมพ์ชื่อเพื่อค้นหาผู้เล่นคนที่ 4..." class="w-full pl-8 pr-8 py-2 rounded-xl glass-input text-xs font-medium text-slate-800" autocomplete="off">
-                  <i class="fa-solid fa-user text-teal-600 absolute left-2.5 top-2.5 text-[11px]"></i>
-                  <button type="button" onclick="clearMemberSlot(4)" class="absolute right-2.5 top-2 text-slate-400 hover:text-rose-500 text-xs font-bold" title="ล้างชื่อ">✕</button>
-                </div>
-              </div>
-
-              <!-- Player 5 -->
-              <div>
-                <label class="block text-[11px] font-bold text-slate-700 mb-1 flex items-center justify-between">
-                  <span>ผู้เล่นคนที่ 5</span>
-                  <span class="text-slate-400 text-[10px] font-normal">(เว้นว่างได้ หากคันนี้มี 4 คน)</span>
-                </label>
-                <div class="relative">
-                  <input type="text" id="userFormMember5" list="personnelDatalist" placeholder="พิมพ์ชื่อเพื่อค้นหาผู้เล่นคนที่ 5 (ถ้ามี)..." class="w-full pl-8 pr-8 py-2 rounded-xl glass-input text-xs font-medium text-slate-800" autocomplete="off">
-                  <i class="fa-solid fa-user-plus text-slate-400 absolute left-2.5 top-2.5 text-[11px]"></i>
-                  <button type="button" onclick="clearMemberSlot(5)" class="absolute right-2.5 top-2 text-slate-400 hover:text-rose-500 text-xs font-bold" title="ล้างชื่อ">✕</button>
-                </div>
-              </div>
+            <!-- Add member button -->
+            <div class="pt-1">
+              <button type="button" id="addMemberSlotBtn" onclick="addMemberSlot()" class="w-full py-2.5 px-3 rounded-xl border border-dashed border-emerald-400 bg-emerald-50/90 hover:bg-emerald-100/90 text-emerald-700 hover:text-emerald-900 font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-xs active:scale-[0.99] cursor-pointer">
+                <i class="fa-solid fa-user-plus text-emerald-600"></i>
+                <span>+ เพิ่มผู้เล่นคนที่ <span id="nextMemberNumber">6</span></span>
+              </button>
             </div>
 
             <!-- Datalist for personnel search -->
@@ -3224,6 +3170,10 @@
           }
 
           // ล้างช่องกรอกรายชื่อผู้เล่นใน Modal ผู้ใช้งาน (หากเปิดค้างอยู่)
+          var mInputs = document.querySelectorAll('#userFormMembersList input[name="userFormMember"]');
+          if (mInputs && mInputs.length > 0) {
+            mInputs.forEach(function(inp) { inp.value = ''; });
+          }
           for (var m = 1; m <= 5; m++) {
             var mInput = document.getElementById('userFormMember' + m);
             if (mInput) mInput.value = '';
@@ -6019,10 +5969,7 @@
             }
           }
         }
-        for (var i = 1; i <= 5; i++) {
-          var el = document.getElementById('userFormMember' + i);
-          if (el) el.value = members[i - 1] || '';
-        }
+        renderUserFormMembers(members);
       } else {
         document.getElementById('modalUserTitle').innerHTML = '<i class="fa-solid fa-user-plus text-emerald-600"></i> เพิ่มผู้ใช้งาน / รถแข่ง';
         document.getElementById('userFormUsername').value = '';
@@ -6035,10 +5982,7 @@
         document.getElementById('userFormCarColor').value = 'Red';
         document.getElementById('userFormCarCode').value = '';
         
-        for (var i = 1; i <= 5; i++) {
-          var el = document.getElementById('userFormMember' + i);
-          if (el) el.value = '';
-        }
+        renderUserFormMembers([]);
       }
       renderPersonnelDatalist();
       var sec = document.getElementById('userFormMembersSection');
@@ -6047,6 +5991,69 @@
       var m = document.getElementById('modalUser');
       m.style.display = 'flex';
     }
+
+    function renderUserFormMembers(values) {
+      values = values || [];
+      var container = document.getElementById('userFormMembersList');
+      if (!container) return;
+
+      var totalSlots = Math.max(5, values.length);
+      var html = '';
+
+      for (var i = 1; i <= totalSlots; i++) {
+        var val = values[i - 1] || '';
+        var badgeHtml = '';
+        var deleteBtnHtml = '';
+        var iconClass = 'fa-solid fa-user text-teal-600';
+
+        if (i === 1) {
+          badgeHtml = '<span class="text-rose-500 text-[10px] font-semibold">*จำเป็น</span>';
+          iconClass = 'fa-solid fa-user-tie text-emerald-600';
+        } else if (i >= 2 && i <= 4) {
+          badgeHtml = '<span class="text-rose-500 text-[10px] font-semibold">*จำเป็น</span>';
+          iconClass = 'fa-solid fa-user text-teal-600';
+        } else if (i === 5) {
+          badgeHtml = '<span class="text-slate-400 text-[10px] font-normal">(เว้นว่างได้ หากมี 4 คน)</span>';
+          iconClass = 'fa-solid fa-user-plus text-slate-400';
+        } else {
+          // Slot 6 and beyond
+          badgeHtml = '<span class="text-emerald-700 text-[10px] font-semibold bg-emerald-100/90 px-1.5 py-0.5 rounded-md border border-emerald-200">เพิ่มเติม</span>';
+          deleteBtnHtml = '<button type="button" onclick="removeMemberSlot(' + i + ')" class="text-rose-500 hover:text-rose-700 text-[10px] font-bold flex items-center gap-1 hover:underline transition-colors cursor-pointer" title="ลบช่องผู้เล่นคนที่ ' + i + '"><i class="fa-solid fa-trash-can text-[9px]"></i> ลบช่องนี้</button>';
+          iconClass = 'fa-solid fa-user-plus text-emerald-600';
+        }
+
+        var labelText = 'ผู้เล่นคนที่ ' + i + (i === 1 ? ' (คนขับ/หัวหน้าทีม)' : '');
+        var placeholderText = 'พิมพ์ชื่อเพื่อค้นหาผู้เล่นคนที่ ' + i + (i === 5 ? ' (ถ้ามี)...' : '...');
+
+        html += '<div id="memberSlotRow' + i + '" class="space-y-1">' +
+          '<div class="flex items-center justify-between">' +
+            '<label class="block text-[11px] font-bold text-slate-700 flex items-center gap-1.5">' +
+              '<span>' + labelText + '</span>' +
+              badgeHtml +
+            '</label>' +
+            deleteBtnHtml +
+          '</div>' +
+          '<div class="relative">' +
+            '<input type="text" id="userFormMember' + i + '" name="userFormMember" list="personnelDatalist" ' +
+              'placeholder="' + placeholderText + '" ' +
+              'value="' + escapeHTML(val) + '" ' +
+              'class="w-full pl-8 pr-8 py-2 rounded-xl glass-input text-xs font-medium text-slate-800" ' +
+              'autocomplete="off">' +
+            '<i class="' + iconClass + ' absolute left-2.5 top-2.5 text-[11px]"></i>' +
+            '<button type="button" onclick="clearMemberSlot(' + i + ')" class="absolute right-2.5 top-2 text-slate-400 hover:text-rose-500 text-xs font-bold" title="ล้างชื่อ">✕</button>' +
+          '</div>' +
+        '</div>';
+      }
+
+      container.innerHTML = html;
+
+      var nextNumEl = document.getElementById('nextMemberNumber');
+      if (nextNumEl) {
+        nextNumEl.innerText = totalSlots + 1;
+      }
+      renderPersonnelDatalist();
+    }
+    window.renderUserFormMembers = renderUserFormMembers;
 
     function renderPersonnelDatalist() {
       var dl = document.getElementById('personnelDatalist');
@@ -6057,6 +6064,39 @@
       }).join('');
     }
     window.renderPersonnelDatalist = renderPersonnelDatalist;
+
+    function getCurrentMemberValues() {
+      var container = document.getElementById('userFormMembersList');
+      if (!container) return [];
+      var inputs = container.querySelectorAll('input[name="userFormMember"]');
+      var vals = [];
+      inputs.forEach(function(inp) {
+        vals.push(inp.value.trim());
+      });
+      return vals;
+    }
+    window.getCurrentMemberValues = getCurrentMemberValues;
+
+    function addMemberSlot() {
+      var vals = getCurrentMemberValues();
+      vals.push('');
+      renderUserFormMembers(vals);
+      var newSlotIdx = vals.length;
+      setTimeout(function() {
+        var newInp = document.getElementById('userFormMember' + newSlotIdx);
+        if (newInp) newInp.focus();
+      }, 50);
+    }
+    window.addMemberSlot = addMemberSlot;
+
+    function removeMemberSlot(index) {
+      var vals = getCurrentMemberValues();
+      if (index > 0 && index <= vals.length) {
+        vals.splice(index - 1, 1);
+        renderUserFormMembers(vals);
+      }
+    }
+    window.removeMemberSlot = removeMemberSlot;
 
     function clearMemberSlot(num) {
       var el = document.getElementById('userFormMember' + num);
@@ -6183,16 +6223,31 @@
       var hasDuplicate = false;
       var duplicateName = '';
 
-      for (var mIdx = 1; mIdx <= 5; mIdx++) {
-        var mEl = document.getElementById('userFormMember' + mIdx);
-        var val = mEl ? mEl.value.trim() : '';
-        if (val) {
-          if (memberSet[val.toLowerCase()]) {
-            hasDuplicate = true;
-            duplicateName = val;
+      var memberInputs = document.querySelectorAll('#userFormMembersList input[name="userFormMember"]');
+      if (memberInputs && memberInputs.length > 0) {
+        memberInputs.forEach(function(inp) {
+          var val = inp.value.trim();
+          if (val) {
+            if (memberSet[val.toLowerCase()]) {
+              hasDuplicate = true;
+              duplicateName = val;
+            }
+            memberSet[val.toLowerCase()] = true;
+            members.push(val);
           }
-          memberSet[val.toLowerCase()] = true;
-          members.push(val);
+        });
+      } else {
+        for (var mIdx = 1; mIdx <= 5; mIdx++) {
+          var mEl = document.getElementById('userFormMember' + mIdx);
+          var val = mEl ? mEl.value.trim() : '';
+          if (val) {
+            if (memberSet[val.toLowerCase()]) {
+              hasDuplicate = true;
+              duplicateName = val;
+            }
+            memberSet[val.toLowerCase()] = true;
+            members.push(val);
+          }
         }
       }
 
