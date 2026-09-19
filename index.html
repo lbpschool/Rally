@@ -1629,14 +1629,14 @@
           </div>
 
           <div>
-            <label class="block text-slate-700 mb-1">ชื่อทีม / ชื่อแสดงผล *</label>
-            <input type="text" id="userFormName" required placeholder="เช่น ทีมพยัคฆ์เพลิง" class="w-full px-3 py-2.5 rounded-xl glass-input">
+            <label class="block text-slate-700 mb-1"><span id="userFormNameLabel">ชื่อทีม / ชื่อแสดงผล</span> *</label>
+            <input type="text" id="userFormName" required placeholder="เช่น ทีมพยัคฆ์เพลิง หรือ กรรมการประจำฐาน 1" class="w-full px-3 py-2.5 rounded-xl glass-input">
           </div>
 
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label class="block text-slate-700 mb-1">บทบาท (Role)</label>
-              <select id="userFormRole" required onchange="var sec = document.getElementById('userFormMembersSection'); if (sec) sec.style.display = (this.value === 'User' ? 'block' : 'none');" class="w-full px-3 py-2.5 rounded-xl glass-input">
+              <select id="userFormRole" required onchange="handleUserRoleChange(this.value)" class="w-full px-3 py-2.5 rounded-xl glass-input">
                 <option value="User">User (ผู้แข่งขัน)</option>
                 <option value="Sub-Admin">Sub-Admin (กรรมการ)</option>
                 <option value="Admin">Admin (ผู้ดูแลระบบ)</option>
@@ -1644,7 +1644,7 @@
             </div>
 
             <div>
-              <label class="block text-slate-700 mb-1">สีRCที่หา</label>
+              <label class="block text-slate-700 mb-1"><span id="userFormCarColorLabel">สีRCที่หา</span></label>
               <select id="userFormCarColor" class="w-full px-3 py-2.5 rounded-xl glass-input">
                 <option value="Red">สีแดง (Red)</option>
                 <option value="Blue">สีน้ำเงิน (Blue)</option>
@@ -1657,21 +1657,21 @@
           </div>
 
           <div>
-            <label class="block text-slate-700 mb-1">รหัสรถ (Car Code)</label>
+            <label class="block text-slate-700 mb-1"><span id="userFormCarCodeLabel">รหัสรถ (Car Code)</span></label>
             <input type="text" id="userFormCarCode" placeholder="เช่น R-04" class="w-full px-3 py-2.5 rounded-xl glass-input">
           </div>
 
-          <!-- Team Players Section (ช่องเพิ่มผู้เล่นประจำรถ) -->
+          <!-- Team Players / Station Referees Section (ช่องเพิ่มผู้เล่นประจำรถ หรือ กรรมการประจำฐาน) -->
           <div id="userFormMembersSection" class="p-4 rounded-2xl bg-gradient-to-br from-emerald-50/80 via-teal-50/40 to-slate-50/60 border border-emerald-200/90 space-y-3">
             <div class="flex items-center justify-between flex-wrap gap-1 pb-1 border-b border-emerald-100">
               <label class="font-black text-slate-800 flex items-center gap-1.5 text-xs">
-                <i class="fa-solid fa-users text-emerald-600"></i>
-                <span>รายชื่อผู้เล่นประจำรถ (4 คนขึ้นไป)</span>
+                <span id="userFormMembersSectionIcon"><i class="fa-solid fa-users text-emerald-600"></i></span>
+                <span id="userFormMembersSectionTitle">รายชื่อผู้เล่นประจำรถ (4 คนขึ้นไป)</span>
               </label>
               <span class="text-[10px] text-emerald-700 font-bold px-2 py-0.5 rounded-full bg-emerald-100 border border-emerald-200">พิมพ์ค้นหาจาก 142 รายชื่อ</span>
             </div>
             
-            <p class="text-[11px] text-slate-500 leading-snug">
+            <p id="userFormMembersSectionDesc" class="text-[11px] text-slate-500 leading-snug">
               พิมพ์ชื่อจริง นามสกุล หรือคำนำหน้า เพื่อค้นหาและเลือกรายชื่อบุคลากร (สามารถกดปุ่มเพิ่มผู้เล่นได้มากกว่า 5 คน)
             </p>
 
@@ -1683,8 +1683,8 @@
             <!-- Add member button -->
             <div class="pt-1">
               <button type="button" id="addMemberSlotBtn" onclick="addMemberSlot()" class="w-full py-2.5 px-3 rounded-xl border border-dashed border-emerald-400 bg-emerald-50/90 hover:bg-emerald-100/90 text-emerald-700 hover:text-emerald-900 font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-xs active:scale-[0.99] cursor-pointer">
-                <i class="fa-solid fa-user-plus text-emerald-600"></i>
-                <span>+ เพิ่มผู้เล่นคนที่ <span id="nextMemberNumber">6</span></span>
+                <i id="addMemberSlotBtnIcon" class="fa-solid fa-user-plus text-emerald-600"></i>
+                <span id="addMemberSlotBtnText">+ เพิ่มผู้เล่นคนที่ <span id="nextMemberNumber">6</span></span>
               </button>
             </div>
 
@@ -1695,7 +1695,7 @@
           </div>
 
           <div>
-            <label class="block text-slate-700 mb-1">รูปโปรไฟล์รถแข่ง (อัปโหลดเข้า Drive Folder: 1L44yh69kAAmLjjrMf2oLbBUQ-oxrb2WK)</label>
+            <label class="block text-slate-700 mb-1"><span id="userFormFileLabel">รูปโปรไฟล์รถแข่ง (อัปโหลดเข้า Drive Folder: 1L44yh69kAAmLjjrMf2oLbBUQ-oxrb2WK)</span></label>
             <input type="file" id="userFormFile" accept="image/*" class="w-full px-3 py-2 rounded-xl glass-input text-xs text-slate-600">
           </div>
 
@@ -2680,7 +2680,7 @@
 
       if (!user && (!members || members.length === 0) && typeof usersData !== 'undefined' && Array.isArray(usersData)) {
         user = usersData.find(function(u) {
-          if (u.role !== 'User') return false;
+          if (u.role !== 'User' && u.role !== 'Sub-Admin') return false;
           if (src && u.profileUrl && u.profileUrl.trim() === src.trim()) return true;
           if (caption && u.name && u.name.trim().toLowerCase() === caption.trim().toLowerCase()) return true;
           if (caption && u.username && u.username.trim().toLowerCase() === caption.trim().toLowerCase()) return true;
@@ -2697,13 +2697,17 @@
         if (capEl) capEl.style.display = 'none';
         cardEl.style.display = 'block';
 
-        var teamName = (user && user.name) ? user.name : (caption || 'ทีมผู้เข้าแข่งขัน');
+        var isJudge = user && user.role === 'Sub-Admin';
+        var defaultTitle = isJudge ? 'กรรมการประจำฐาน' : 'ทีมผู้เข้าแข่งขัน';
+        var teamName = (user && user.name) ? user.name : (caption || defaultTitle);
         if (teamNameEl) teamNameEl.innerText = teamName;
 
         if (countBadgeEl) {
-          countBadgeEl.innerText = members.length > 0 ? (members.length + ' คน') : 'ยังไม่มีสมาชิก';
+          var unit = isJudge ? ' ท่าน' : ' คน';
+          var emptyText = isJudge ? 'ยังไม่ระบุกรรมการ' : 'ยังไม่มีสมาชิก';
+          countBadgeEl.innerText = members.length > 0 ? (members.length + unit) : emptyText;
           countBadgeEl.className = members.length > 0
-            ? 'px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-400/30'
+            ? (isJudge ? 'px-2.5 py-1 rounded-full text-[11px] font-bold bg-blue-500/20 text-blue-300 border border-blue-400/30' : 'px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-400/30')
             : 'px-2.5 py-1 rounded-full text-[11px] font-medium bg-slate-500/20 text-slate-400 border border-slate-400/30';
         }
 
@@ -2711,19 +2715,23 @@
           if (members.length > 0) {
             listEl.className = 'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5 text-xs';
             listEl.innerHTML = members.map(function(m, idx) {
+              var itemBg = isJudge ? 'bg-blue-500/20 text-blue-300 border-blue-400/30' : 'bg-emerald-500/20 text-emerald-300 border-emerald-400/30';
+              var itemIcon = isJudge ? 'fa-solid fa-user-shield text-blue-400 text-[11px] shrink-0' : 'fa-solid fa-user text-emerald-400 text-[11px] shrink-0';
               return '<div class="flex items-center gap-2 p-2 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-colors">' +
-                '<span class="w-6 h-6 rounded-lg bg-emerald-500/20 text-emerald-300 flex items-center justify-center text-[10px] font-black shrink-0 border border-emerald-400/30">' +
+                '<span class="w-6 h-6 rounded-lg ' + itemBg + ' flex items-center justify-center text-[10px] font-black shrink-0 border">' +
                   (idx + 1) +
                 '</span>' +
                 '<div class="flex items-center gap-1.5 min-w-0 flex-1">' +
-                  '<i class="fa-solid fa-user text-emerald-400 text-[11px] shrink-0"></i>' +
+                  '<i class="' + itemIcon + '"></i>' +
                   '<span class="text-xs font-semibold text-slate-100 truncate" title="' + escapeHTML(m) + '">' + escapeHTML(m) + '</span>' +
                 '</div>' +
               '</div>';
             }).join('');
           } else {
             listEl.className = 'w-full text-center py-2';
-            listEl.innerHTML = '<div class="text-slate-400 text-xs font-medium py-1"><i class="fa-solid fa-user-slash mr-1"></i> ยังไม่ได้ระบุรายชื่อสมาชิกในทีม</div>';
+            var noMemberText = isJudge ? 'ยังไม่ได้ระบุรายชื่อกรรมการประจำฐาน' : 'ยังไม่ได้ระบุรายชื่อสมาชิกในทีม';
+            var noMemberIcon = isJudge ? 'fa-solid fa-user-shield' : 'fa-solid fa-user-slash';
+            listEl.innerHTML = '<div class="text-slate-400 text-xs font-medium py-1"><i class="' + noMemberIcon + ' mr-1"></i> ' + noMemberText + '</div>';
           }
         }
       } else {
@@ -4112,6 +4120,11 @@
             '</div></div>' +
             '<h4 class="text-sm font-extrabold text-slate-800 line-clamp-1 leading-tight">' + escapeHTML(item.user.name) + '</h4>' +
             '<p class="text-xs text-purple-600 font-bold mt-0.5"><i class="fa-solid fa-id-badge mr-1"></i>' + escapeHTML(item.user.carCode || item.user.username) + '</p>' +
+            (item.user.members && item.user.members.length > 0
+              ? '<div class="text-[11px] text-slate-600 font-medium mt-1.5 px-2.5 py-1 rounded-xl bg-purple-50/80 border border-purple-100/80 truncate max-w-full text-center" title="' + escapeHTML(item.user.members.join(', ')) + '">' +
+                '<i class="fa-solid fa-user-shield text-purple-600 mr-1 text-[10px]"></i>' + escapeHTML(item.user.members.join(', ')) +
+                '</div>'
+              : '') +
             '</div>' +
             judgeScoreHTML +
             '</div>';
@@ -5972,9 +5985,10 @@
             '<div>' + escapeHTML(u.name) + '</div>' +
             (u.members && u.members.length > 0
               ? '<div class="text-[10px] text-slate-500 font-normal mt-0.5 max-w-[220px] truncate" title="' + escapeHTML(u.members.join(', ')) + '">' +
-                '<i class="fa-solid fa-users text-[9px] text-emerald-600 mr-1"></i>' + u.members.length + ' คน: ' + escapeHTML(u.members.join(', ')) +
+                '<i class="fa-solid ' + (u.role === 'Sub-Admin' ? 'fa-user-shield text-blue-600' : 'fa-users text-emerald-600') + ' text-[9px] mr-1"></i>' +
+                (u.role === 'Sub-Admin' ? 'กรรมการ ' : '') + u.members.length + (u.role === 'Sub-Admin' ? ' ท่าน: ' : ' คน: ') + escapeHTML(u.members.join(', ')) +
                 '</div>'
-              : '<div class="text-[10px] text-slate-400 font-normal mt-0.5">ยังไม่ระบุสมาชิก</div>') +
+              : '<div class="text-[10px] text-slate-400 font-normal mt-0.5">' + (u.role === 'Sub-Admin' ? 'ยังไม่ระบุกรรมการ' : (u.role === 'Admin' ? '-' : 'ยังไม่ระบุสมาชิก')) + '</div>') +
           '</td>' +
           '<td class="py-2.5 px-3.5 whitespace-nowrap">' + roleBadge + '</td>' +
           '<td class="py-2.5 px-3.5 text-slate-700 font-mono text-xs whitespace-nowrap">' + escapeHTML(u.carCode || '-') + '</td>' +
@@ -5988,6 +6002,72 @@
       var text = document.getElementById('searchUserInput').value;
       renderAdminUsersTable(text);
     }
+
+    function updateUserFormRoleUI(role) {
+      var sec = document.getElementById('userFormMembersSection');
+      var nameLabel = document.getElementById('userFormNameLabel');
+      var nameInput = document.getElementById('userFormName');
+      var carColorLabel = document.getElementById('userFormCarColorLabel');
+      var carCodeLabel = document.getElementById('userFormCarCodeLabel');
+      var carCodeInput = document.getElementById('userFormCarCode');
+      var fileLabel = document.getElementById('userFormFileLabel');
+      var secTitle = document.getElementById('userFormMembersSectionTitle');
+      var secIcon = document.getElementById('userFormMembersSectionIcon');
+      var secDesc = document.getElementById('userFormMembersSectionDesc');
+      var addBtn = document.getElementById('addMemberSlotBtn');
+      var addBtnIcon = document.getElementById('addMemberSlotBtnIcon');
+
+      if (role === 'Sub-Admin') {
+        if (sec) {
+          sec.style.display = 'block';
+          sec.className = 'p-4 rounded-2xl bg-gradient-to-br from-blue-50/90 via-indigo-50/40 to-slate-50/60 border border-blue-200/90 space-y-3';
+        }
+        if (secTitle) secTitle.innerText = 'รายชื่อกรรมการประจำฐาน';
+        if (secIcon) secIcon.innerHTML = '<i class="fa-solid fa-user-shield text-blue-600"></i>';
+        if (secDesc) secDesc.innerText = 'พิมพ์ชื่อจริง นามสกุล หรือคำนำหน้า เพื่อค้นหาและเลือกรายชื่อบุคลากรที่ทำหน้าที่กรรมการประจำฐานนี้ (เพิ่มได้ไม่จำกัดจำนวน)';
+        if (nameLabel) nameLabel.innerText = 'ชื่อทีม / ชื่อประจำฐาน (เช่น กรรมการประจำฐาน 1)';
+        if (nameInput) nameInput.placeholder = 'เช่น กรรมการประจำฐาน 1';
+        if (carColorLabel) carColorLabel.innerText = 'สีประจำฐาน / สีRCที่ตรวจ';
+        if (carCodeLabel) carCodeLabel.innerText = 'รหัสกรรมการ / รหัสประจำฐาน (Car Code)';
+        if (carCodeInput) carCodeInput.placeholder = 'เช่น SUB-01';
+        if (fileLabel) fileLabel.innerText = 'รูปโปรไฟล์กรรมการ / ประจำฐาน (อัปโหลดเข้า Drive Folder: 1L44yh69kAAmLjjrMf2oLbBUQ-oxrb2WK)';
+        if (addBtn) addBtn.className = 'w-full py-2.5 px-3 rounded-xl border border-dashed border-blue-400 bg-blue-50/90 hover:bg-blue-100/90 text-blue-700 hover:text-blue-900 font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-xs active:scale-[0.99] cursor-pointer';
+        if (addBtnIcon) addBtnIcon.className = 'fa-solid fa-user-plus text-blue-600';
+      } else if (role === 'User') {
+        if (sec) {
+          sec.style.display = 'block';
+          sec.className = 'p-4 rounded-2xl bg-gradient-to-br from-emerald-50/80 via-teal-50/40 to-slate-50/60 border border-emerald-200/90 space-y-3';
+        }
+        if (secTitle) secTitle.innerText = 'รายชื่อผู้เล่นประจำรถ (4 คนขึ้นไป)';
+        if (secIcon) secIcon.innerHTML = '<i class="fa-solid fa-users text-emerald-600"></i>';
+        if (secDesc) secDesc.innerText = 'พิมพ์ชื่อจริง นามสกุล หรือคำนำหน้า เพื่อค้นหาและเลือกรายชื่อบุคลากร (สามารถกดปุ่มเพิ่มผู้เล่นได้มากกว่า 5 คน)';
+        if (nameLabel) nameLabel.innerText = 'ชื่อทีม / ชื่อแสดงผล';
+        if (nameInput) nameInput.placeholder = 'เช่น ทีมพยัคฆ์เพลิง';
+        if (carColorLabel) carColorLabel.innerText = 'สีRCที่หา';
+        if (carCodeLabel) carCodeLabel.innerText = 'รหัสรถ (Car Code)';
+        if (carCodeInput) carCodeInput.placeholder = 'เช่น R-04';
+        if (fileLabel) fileLabel.innerText = 'รูปโปรไฟล์รถแข่ง (อัปโหลดเข้า Drive Folder: 1L44yh69kAAmLjjrMf2oLbBUQ-oxrb2WK)';
+        if (addBtn) addBtn.className = 'w-full py-2.5 px-3 rounded-xl border border-dashed border-emerald-400 bg-emerald-50/90 hover:bg-emerald-100/90 text-emerald-700 hover:text-emerald-900 font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-xs active:scale-[0.99] cursor-pointer';
+        if (addBtnIcon) addBtnIcon.className = 'fa-solid fa-user-plus text-emerald-600';
+      } else {
+        // Admin
+        if (sec) sec.style.display = 'none';
+        if (nameLabel) nameLabel.innerText = 'ชื่อ-นามสกุล / ชื่อแสดงผล';
+        if (nameInput) nameInput.placeholder = 'เช่น ผู้ดูแลระบบ';
+        if (carColorLabel) carColorLabel.innerText = 'สีประจำตัว';
+        if (carCodeLabel) carCodeLabel.innerText = 'รหัสประจำตัว (Code)';
+        if (carCodeInput) carCodeInput.placeholder = 'เช่น ADM-01';
+        if (fileLabel) fileLabel.innerText = 'รูปโปรไฟล์ (อัปโหลดเข้า Drive Folder: 1L44yh69kAAmLjjrMf2oLbBUQ-oxrb2WK)';
+      }
+    }
+    window.updateUserFormRoleUI = updateUserFormRoleUI;
+
+    function handleUserRoleChange(newRole) {
+      var currentVals = getCurrentMemberValues();
+      updateUserFormRoleUI(newRole);
+      renderUserFormMembers(currentVals, newRole);
+    }
+    window.handleUserRoleChange = handleUserRoleChange;
 
     function openUserModal(username) {
       if (username) {
@@ -6014,7 +6094,8 @@
             }
           }
         }
-        renderUserFormMembers(members);
+        updateUserFormRoleUI(u.role);
+        renderUserFormMembers(members, u.role);
       } else {
         document.getElementById('modalUserTitle').innerHTML = '<i class="fa-solid fa-user-plus text-emerald-600"></i> เพิ่มผู้ใช้งาน / รถแข่ง';
         document.getElementById('userFormUsername').value = '';
@@ -6027,48 +6108,77 @@
         document.getElementById('userFormCarColor').value = 'Red';
         document.getElementById('userFormCarCode').value = '';
         
-        renderUserFormMembers([]);
+        updateUserFormRoleUI('User');
+        renderUserFormMembers([], 'User');
       }
       renderPersonnelDatalist();
-      var sec = document.getElementById('userFormMembersSection');
-      if (sec) sec.style.display = ((username ? u.role : 'User') === 'User' ? 'block' : 'none');
       document.getElementById('userFormFile').value = '';
       var m = document.getElementById('modalUser');
       m.style.display = 'flex';
     }
 
-    function renderUserFormMembers(values) {
+    function renderUserFormMembers(values, role) {
       values = values || [];
+      if (!role) {
+        var rEl = document.getElementById('userFormRole');
+        role = rEl ? rEl.value : 'User';
+      }
       var container = document.getElementById('userFormMembersList');
       if (!container) return;
 
-      var totalSlots = Math.max(5, values.length);
+      var isJudge = (role === 'Sub-Admin');
+      var totalSlots = isJudge ? Math.max(2, values.length) : Math.max(5, values.length);
       var html = '';
 
       for (var i = 1; i <= totalSlots; i++) {
         var val = values[i - 1] || '';
         var badgeHtml = '';
         var deleteBtnHtml = '';
-        var iconClass = 'fa-solid fa-user text-teal-600';
+        var iconClass = isJudge ? 'fa-solid fa-user-check text-blue-500' : 'fa-solid fa-user text-teal-600';
+        var labelText = '';
+        var placeholderText = '';
 
-        if (i === 1) {
-          badgeHtml = '<span class="text-rose-500 text-[10px] font-semibold">*จำเป็น</span>';
-          iconClass = 'fa-solid fa-user-tie text-emerald-600';
-        } else if (i >= 2 && i <= 4) {
-          badgeHtml = '<span class="text-rose-500 text-[10px] font-semibold">*จำเป็น</span>';
-          iconClass = 'fa-solid fa-user text-teal-600';
-        } else if (i === 5) {
-          badgeHtml = '<span class="text-slate-400 text-[10px] font-normal">(เว้นว่างได้ หากมี 4 คน)</span>';
-          iconClass = 'fa-solid fa-user-plus text-slate-400';
+        if (isJudge) {
+          if (i === 1) {
+            badgeHtml = '<span class="text-blue-600 text-[10px] font-semibold">*กรรมการหลัก</span>';
+            iconClass = 'fa-solid fa-user-shield text-blue-600';
+            labelText = 'กรรมการคนที่ 1 (หัวหน้าประจำฐาน/กรรมการหลัก)';
+            placeholderText = 'พิมพ์ชื่อเพื่อค้นหากรรมการคนที่ 1...';
+          } else if (i === 2) {
+            badgeHtml = '<span class="text-slate-400 text-[10px] font-normal">(ถ้ามี)</span>';
+            iconClass = 'fa-solid fa-user-check text-blue-500';
+            labelText = 'กรรมการคนที่ 2';
+            placeholderText = 'พิมพ์ชื่อเพื่อค้นหากรรมการคนที่ 2 (ถ้ามี)...';
+            if (totalSlots > 2 || (totalSlots === 2 && val)) {
+              deleteBtnHtml = '<button type="button" onclick="removeMemberSlot(' + i + ')" class="text-rose-500 hover:text-rose-700 text-[10px] font-bold flex items-center gap-1 hover:underline transition-colors cursor-pointer" title="ลบช่องกรรมการคนที่ ' + i + '"><i class="fa-solid fa-trash-can text-[9px]"></i> ลบช่องนี้</button>';
+            }
+          } else {
+            badgeHtml = '<span class="text-blue-700 text-[10px] font-semibold bg-blue-100/90 px-1.5 py-0.5 rounded-md border border-blue-200">เพิ่มเติม</span>';
+            iconClass = 'fa-solid fa-user-plus text-blue-600';
+            labelText = 'กรรมการคนที่ ' + i;
+            placeholderText = 'พิมพ์ชื่อเพื่อค้นหากรรมการคนที่ ' + i + '...';
+            deleteBtnHtml = '<button type="button" onclick="removeMemberSlot(' + i + ')" class="text-rose-500 hover:text-rose-700 text-[10px] font-bold flex items-center gap-1 hover:underline transition-colors cursor-pointer" title="ลบช่องกรรมการคนที่ ' + i + '"><i class="fa-solid fa-trash-can text-[9px]"></i> ลบช่องนี้</button>';
+          }
         } else {
-          // Slot 6 and beyond
-          badgeHtml = '<span class="text-emerald-700 text-[10px] font-semibold bg-emerald-100/90 px-1.5 py-0.5 rounded-md border border-emerald-200">เพิ่มเติม</span>';
-          deleteBtnHtml = '<button type="button" onclick="removeMemberSlot(' + i + ')" class="text-rose-500 hover:text-rose-700 text-[10px] font-bold flex items-center gap-1 hover:underline transition-colors cursor-pointer" title="ลบช่องผู้เล่นคนที่ ' + i + '"><i class="fa-solid fa-trash-can text-[9px]"></i> ลบช่องนี้</button>';
-          iconClass = 'fa-solid fa-user-plus text-emerald-600';
+          // User (ผู้แข่งขัน)
+          if (i === 1) {
+            badgeHtml = '<span class="text-rose-500 text-[10px] font-semibold">*จำเป็น</span>';
+            iconClass = 'fa-solid fa-user-tie text-emerald-600';
+          } else if (i >= 2 && i <= 4) {
+            badgeHtml = '<span class="text-rose-500 text-[10px] font-semibold">*จำเป็น</span>';
+            iconClass = 'fa-solid fa-user text-teal-600';
+          } else if (i === 5) {
+            badgeHtml = '<span class="text-slate-400 text-[10px] font-normal">(เว้นว่างได้ หากมี 4 คน)</span>';
+            iconClass = 'fa-solid fa-user-plus text-slate-400';
+          } else {
+            // Slot 6 and beyond
+            badgeHtml = '<span class="text-emerald-700 text-[10px] font-semibold bg-emerald-100/90 px-1.5 py-0.5 rounded-md border border-emerald-200">เพิ่มเติม</span>';
+            deleteBtnHtml = '<button type="button" onclick="removeMemberSlot(' + i + ')" class="text-rose-500 hover:text-rose-700 text-[10px] font-bold flex items-center gap-1 hover:underline transition-colors cursor-pointer" title="ลบช่องผู้เล่นคนที่ ' + i + '"><i class="fa-solid fa-trash-can text-[9px]"></i> ลบช่องนี้</button>';
+            iconClass = 'fa-solid fa-user-plus text-emerald-600';
+          }
+          labelText = 'ผู้เล่นคนที่ ' + i + (i === 1 ? ' (คนขับ/หัวหน้าทีม)' : '');
+          placeholderText = 'พิมพ์ชื่อเพื่อค้นหาผู้เล่นคนที่ ' + i + (i === 5 ? ' (ถ้ามี)...' : '...');
         }
-
-        var labelText = 'ผู้เล่นคนที่ ' + i + (i === 1 ? ' (คนขับ/หัวหน้าทีม)' : '');
-        var placeholderText = 'พิมพ์ชื่อเพื่อค้นหาผู้เล่นคนที่ ' + i + (i === 5 ? ' (ถ้ามี)...' : '...');
 
         html += '<div id="memberSlotRow' + i + '" class="space-y-1">' +
           '<div class="flex items-center justify-between">' +
@@ -6092,9 +6202,13 @@
 
       container.innerHTML = html;
 
-      var nextNumEl = document.getElementById('nextMemberNumber');
-      if (nextNumEl) {
-        nextNumEl.innerText = totalSlots + 1;
+      var addBtnTextEl = document.getElementById('addMemberSlotBtnText');
+      if (addBtnTextEl) {
+        var targetLabel = isJudge ? 'กรรมการคนที่ ' : 'ผู้เล่นคนที่ ';
+        addBtnTextEl.innerHTML = '+ เพิ่ม' + targetLabel + '<span id="nextMemberNumber">' + (totalSlots + 1) + '</span>';
+      } else {
+        var nextNumEl = document.getElementById('nextMemberNumber');
+        if (nextNumEl) nextNumEl.innerText = totalSlots + 1;
       }
       renderPersonnelDatalist();
     }
@@ -6123,9 +6237,11 @@
     window.getCurrentMemberValues = getCurrentMemberValues;
 
     function addMemberSlot() {
+      var rEl = document.getElementById('userFormRole');
+      var role = rEl ? rEl.value : 'User';
       var vals = getCurrentMemberValues();
       vals.push('');
-      renderUserFormMembers(vals);
+      renderUserFormMembers(vals, role);
       var newSlotIdx = vals.length;
       setTimeout(function() {
         var newInp = document.getElementById('userFormMember' + newSlotIdx);
@@ -6135,10 +6251,12 @@
     window.addMemberSlot = addMemberSlot;
 
     function removeMemberSlot(index) {
+      var rEl = document.getElementById('userFormRole');
+      var role = rEl ? rEl.value : 'User';
       var vals = getCurrentMemberValues();
       if (index > 0 && index <= vals.length) {
         vals.splice(index - 1, 1);
-        renderUserFormMembers(vals);
+        renderUserFormMembers(vals, role);
       }
     }
     window.removeMemberSlot = removeMemberSlot;
@@ -6301,10 +6419,15 @@
       }
 
       if (hasDuplicate) {
+        var isJudge = (role === 'Sub-Admin');
+        var errTitle = isJudge ? 'รายชื่อกรรมการซ้ำกัน' : 'รายชื่อผู้เล่นซ้ำกัน';
+        var errText = isJudge
+          ? 'พบรายชื่อ "' + duplicateName + '" ซ้ำกันมากกว่า 1 ช่องในฐานเดียวกัน โปรดตรวจสอบอีกครั้ง'
+          : 'พบรายชื่อ "' + duplicateName + '" ซ้ำกันมากกว่า 1 ช่องในรถคันเดียวกัน โปรดตรวจสอบอีกครั้ง';
         Swal.fire({
           icon: 'warning',
-          title: 'รายชื่อผู้เล่นซ้ำกัน',
-          text: 'พบรายชื่อ "' + duplicateName + '" ซ้ำกันมากกว่า 1 ช่องในรถคันเดียวกัน โปรดตรวจสอบอีกครั้ง'
+          title: errTitle,
+          text: errText
         });
         return false;
       }
@@ -7206,7 +7329,7 @@
     function initMockDatabase() {
       usersData = [
         { username: 'admin', password: 'admin123', name: 'ผู้ดูแลระบบสูงสุด', role: 'Admin', carCode: 'ADM-00', carColor: 'Red', profileUrl: 'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&w=400&q=80', bonusPoints: 0 },
-        { username: 'ref1', password: '123', name: 'กรรมการประจำฐาน 1', role: 'Sub-Admin', carCode: 'SUB-01', carColor: 'Blue', profileUrl: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=400&q=80', bonusPoints: 0 },
+        { username: 'ref1', password: '123', name: 'กรรมการประจำฐาน 1', role: 'Sub-Admin', carCode: 'SUB-01', carColor: 'Blue', profileUrl: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=400&q=80', bonusPoints: 0, members: ['อ.สมชาย ใจดี', 'อ.วิภาวรรณ สดใส'] },
         { username: 'judge1', password: '123', name: 'กรรมการประจำฐาน 1 (สำรอง)', role: 'Sub-Admin', carCode: 'SUB-01', carColor: 'Blue', profileUrl: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=400&q=80', bonusPoints: 0 },
         { username: 'car01', password: 'pass123', name: 'บางระจินทร์', role: 'User', carCode: 'C1', carColor: 'Red', profileUrl: 'https://images.unsplash.com/photo-1544829099-b9a0c07fad1a?auto=format&fit=crop&w=400&q=80', bonusPoints: 0 },
         { username: 'car02', password: 'pass123', name: 'ดูหุ่นพี่ก่อน', role: 'User', carCode: 'B2', carColor: 'Blue', profileUrl: 'https://images.unsplash.com/photo-1552519507-da3b142c6e3d?auto=format&fit=crop&w=400&q=80', bonusPoints: 0 },
