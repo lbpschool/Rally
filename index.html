@@ -3085,56 +3085,44 @@
         return;
       }
       var targetState = !isScoresHidden;
-      showLoading('กำลังบันทึกการตั้งค่าแสดง/ซ่อนคะแนน...');
+      isScoresHidden = targetState;
 
-      if (isMockMode) {
-        setTimeout(function() {
-          isScoresHidden = targetState;
-          hideLoading();
-          setupNavigation();
-          renderUserDashboard();
-          renderLeaderboard();
-          renderGradingList();
-          renderAnalytics();
-          Swal.fire({
-            toast: true,
-            position: 'top-end',
-            icon: 'info',
-            title: isScoresHidden ? '🔒 ซ่อนการแสดงคะแนนสำหรับผู้ใช้งานทุกอุปกรณ์แล้ว' : '👁️ เปิดการแสดงคะแนนตามปกติเรียบร้อย',
-            showConfirmButton: false,
-            timer: 2000
-          });
-        }, 300);
-      } else {
-        if (typeof google !== 'undefined' && google.script && google.script.run) {
-          google.script.run
-            .withSuccessHandler(function(res) {
-              hideLoading();
-              if (res.success) {
-                isScoresHidden = res.isScoresHidden;
-                setupNavigation();
-                renderUserDashboard();
-                renderLeaderboard();
-                renderGradingList();
-                renderAnalytics();
-                Swal.fire({
-                  toast: true,
-                  position: 'top-end',
-                  icon: 'info',
-                  title: isScoresHidden ? '🔒 ซ่อนการแสดงคะแนนสำหรับผู้ใช้งานทุกอุปกรณ์แล้ว' : '👁️ เปิดการแสดงคะแนนตามปกติเรียบร้อย',
-                  showConfirmButton: false,
-                  timer: 2000
-                });
-              } else {
-                handleApiResponseError(res, 'ไม่สามารถบันทึกการตั้งค่าได้');
-              }
-            })
-            .withFailureHandler(function(err) {
-              hideLoading();
-              Swal.fire('ข้อผิดพลาดระบบ', err.message, 'error');
-            })
-            .apiSetScoreVisibility(targetState, sessionToken);
+      setupNavigation();
+      renderUserDashboard();
+      renderLeaderboard();
+      renderGradingList();
+      renderAnalytics();
+
+      // INSTANT BROADCAST TO FIREBASE REALTIME DATABASE (< 0.1s update)
+      try {
+        if (typeof firebase !== 'undefined' && firebase.apps && firebase.apps.length) {
+          firebase.database().ref('live_rally_data/settings/isScoresHidden').set(targetState);
+          firebase.database().ref('live_rally_data/timestamp').set(Date.now());
         }
+      } catch (fbErr) {}
+
+      Swal.fire({
+        toast: true,
+        position: 'top-end',
+        icon: 'info',
+        title: isScoresHidden ? '🔒 ซ่อนการแสดงคะแนนสำหรับผู้ใช้งานทุกอุปกรณ์แล้ว' : '👁️ เปิดการแสดงคะแนนตามปกติเรียบร้อย',
+        showConfirmButton: false,
+        timer: 2000
+      });
+
+      if (!isMockMode && typeof google !== 'undefined' && google.script && google.script.run) {
+        google.script.run
+          .withSuccessHandler(function(res) {
+            if (res && res.success) {
+              console.log('[RallyApp] Score visibility persisted:', res.isScoresHidden);
+            } else {
+              handleApiResponseError(res, 'ไม่สามารถบันทึกการตั้งค่าได้');
+            }
+          })
+          .withFailureHandler(function(err) {
+            console.warn('[RallyApp] Score visibility sync notice:', err);
+          })
+          .apiSetScoreVisibility(targetState, sessionToken);
       }
     }
     window.toggleScoreVisibility = toggleScoreVisibility;
@@ -4993,37 +4981,43 @@
       if (!input) return;
       var pts = Number(input.value) || 0;
 
-      showLoading('กำลังบันทึกคะแนนพิเศษ...');
-
       var target = usersData.find(function(u) { return u.username === username; });
       if (target) target.bonusPoints = pts;
 
       renderLeaderboard();
       renderUserDashboard();
 
-      if (isMockMode) {
-        setTimeout(function() {
-          hideLoading();
-          Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'บันทึกคะแนนพิเศษเรียบร้อย', showConfirmButton: false, timer: 1500 });
-        }, 300);
-      } else {
-        if (typeof google !== 'undefined' && google.script && google.script.run) {
-          google.script.run
-            .withSuccessHandler(function(res) {
-              hideLoading();
-              if (res.success) {
-                Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: res.message, showConfirmButton: false, timer: 1500 });
-                loadAppData(true);
-              } else {
-                handleApiResponseError(res);
-              }
-            })
-            .withFailureHandler(function(err) {
-              hideLoading();
-              Swal.fire('ข้อผิดพลาดระบบ', err.message, 'error');
-            })
-            .apiUpdateBonusPoints(username, pts, sessionToken);
+      // INSTANT BROADCAST TO FIREBASE REALTIME DATABASE (< 0.1s update)
+      try {
+        if (typeof firebase !== 'undefined' && firebase.apps && firebase.apps.length) {
+          firebase.database().ref('live_rally_data/users').set(usersData);
+          firebase.database().ref('live_rally_data/timestamp').set(Date.now());
         }
+      } catch (fbErr) {}
+
+      Swal.fire({ 
+        toast: true, 
+        position: 'top-end', 
+        icon: 'success', 
+        title: 'บันทึกคะแนนพิเศษเรียบร้อย (' + pts + ' คะแนน)', 
+        showConfirmButton: false, 
+        timer: 1500 
+      });
+
+      if (!isMockMode && typeof google !== 'undefined' && google.script && google.script.run) {
+        google.script.run
+          .withSuccessHandler(function(res) {
+            if (res && res.success) {
+              console.log('[RallyApp] Bonus points persisted:', res.message);
+              loadAppData(true);
+            } else {
+              handleApiResponseError(res);
+            }
+          })
+          .withFailureHandler(function(err) {
+            console.warn('[RallyApp] Background Sheets sync notice:', err);
+          })
+          .apiUpdateBonusPoints(username, pts, sessionToken);
       }
     }
 
@@ -5738,7 +5732,11 @@
 
     function processActivitySave(actData) {
       if (!ensureAuthenticated()) return;
-      showLoading('กำลังบันทึกข้อมูลภารกิจ...');
+
+      var hasImageUpload = !!(actData.imageFileObj && actData.imageFileObj.base64);
+      if (hasImageUpload) {
+        showLoading('กำลังอัปโหลดรูปภาพภารกิจ...');
+      }
 
       var idx = activitiesData.findIndex(function(a) { return a.id === actData.id; });
       var imgUrl = actData.imageFileObj ? 'https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?auto=format&fit=crop&w=600&q=80' : actData.imageUrl;
@@ -5763,26 +5761,55 @@
       renderUserMissionsGrid();
       renderUserDashboard();
 
+      // INSTANT BROADCAST TO FIREBASE REALTIME DATABASE (< 0.1s update)
+      try {
+        if (typeof firebase !== 'undefined' && firebase.apps && firebase.apps.length) {
+          firebase.database().ref('live_rally_data/activities').set(activitiesData);
+          firebase.database().ref('live_rally_data/timestamp').set(Date.now());
+          console.log('[Firebase Realtime] Activity saved & pushed to RTDB instantly!');
+        }
+      } catch (fbErr) {}
+
+      if (!hasImageUpload) {
+        Swal.fire({
+          toast: true,
+          position: 'top-end',
+          icon: 'success',
+          title: 'บันทึกข้อมูลภารกิจเรียบร้อยแล้ว',
+          showConfirmButton: false,
+          timer: 1800
+        });
+      }
+
       if (isMockMode) {
-        setTimeout(function() {
-          hideLoading();
-          Swal.fire({ icon: 'success', title: 'บันทึกภารกิจสำเร็จ', timer: 1500, showConfirmButton: false });
-        }, 300);
+        if (hasImageUpload) {
+          setTimeout(function() {
+            hideLoading();
+            Swal.fire({ icon: 'success', title: 'บันทึกภารกิจสำเร็จ', timer: 1500, showConfirmButton: false });
+          }, 300);
+        }
       } else {
         if (typeof google !== 'undefined' && google.script && google.script.run) {
           google.script.run
             .withSuccessHandler(function(res) {
-              hideLoading();
-              if (res.success) {
-                Swal.fire({ icon: 'success', title: res.message, timer: 1500, showConfirmButton: false });
+              if (hasImageUpload) hideLoading();
+              if (res && res.success) {
+                if (hasImageUpload) {
+                  Swal.fire({ icon: 'success', title: res.message || 'บันทึกภารกิจสำเร็จ', timer: 1500, showConfirmButton: false });
+                }
+                console.log('[RallyApp] Activity persisted to Google Sheets:', res.message);
                 loadAppData(true);
               } else {
                 handleApiResponseError(res);
               }
             })
             .withFailureHandler(function(err) {
-              hideLoading();
-              Swal.fire('ข้อผิดพลาดระบบ', err.message, 'error');
+              if (hasImageUpload) hideLoading();
+              console.warn('[RallyApp] Background Sheets sync notice:', err);
+              var isTimeout = err.name === 'AbortError' || String(err).includes('abort');
+              if (!isTimeout) {
+                Swal.fire('ข้อผิดพลาดระบบ', err.message, 'error');
+              }
             })
             .apiSaveActivity(actData, sessionToken);
         }
@@ -5816,48 +5843,42 @@
       var fileInput = document.getElementById('actFormFile');
       var solFileInput = document.getElementById('actFormSolutionFile');
 
-      var hasImageFile = fileInput && fileInput.files && fileInput.files.length > 0;
-      var hasSolFile = solFileInput && solFileInput.files && solFileInput.files.length > 0;
-
-      if (hasImageFile || hasSolFile) {
+      if (fileInput && fileInput.files.length > 0) {
         showLoading('กำลังประมวลผลและอัปโหลดรูปภาพขึ้น Google Drive...');
-
-        function step1(next) {
-          if (hasImageFile) {
-            var f = fileInput.files[0];
-            readFileAsBase64(f, function(b64) {
-              actDataPayload.imageFileObj = {
-                base64: b64,
-                fileName: 'act_' + (id || Date.now()) + '_' + Date.now() + '.jpg',
-                mimeType: f.type
-              };
-              next();
-            });
-          } else {
-            next();
-          }
-        }
-
-        function step2(next) {
-          if (hasSolFile) {
+        var f = fileInput.files[0];
+        readFileAsBase64(f, function(b64) {
+          actDataPayload.imageFileObj = {
+            base64: b64,
+            fileName: 'act_' + actDataPayload.id + '_' + Date.now() + '.jpg',
+            mimeType: f.type
+          };
+          if (solFileInput && solFileInput.files.length > 0) {
             var sf = solFileInput.files[0];
-            readFileAsBase64(sf, function(b64) {
+            readFileAsBase64(sf, function(sb64) {
               actDataPayload.solutionImageFileObj = {
-                base64: b64,
-                fileName: 'solution_' + (id || Date.now()) + '_' + Date.now() + '.jpg',
+                base64: sb64,
+                fileName: 'sol_' + actDataPayload.id + '_' + Date.now() + '.jpg',
                 mimeType: sf.type
               };
-              next();
+              processActivitySave(actDataPayload);
             });
           } else {
-            next();
-          }
-        }
-
-        step1(function() {
-          step2(function() {
             processActivitySave(actDataPayload);
-          });
+          }
+        });
+        return false;
+      }
+
+      if (solFileInput && solFileInput.files.length > 0) {
+        showLoading('กำลังประมวลผลและอัปโหลดรูปภาพเฉลยขึ้น Google Drive...');
+        var sf = solFileInput.files[0];
+        readFileAsBase64(sf, function(sb64) {
+          actDataPayload.solutionImageFileObj = {
+            base64: sb64,
+            fileName: 'sol_' + actDataPayload.id + '_' + Date.now() + '.jpg',
+            mimeType: sf.type
+          };
+          processActivitySave(actDataPayload);
         });
         return false;
       }
@@ -5883,35 +5904,42 @@
         cancelButtonText: 'ยกเลิก'
       }).then(function(result) {
         if (result.isConfirmed) {
-          showLoading('กำลังลบภารกิจ...');
           activitiesData = activitiesData.filter(function(a) { return a.id !== id; });
           renderAdminActivitiesTable();
           renderUserMissionsGrid();
           renderUserDashboard();
 
-          if (isMockMode) {
-            setTimeout(function() {
-              hideLoading();
-              Swal.fire('ลบสำเร็จ', 'ลบภารกิจเรียบร้อยแล้ว', 'success');
-            }, 300);
-          } else {
-            if (typeof google !== 'undefined' && google.script && google.script.run) {
-              google.script.run
-                .withSuccessHandler(function(res) {
-                  hideLoading();
-                  if (res.success) {
-                    Swal.fire('สำเร็จ', res.message, 'success');
-                    loadAppData();
-                  } else {
-                    handleApiResponseError(res);
-                  }
-                })
-                .withFailureHandler(function(err) {
-                  hideLoading();
-                  Swal.fire('ข้อผิดพลาดระบบ', err.message, 'error');
-                })
-                .apiDeleteActivity(id, sessionToken);
+          // INSTANT BROADCAST TO FIREBASE REALTIME DATABASE (< 0.1s update)
+          try {
+            if (typeof firebase !== 'undefined' && firebase.apps && firebase.apps.length) {
+              firebase.database().ref('live_rally_data/activities').set(activitiesData);
+              firebase.database().ref('live_rally_data/timestamp').set(Date.now());
             }
+          } catch (fbErr) {}
+
+          Swal.fire({
+            toast: true,
+            position: 'top-end',
+            icon: 'success',
+            title: 'ลบภารกิจรหัส ' + id + ' เรียบร้อยแล้ว',
+            showConfirmButton: false,
+            timer: 1800
+          });
+
+          if (!isMockMode && typeof google !== 'undefined' && google.script && google.script.run) {
+            google.script.run
+              .withSuccessHandler(function(res) {
+                if (res && res.success) {
+                  console.log('[RallyApp] Activity deleted from Google Sheets:', res.message);
+                  loadAppData(true);
+                } else {
+                  handleApiResponseError(res);
+                }
+              })
+              .withFailureHandler(function(err) {
+                console.warn('[RallyApp] Background Sheets sync notice:', err);
+              })
+              .apiDeleteActivity(id, sessionToken);
           }
         }
       });
@@ -6046,7 +6074,11 @@
 
     function processUserSave(userData) {
       if (!ensureAuthenticated()) return;
-      showLoading('กำลังบันทึกข้อมูลผู้ใช้...');
+
+      var hasImageUpload = !!(userData.imageFileObj && userData.imageFileObj.base64);
+      if (hasImageUpload) {
+        showLoading('กำลังอัปโหลดรูปภาพโปรไฟล์...');
+      }
 
       var existingIdx = usersData.findIndex(function(u) { return u.username === userData.username; });
       var profileUrl = userData.imageFileObj ? 'https://images.unsplash.com/photo-1544829099-b9a0c07fad1a?auto=format&fit=crop&w=400&q=80' : (existingIdx >= 0 ? usersData[existingIdx].profileUrl : 'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&w=400&q=80');
@@ -6065,31 +6097,72 @@
       if (existingIdx >= 0) usersData[existingIdx] = newU;
       else usersData.push(newU);
 
+      if (currentUser && currentUser.username === userData.username) {
+        currentUser.name = userData.name;
+        currentUser.role = userData.role;
+        currentUser.carColor = userData.carColor;
+        currentUser.carCode = userData.carCode;
+        currentUser.profileUrl = profileUrl;
+        currentUser.members = newU.members;
+        try { safeSetStorage('rally_session_user', JSON.stringify(currentUser)); } catch (e) {}
+      }
+
       closeUserModal();
       renderAdminUsersTable();
       renderUserDashboard();
       renderLeaderboard();
 
+      // INSTANT BROADCAST TO FIREBASE REALTIME DATABASE (< 0.1s update)
+      try {
+        if (typeof firebase !== 'undefined' && firebase.apps && firebase.apps.length) {
+          firebase.database().ref('live_rally_data/users').set(usersData);
+          firebase.database().ref('live_rally_data/timestamp').set(Date.now());
+          console.log('[Firebase Realtime] User saved & pushed to RTDB instantly!');
+        }
+      } catch (fbErr) {
+        console.warn('[Firebase Realtime] Push error:', fbErr);
+      }
+
+      if (!hasImageUpload) {
+        Swal.fire({
+          toast: true,
+          position: 'top-end',
+          icon: 'success',
+          title: 'บันทึกข้อมูลผู้ใช้เรียบร้อยแล้ว',
+          showConfirmButton: false,
+          timer: 1800
+        });
+      }
+
       if (isMockMode) {
-        setTimeout(function() {
-          hideLoading();
-          Swal.fire({ icon: 'success', title: 'บันทึกข้อมูลผู้ใช้สำเร็จ', timer: 1500, showConfirmButton: false });
-        }, 300);
+        if (hasImageUpload) {
+          setTimeout(function() {
+            hideLoading();
+            Swal.fire({ icon: 'success', title: 'บันทึกข้อมูลผู้ใช้สำเร็จ', timer: 1500, showConfirmButton: false });
+          }, 300);
+        }
       } else {
         if (typeof google !== 'undefined' && google.script && google.script.run) {
           google.script.run
             .withSuccessHandler(function(res) {
-              hideLoading();
-              if (res.success) {
-                Swal.fire({ icon: 'success', title: res.message, timer: 1500, showConfirmButton: false });
-                loadAppData();
+              if (hasImageUpload) hideLoading();
+              if (res && res.success) {
+                if (hasImageUpload) {
+                  Swal.fire({ icon: 'success', title: res.message || 'บันทึกข้อมูลสำเร็จ', timer: 1500, showConfirmButton: false });
+                }
+                console.log('[RallyApp] User persisted to Google Sheets:', res.message);
+                loadAppData(true);
               } else {
                 handleApiResponseError(res);
               }
             })
             .withFailureHandler(function(err) {
-              hideLoading();
-              Swal.fire('ข้อผิดพลาดระบบ', err.message, 'error');
+              if (hasImageUpload) hideLoading();
+              console.warn('[RallyApp] Background Sheets sync notice:', err);
+              var isTimeout = err.name === 'AbortError' || String(err).includes('abort');
+              if (!isTimeout) {
+                Swal.fire('ข้อผิดพลาดระบบ', err.message, 'error');
+              }
             })
             .apiSaveUser(userData, sessionToken);
         }
@@ -6186,36 +6259,42 @@
         cancelButtonText: 'ยกเลิก'
       }).then(function(result) {
         if (result.isConfirmed) {
-          showLoading('กำลังลบผู้ใช้...');
-          
           usersData = usersData.filter(function(u) { return u.username !== username; });
           renderAdminUsersTable();
           renderUserDashboard();
           renderLeaderboard();
 
-          if (isMockMode) {
-            setTimeout(function() {
-              hideLoading();
-              Swal.fire('ลบสำเร็จ', 'ลบบัญชีเรียบร้อยแล้ว', 'success');
-            }, 300);
-          } else {
-            if (typeof google !== 'undefined' && google.script && google.script.run) {
-              google.script.run
-                .withSuccessHandler(function(res) {
-                  hideLoading();
-                  if (res.success) {
-                    Swal.fire('สำเร็จ', res.message, 'success');
-                    loadAppData();
-                  } else {
-                    handleApiResponseError(res);
-                  }
-                })
-                .withFailureHandler(function(err) {
-                  hideLoading();
-                  Swal.fire('ข้อผิดพลาดระบบ', err.message, 'error');
-                })
-                .apiDeleteUser(username, sessionToken);
+          // INSTANT BROADCAST TO FIREBASE REALTIME DATABASE (< 0.1s update)
+          try {
+            if (typeof firebase !== 'undefined' && firebase.apps && firebase.apps.length) {
+              firebase.database().ref('live_rally_data/users').set(usersData);
+              firebase.database().ref('live_rally_data/timestamp').set(Date.now());
             }
+          } catch (fbErr) {}
+
+          Swal.fire({
+            toast: true,
+            position: 'top-end',
+            icon: 'success',
+            title: 'ลบบัญชี ' + username + ' เรียบร้อยแล้ว',
+            showConfirmButton: false,
+            timer: 1800
+          });
+
+          if (!isMockMode && typeof google !== 'undefined' && google.script && google.script.run) {
+            google.script.run
+              .withSuccessHandler(function(res) {
+                if (res && res.success) {
+                  console.log('[RallyApp] User deleted from Google Sheets:', res.message);
+                  loadAppData(true);
+                } else {
+                  handleApiResponseError(res);
+                }
+              })
+              .withFailureHandler(function(err) {
+                console.warn('[RallyApp] Background Sheets sync notice:', err);
+              })
+              .apiDeleteUser(username, sessionToken);
           }
         }
       });
@@ -6497,7 +6576,7 @@
         newNameForB = 'ทีม ' + (userB.carCode || userB.username);
       }
 
-      showLoading('กำลังสลับเบอร์รถ ' + uA + ' และ ' + uB + '...');
+      closeSwapCarModal();
 
       // Optimistic in-memory update
       var tempProfile = userA.profileUrl;
@@ -6521,47 +6600,42 @@
       renderUserDashboard();
       renderLeaderboard();
 
-      if (isMockMode) {
-        setTimeout(function() {
-          hideLoading();
-          closeSwapCarModal();
-          Swal.fire({
-            icon: 'success',
-            title: 'สลับเบอร์รถสำเร็จ!',
-            html: '<p>สลับข้อมูลระหว่าง <b>' + escapeHTML(uA) + '</b> และ <b>' + escapeHTML(uB) + '</b> เรียบร้อยแล้ว</p>',
-            confirmButtonColor: '#10b981'
-          });
-        }, 300);
-      } else {
-        if (typeof google !== 'undefined' && google.script && google.script.run) {
-          google.script.run
-            .withSuccessHandler(function(res) {
-              hideLoading();
-              if (res.success) {
-                closeSwapCarModal();
-                Swal.fire({
-                  icon: 'success',
-                  title: 'สลับเบอร์รถสำเร็จ!',
-                  html: '<p>' + escapeHTML(res.message) + '</p>',
-                  confirmButtonColor: '#10b981'
-                });
-                loadAppData();
-              } else {
-                handleApiResponseError(res);
-              }
-            })
-            .withFailureHandler(function(err) {
-              hideLoading();
-              console.error('Swap car error:', err);
-              var isNetErr = !err || err.message === 'Failed to fetch' || String(err).includes('fetch');
-              var errMsg = isNetErr
-                ? 'ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้ กรุณาลองใหม่อีกครั้ง'
-                : (err.message || err.toString());
-              Swal.fire({ icon: 'error', title: 'การเชื่อมต่อขัดข้อง', text: errMsg, confirmButtonText: 'ตกลง' });
-              loadAppData();
-            })
-            .apiSwapCars(uA, uB, sessionToken);
+      // INSTANT BROADCAST TO FIREBASE REALTIME DATABASE (< 0.1s update)
+      try {
+        if (typeof firebase !== 'undefined' && firebase.apps && firebase.apps.length) {
+          firebase.database().ref('live_rally_data/users').set(usersData);
+          firebase.database().ref('live_rally_data/timestamp').set(Date.now());
         }
+      } catch (fbErr) {}
+
+      Swal.fire({
+        toast: true,
+        position: 'top-end',
+        icon: 'success',
+        title: 'สลับเบอร์รถระหว่าง ' + uA + ' และ ' + uB + ' สำเร็จ!',
+        showConfirmButton: false,
+        timer: 2000
+      });
+
+      if (!isMockMode && typeof google !== 'undefined' && google.script && google.script.run) {
+        google.script.run
+          .withSuccessHandler(function(res) {
+            if (res && res.success) {
+              console.log('[RallyApp] Swap cars persisted to Google Sheets:', res.message);
+              loadAppData(true);
+            } else {
+              handleApiResponseError(res);
+            }
+          })
+          .withFailureHandler(function(err) {
+            console.warn('[RallyApp] Background Sheets sync notice:', err);
+            var isNetErr = !err || err.message === 'Failed to fetch' || String(err).includes('fetch');
+            var errMsg = isNetErr
+              ? 'ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้ กรุณาลองใหม่อีกครั้ง'
+              : (err.message || err.toString());
+            Swal.fire({ icon: 'error', title: 'การเชื่อมต่อขัดข้อง', text: errMsg, confirmButtonText: 'ตกลง' });
+          })
+          .apiSwapCars(uA, uB, sessionToken);
       }
     }
     window.confirmSwapCars = confirmSwapCars;
@@ -7227,58 +7301,45 @@
         return;
       }
       var targetState = !isVotingOpen;
-      showLoading('กำลังบันทึกการตั้งค่าระบบโหวต...');
+      isVotingOpen = targetState;
+      if (isVotingOpen) {
+        revealedPodiumRanks = { 1: false, 2: false, 3: false };
+        isLiveRankingTableVisible = false;
+      }
 
-      if (isMockMode) {
-        setTimeout(function() {
-          isVotingOpen = targetState;
-          if (isVotingOpen) {
-            revealedPodiumRanks = { 1: false, 2: false, 3: false };
-            isLiveRankingTableVisible = false;
-          }
-          hideLoading();
-          renderUserDashboard();
-          renderVoteResults();
-          Swal.fire({
-            toast: true,
-            position: 'top-end',
-            icon: 'info',
-            title: isVotingOpen ? '🗳️ เปิดระบบโหวตคะแนนเรียบร้อยแล้ว' : '🔒 ปิดระบบโหวตคะแนนเรียบร้อยแล้ว',
-            showConfirmButton: false,
-            timer: 2500
-          });
-        }, 300);
-      } else {
-        if (typeof google !== 'undefined' && google.script && google.script.run) {
-          google.script.run
-            .withSuccessHandler(function(res) {
-              hideLoading();
-              if (res.success) {
-                isVotingOpen = res.isVotingOpen;
-                if (isVotingOpen) {
-                  revealedPodiumRanks = { 1: false, 2: false, 3: false };
-                  isLiveRankingTableVisible = false;
-                }
-                renderUserDashboard();
-                renderVoteResults();
-                Swal.fire({
-                  toast: true,
-                  position: 'top-end',
-                  icon: 'info',
-                  title: isVotingOpen ? '🗳️ เปิดระบบโหวตคะแนนเรียบร้อยแล้ว' : '🔒 ปิดระบบโหวตคะแนนเรียบร้อยแล้ว',
-                  showConfirmButton: false,
-                  timer: 2500
-                });
-              } else {
-                handleApiResponseError(res, 'ไม่สามารถเปลี่ยนสถานะระบบโหวตได้');
-              }
-            })
-            .withFailureHandler(function(err) {
-              hideLoading();
-              Swal.fire('ข้อผิดพลาดระบบ', err.message, 'error');
-            })
-            .apiSetVotingStatus(targetState, sessionToken);
+      renderUserDashboard();
+      renderVoteResults();
+
+      // INSTANT BROADCAST TO FIREBASE REALTIME DATABASE (< 0.1s update)
+      try {
+        if (typeof firebase !== 'undefined' && firebase.apps && firebase.apps.length) {
+          firebase.database().ref('live_rally_data/settings/isVotingOpen').set(targetState);
+          firebase.database().ref('live_rally_data/timestamp').set(Date.now());
         }
+      } catch (fbErr) {}
+
+      Swal.fire({
+        toast: true,
+        position: 'top-end',
+        icon: 'info',
+        title: isVotingOpen ? '🗳️ เปิดระบบโหวตคะแนนเรียบร้อยแล้ว' : '🔒 ปิดระบบโหวตคะแนนเรียบร้อยแล้ว',
+        showConfirmButton: false,
+        timer: 2000
+      });
+
+      if (!isMockMode && typeof google !== 'undefined' && google.script && google.script.run) {
+        google.script.run
+          .withSuccessHandler(function(res) {
+            if (res && res.success) {
+              console.log('[RallyApp] Voting status persisted:', res.isVotingOpen);
+            } else {
+              handleApiResponseError(res, 'ไม่สามารถเปลี่ยนสถานะระบบโหวตได้');
+            }
+          })
+          .withFailureHandler(function(err) {
+            console.warn('[RallyApp] Voting status sync notice:', err);
+          })
+          .apiSetVotingStatus(targetState, sessionToken);
       }
     }
     window.toggleVotingSystem = toggleVotingSystem;
@@ -8829,56 +8890,41 @@
       var rankVal = parseInt(input ? input.value : 0, 10);
       if (isNaN(rankVal) || rankVal < 0) rankVal = 0;
 
-      showLoading('กำลังบันทึกการตั้งค่ารางวัลบู้บี้...');
+      boobyRank = rankVal;
+      closeBoobyRankModal();
+      renderLeaderboard();
+      renderCeremonyView();
 
-      if (isMockMode) {
-        setTimeout(function() {
-          boobyRank = rankVal;
-          hideLoading();
-          closeBoobyRankModal();
-          renderLeaderboard();
-          renderCeremonyView();
-          Swal.fire({
-            icon: 'success',
-            title: 'บันทึกสำเร็จ',
-            text: rankVal > 0 ? ('กำหนดรางวัลบู้บี้เป็นอันดับที่ ' + rankVal + ' เรียบร้อยแล้ว') : 'ปิดการใช้งานรางวัลบู้บี้เรียบร้อยแล้ว',
-            timer: 2000,
-            showConfirmButton: false
-          });
-        }, 300);
-      } else {
-        if (typeof google !== 'undefined' && google.script && google.script.run) {
-          google.script.run
-            .withSuccessHandler(function(res) {
-              hideLoading();
-              if (res.success) {
-                boobyRank = res.boobyRank;
-                closeBoobyRankModal();
-                renderLeaderboard();
-                renderCeremonyView();
-                Swal.fire({
-                  icon: 'success',
-                  title: 'บันทึกสำเร็จ',
-                  text: boobyRank > 0 ? ('กำหนดรางวัลบู้บี้เป็นอันดับที่ ' + boobyRank + ' เรียบร้อยแล้ว') : 'ปิดการใช้งานรางวัลบู้บี้เรียบร้อยแล้ว',
-                  timer: 2000,
-                  showConfirmButton: false
-                });
-              } else {
-                Swal.fire('ข้อผิดพลาด', res.message || 'ไม่สามารถบันทึกได้', 'error');
-              }
-            })
-            .withFailureHandler(function(err) {
-              hideLoading();
-              Swal.fire('ข้อผิดพลาดระบบ', err.message, 'error');
-            })
-            .apiSetBoobyRank(rankVal, sessionToken);
-        } else {
-          hideLoading();
-          boobyRank = rankVal;
-          closeBoobyRankModal();
-          renderLeaderboard();
-          renderCeremonyView();
+      // INSTANT BROADCAST TO FIREBASE REALTIME DATABASE (< 0.1s update)
+      try {
+        if (typeof firebase !== 'undefined' && firebase.apps && firebase.apps.length) {
+          firebase.database().ref('live_rally_data/settings/boobyRank').set(rankVal);
+          firebase.database().ref('live_rally_data/timestamp').set(Date.now());
         }
+      } catch (fbErr) {}
+
+      Swal.fire({
+        toast: true,
+        position: 'top-end',
+        icon: 'success',
+        title: rankVal > 0 ? ('กำหนดรางวัลบู้บี้เป็นอันดับที่ ' + rankVal + ' แล้ว') : 'ปิดการใช้งานรางวัลบู้บี้แล้ว',
+        showConfirmButton: false,
+        timer: 2000
+      });
+
+      if (!isMockMode && typeof google !== 'undefined' && google.script && google.script.run) {
+        google.script.run
+          .withSuccessHandler(function(res) {
+            if (res && res.success) {
+              console.log('[RallyApp] Booby rank persisted:', res.boobyRank);
+            } else {
+              Swal.fire('ข้อผิดพลาด', res.message || 'ไม่สามารถบันทึกได้', 'error');
+            }
+          })
+          .withFailureHandler(function(err) {
+            console.warn('[RallyApp] Booby rank sync notice:', err);
+          })
+          .apiSetBoobyRank(rankVal, sessionToken);
       }
     }
     window.saveBoobyRankSetting = saveBoobyRankSetting;

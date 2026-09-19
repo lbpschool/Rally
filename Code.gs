@@ -149,12 +149,11 @@ function handleApiRequest(action, payload) {
       break;
   }
 
-  // Invalidate shared cache only on major structural or configuration changes
-  // (Routine actions like submitAnswer, gradeSubmission, updateBonusPoints, castVote update the cache in-place!)
+  // Invalidate shared cache only on global reset or full-scale data clearing
+  // (Routine actions like submitAnswer, gradeSubmission, updateBonusPoints, castVote, saveUser, deleteUser, saveActivity, deleteActivity, resetCompetitorProfiles update the cache in-place!)
   const structuralActions = [
     'setBoobyRank', 'setScoreVisibility', 'setVotingStatus', 'setVoteVisibility',
-    'resetVotes', 'batchGradeActivity', 'saveActivity', 'deleteActivity',
-    'saveUser', 'deleteUser', 'swapCars', 'updateSelfProfile', 'clearAllSubmissions', 'resetCompetitorProfiles'
+    'resetVotes', 'batchGradeActivity', 'swapCars', 'updateSelfProfile', 'clearAllSubmissions'
   ];
   if (structuralActions.indexOf(action) !== -1 && result && result.success !== false) {
     invalidateGlobalCache();
@@ -329,6 +328,110 @@ function appendCachedVote(newVote) {
     setCachedSharedData(shared);
   } catch (e) {
     Logger.log('appendCachedVote error: ' + e);
+  }
+}
+
+function updateCachedUser(userData) {
+  try {
+    const shared = getCachedSharedData();
+    if (!shared || !shared.users) return;
+    const uNorm = String(userData.username || '').trim().toLowerCase();
+    let found = false;
+    for (let i = 0; i < shared.users.length; i++) {
+      if (String(shared.users[i].username || '').trim().toLowerCase() === uNorm) {
+        shared.users[i].name = userData.name;
+        shared.users[i].role = userData.role;
+        shared.users[i].carColor = userData.carColor;
+        shared.users[i].carCode = userData.carCode;
+        if (userData.profileUrl) shared.users[i].profileUrl = userData.profileUrl;
+        if (userData.members) shared.users[i].members = userData.members;
+        if (typeof userData.bonusPoints !== 'undefined') shared.users[i].bonusPoints = Number(userData.bonusPoints) || 0;
+        found = true;
+        break;
+      }
+    }
+    if (!found) {
+      shared.users.push({
+        username: userData.username,
+        name: userData.name,
+        role: userData.role,
+        carColor: userData.carColor,
+        carCode: userData.carCode,
+        profileUrl: userData.profileUrl || 'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&w=400&q=80',
+        bonusPoints: Number(userData.bonusPoints) || 0,
+        members: userData.members || []
+      });
+    }
+    setCachedSharedData(shared);
+  } catch (e) {
+    Logger.log('updateCachedUser error: ' + e);
+  }
+}
+
+function deleteCachedUser(username) {
+  try {
+    const shared = getCachedSharedData();
+    if (!shared || !shared.users) return;
+    const uNorm = String(username || '').trim().toLowerCase();
+    shared.users = shared.users.filter(function(u) {
+      return String(u.username || '').trim().toLowerCase() !== uNorm;
+    });
+    setCachedSharedData(shared);
+  } catch (e) {
+    Logger.log('deleteCachedUser error: ' + e);
+  }
+}
+
+function updateCachedActivity(actData) {
+  try {
+    const shared = getCachedSharedData();
+    if (!shared || !shared.activities) return;
+    const aNorm = String(actData.id || '').trim();
+    let found = false;
+    for (let i = 0; i < shared.activities.length; i++) {
+      if (String(shared.activities[i].id || '').trim() === aNorm) {
+        shared.activities[i].category = actData.category;
+        shared.activities[i].scoringType = actData.scoringType;
+        shared.activities[i].title = actData.title;
+        shared.activities[i].description = actData.description;
+        shared.activities[i].maxPoints = Number(actData.maxPoints) || 0;
+        if (actData.imageUrl) shared.activities[i].imageUrl = actData.imageUrl;
+        if (typeof actData.solutionImageUrl !== 'undefined') shared.activities[i].solutionImageUrl = actData.solutionImageUrl;
+        if (actData.autoAnswers) shared.activities[i].autoAnswers = actData.autoAnswers;
+        found = true;
+        break;
+      }
+    }
+    if (!found) {
+      shared.activities.push({
+        id: actData.id,
+        category: actData.category,
+        scoringType: actData.scoringType,
+        title: actData.title,
+        description: actData.description,
+        maxPoints: Number(actData.maxPoints) || 0,
+        imageUrl: actData.imageUrl || '',
+        solutionImageUrl: actData.solutionImageUrl || '',
+        autoAnswers: actData.autoAnswers || {}
+      });
+    }
+    setCachedSharedData(shared);
+  } catch (e) {
+    Logger.log('updateCachedActivity error: ' + e);
+  }
+}
+
+function deleteCachedActivity(id) {
+  try {
+    const shared = getCachedSharedData();
+    if (!shared || !shared.activities) return;
+    const aNorm = String(id || '').trim();
+    shared.activities = shared.activities.filter(function(a) {
+      return String(a.id || '').trim() !== aNorm;
+    });
+    setCachedSharedData(shared);
+  } catch (e) {
+    Logger.log('deleteCachedActivity error: ' + e);
   }
 }
 
@@ -1349,7 +1452,7 @@ function apiSaveActivity(activityData, sessionToken) {
     }
   }
 
-  return withLock(function() {
+  const result = withLock(function() {
     const ss = getSpreadsheet();
     const actSheet = getOrCreateSheet(ss, SHEET_NAMES.ACTIVITIES);
     const actData = actSheet.getDataRange().getValues();
@@ -1390,10 +1493,18 @@ function apiSaveActivity(activityData, sessionToken) {
       success: true, 
       message: 'บันทึกข้อมูลภารกิจเรียบร้อยแล้ว', 
       activityId: id, 
-      imageUrl: imageUrl,
+      imageUrl: imageUrl, 
       solutionImageUrl: solutionImageUrl
     };
   });
+
+  if (result && result.success) {
+    activityData.id = id;
+    activityData.imageUrl = imageUrl;
+    activityData.solutionImageUrl = solutionImageUrl;
+    updateCachedActivity(activityData);
+  }
+  return result;
 }
 
 /**
@@ -1456,7 +1567,7 @@ function apiDeleteActivity(activityId, sessionToken) {
   const auth = verifyAuth(sessionToken, ['Admin']);
   if (!auth.success) return auth;
 
-  return withLock(function() {
+  const result = withLock(function() {
     const ss = getSpreadsheet();
     const actSheet = getOrCreateSheet(ss, SHEET_NAMES.ACTIVITIES);
     const actData = actSheet.getDataRange().getValues();
@@ -1469,6 +1580,11 @@ function apiDeleteActivity(activityId, sessionToken) {
     }
     return { success: false, message: 'ไม่พบภารกิจที่ต้องการลบ' };
   });
+
+  if (result && result.success) {
+    deleteCachedActivity(activityId);
+  }
+  return result;
 }
 
 /**
@@ -1488,7 +1604,7 @@ function apiSaveUser(userData, sessionToken) {
     }
   }
 
-  return withLock(function() {
+  const result = withLock(function() {
     const ss = getSpreadsheet();
     const usersSheet = getOrCreateSheet(ss, SHEET_NAMES.USERS);
     const usersData = usersSheet.getDataRange().getValues();
@@ -1538,6 +1654,12 @@ function apiSaveUser(userData, sessionToken) {
 
     return { success: true, message: 'บันทึกข้อมูลผู้ใช้งานเรียบร้อยแล้ว' };
   });
+
+  if (result && result.success) {
+    userData.profileUrl = profileUrl;
+    updateCachedUser(userData);
+  }
+  return result;
 }
 
 /**
@@ -1547,7 +1669,7 @@ function apiDeleteUser(username, sessionToken) {
   const auth = verifyAuth(sessionToken, ['Admin']);
   if (!auth.success) return auth;
 
-  return withLock(function() {
+  const result = withLock(function() {
     const ss = getSpreadsheet();
     const usersSheet = getOrCreateSheet(ss, SHEET_NAMES.USERS);
     const usersData = usersSheet.getDataRange().getValues();
@@ -1559,6 +1681,11 @@ function apiDeleteUser(username, sessionToken) {
     }
     return { success: false, message: 'ไม่พบผู้ใช้งานที่ต้องการลบ' };
   });
+
+  if (result && result.success) {
+    deleteCachedUser(username);
+  }
+  return result;
 }
 
 /**
