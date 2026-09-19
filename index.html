@@ -4120,11 +4120,6 @@
             '</div></div>' +
             '<h4 class="text-sm font-extrabold text-slate-800 line-clamp-1 leading-tight">' + escapeHTML(item.user.name) + '</h4>' +
             '<p class="text-xs text-purple-600 font-bold mt-0.5"><i class="fa-solid fa-id-badge mr-1"></i>' + escapeHTML(item.user.carCode || item.user.username) + '</p>' +
-            (item.user.members && item.user.members.length > 0
-              ? '<div class="text-[11px] text-slate-600 font-medium mt-1.5 px-2.5 py-1 rounded-xl bg-purple-50/80 border border-purple-100/80 truncate max-w-full text-center" title="' + escapeHTML(item.user.members.join(', ')) + '">' +
-                '<i class="fa-solid fa-user-shield text-purple-600 mr-1 text-[10px]"></i>' + escapeHTML(item.user.members.join(', ')) +
-                '</div>'
-              : '') +
             '</div>' +
             judgeScoreHTML +
             '</div>';
