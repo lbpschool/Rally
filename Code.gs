@@ -951,7 +951,7 @@ function apiCastVote(voterUsername, targetUsername, sessionToken) {
   const auth = verifyAuth(sessionToken, ['User', 'Admin', 'Sub-Admin'], voterUsername);
   if (!auth.success) return auth;
 
-  return withLock(function() {
+  const result = withLock(function() {
     if (!voterUsername || !targetUsername) {
       return { success: false, message: 'ข้อมูลการโหวตไม่สมบูรณ์' };
     }
