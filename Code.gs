@@ -145,7 +145,10 @@ function handleApiRequest(action, payload) {
       result = uploadFileToDrive(payload.base64Data, payload.fileName, payload.mimeType);
       break;
     case 'uploadSolutionImage':
-      result = apiUploadSolutionImage(payload.activityId, payload.imageFileObj, token);
+      result = apiUploadSolutionImage(payload.activityId, payload.imageFileObj || payload.imageFiles, token);
+      break;
+    case 'deleteSolutionImage':
+      result = apiDeleteSolutionImage(payload.activityId, payload.imageUrl, token);
       break;
     default:
       result = { success: false, message: 'Unknown API action: ' + action };
@@ -400,6 +403,7 @@ function updateCachedActivity(actData) {
         shared.activities[i].maxPoints = Number(actData.maxPoints) || 0;
         if (actData.imageUrl) shared.activities[i].imageUrl = actData.imageUrl;
         if (typeof actData.solutionImageUrl !== 'undefined') shared.activities[i].solutionImageUrl = actData.solutionImageUrl;
+        if (typeof actData.solutionImages !== 'undefined') shared.activities[i].solutionImages = actData.solutionImages;
         if (actData.autoAnswers) shared.activities[i].autoAnswers = actData.autoAnswers;
         found = true;
         break;
@@ -415,6 +419,7 @@ function updateCachedActivity(actData) {
         maxPoints: Number(actData.maxPoints) || 0,
         imageUrl: actData.imageUrl || '',
         solutionImageUrl: actData.solutionImageUrl || '',
+        solutionImages: actData.solutionImages || (actData.solutionImageUrl ? [actData.solutionImageUrl] : []),
         autoAnswers: actData.autoAnswers || {}
       });
     }
@@ -436,6 +441,25 @@ function deleteCachedActivity(id) {
   } catch (e) {
     Logger.log('deleteCachedActivity error: ' + e);
   }
+}
+
+/**
+ * Helper: Parse solution images stored in sheet (supports JSON array string, comma-separated, or single URL)
+ */
+function parseSolutionImages(rawVal) {
+  if (!rawVal) return [];
+  const str = String(rawVal).trim();
+  if (!str) return [];
+  if (str.startsWith('[') && str.endsWith(']')) {
+    try {
+      const parsed = JSON.parse(str);
+      if (Array.isArray(parsed)) return parsed.filter(Boolean);
+    } catch(e) {}
+  }
+  if (str.indexOf(',') !== -1 && !str.startsWith('http')) {
+    return str.split(',').map(function(s){ return s.trim(); }).filter(Boolean);
+  }
+  return [str];
 }
 
 function fetchSharedDataFromSheets() {
@@ -471,6 +495,7 @@ function fetchSharedDataFromSheets() {
   for (let i = 1; i < actRaw.length; i++) {
     let autoAns = {};
     try { autoAns = JSON.parse(actRaw[i][7] || '{}'); } catch(e) {}
+    const sImgs = parseSolutionImages(actRaw[i][8]);
     activities.push({
       id: actRaw[i][0],
       category: actRaw[i][1],
@@ -480,7 +505,8 @@ function fetchSharedDataFromSheets() {
       scoringType: actRaw[i][5],
       maxPoints: Number(actRaw[i][6]) || 0,
       autoAnswers: autoAns,
-      solutionImageUrl: String(actRaw[i][8] || '')
+      solutionImages: sImgs,
+      solutionImageUrl: sImgs[0] || ''
     });
   }
 
@@ -946,7 +972,7 @@ function apiGetInitialData(username, sessionToken) {
   const isAdmin = (requesterRole === 'Admin');
   const isPrivileged = (requesterRole === 'Admin' || requesterRole === 'Sub-Admin');
 
-  // Filter activities: solutionImageUrl is sent ONLY to Admin
+  // Filter activities: solutionImageUrl and solutionImages are sent ONLY to Admin
   const activities = (shared.activities || []).map(function(a) {
     if (isAdmin) return a;
     return {
@@ -958,7 +984,8 @@ function apiGetInitialData(username, sessionToken) {
       scoringType: a.scoringType,
       maxPoints: a.maxPoints,
       autoAnswers: a.autoAnswers,
-      solutionImageUrl: ''
+      solutionImageUrl: '',
+      solutionImages: []
     };
   });
 
@@ -1474,6 +1501,12 @@ function apiSaveActivity(activityData, sessionToken) {
       }
     }
 
+    let solutionImages = activityData.solutionImages;
+    if (!solutionImages || !Array.isArray(solutionImages)) {
+      solutionImages = solutionImageUrl ? [solutionImageUrl] : [];
+    }
+    const solutionImagesVal = (solutionImages.length === 0) ? '' : (solutionImages.length === 1 ? solutionImages[0] : JSON.stringify(solutionImages));
+
     const rowContent = [
       id,
       activityData.category,
@@ -1483,7 +1516,7 @@ function apiSaveActivity(activityData, sessionToken) {
       activityData.scoringType,
       Number(activityData.maxPoints) || 0,
       autoAnswersStr,
-      solutionImageUrl
+      solutionImagesVal
     ];
 
     if (foundRow > 0) {
@@ -1497,40 +1530,81 @@ function apiSaveActivity(activityData, sessionToken) {
       message: 'บันทึกข้อมูลภารกิจเรียบร้อยแล้ว', 
       activityId: id, 
       imageUrl: imageUrl, 
-      solutionImageUrl: solutionImageUrl
+      solutionImageUrl: solutionImages[0] || '',
+      solutionImages: solutionImages
     };
   });
 
   if (result && result.success) {
     activityData.id = id;
     activityData.imageUrl = imageUrl;
-    activityData.solutionImageUrl = solutionImageUrl;
+    activityData.solutionImageUrl = result.solutionImageUrl;
+    activityData.solutionImages = result.solutionImages;
     updateCachedActivity(activityData);
   }
   return result;
 }
 
 /**
- * API: Quick Upload Solution Image for Activity (Admin)
+ * Helper: Update Solution Images of an Activity in Cache & Firebase RTDB
+ */
+function updateActivitySolutionImagesInCache(activityId, currentImgs) {
+  try {
+    const shared = getCachedSharedData();
+    if (!shared || !shared.activities) return;
+    const aNorm = String(activityId || '').trim();
+    for (let i = 0; i < shared.activities.length; i++) {
+      if (String(shared.activities[i].id || '').trim() === aNorm) {
+        shared.activities[i].solutionImages = currentImgs;
+        shared.activities[i].solutionImageUrl = currentImgs[0] || '';
+        break;
+      }
+    }
+    setCachedSharedData(shared);
+  } catch (e) {
+    Logger.log('updateActivitySolutionImagesInCache error: ' + e);
+  }
+}
+
+/**
+ * API: Quick Upload Solution Image(s) for Activity (Admin) - Supports single or multiple images
  */
 function apiUploadSolutionImage(activityId, imageFileObj, sessionToken) {
   const auth = verifyAuth(sessionToken, ['Admin']);
   if (!auth.success) return auth;
 
-  if (!imageFileObj || !imageFileObj.base64) {
+  // Support either single imageFileObj, an array of imageFileObjs, or { files: [...] }
+  let fileList = [];
+  if (Array.isArray(imageFileObj)) {
+    fileList = imageFileObj;
+  } else if (imageFileObj && Array.isArray(imageFileObj.files)) {
+    fileList = imageFileObj.files;
+  } else if (imageFileObj && imageFileObj.base64) {
+    fileList = [imageFileObj];
+  }
+
+  if (fileList.length === 0) {
     return { success: false, message: 'ไม่พบไฟล์รูปภาพเฉลยที่ต้องการอัปโหลด' };
   }
 
-  const uploadRes = uploadFileToDrive(
-    imageFileObj.base64, 
-    imageFileObj.fileName || ('solution_' + activityId + '.jpg'), 
-    imageFileObj.mimeType || 'image/jpeg'
-  );
-  if (!uploadRes.success) {
-    return { success: false, message: 'ไม่สามารถอัปโหลดรูปภาพเฉลยไปยัง Google Drive ได้: ' + (uploadRes.error || '') };
+  const uploadedUrls = [];
+  for (let f = 0; f < fileList.length; f++) {
+    const curFile = fileList[f];
+    if (curFile && curFile.base64) {
+      const uploadRes = uploadFileToDrive(
+        curFile.base64, 
+        curFile.fileName || ('solution_' + activityId + '_' + Date.now() + '_' + f + '.jpg'), 
+        curFile.mimeType || 'image/jpeg'
+      );
+      if (uploadRes.success && uploadRes.directUrl) {
+        uploadedUrls.push(uploadRes.directUrl);
+      }
+    }
   }
 
-  const solutionUrl = uploadRes.directUrl;
+  if (uploadedUrls.length === 0) {
+    return { success: false, message: 'ไม่สามารถอัปโหลดรูปภาพเฉลยไปยัง Google Drive ได้' };
+  }
 
   return withLock(function() {
     const ss = getSpreadsheet();
@@ -1550,12 +1624,75 @@ function apiUploadSolutionImage(activityId, imageFileObj, sessionToken) {
     }
 
     if (foundRow > 0) {
-      actSheet.getRange(foundRow, 9).setValue(solutionUrl);
+      const existingRaw = actSheet.getRange(foundRow, 9).getValue();
+      const currentImgs = parseSolutionImages(existingRaw);
+
+      // Append newly uploaded images without duplicate
+      uploadedUrls.forEach(function(u) {
+        if (currentImgs.indexOf(u) === -1) currentImgs.push(u);
+      });
+
+      const valToSave = (currentImgs.length === 0) ? '' : (currentImgs.length === 1 ? currentImgs[0] : JSON.stringify(currentImgs));
+      actSheet.getRange(foundRow, 9).setValue(valToSave);
+
+      // In-place cache & Firebase sync
+      updateActivitySolutionImagesInCache(activityId, currentImgs);
+
       return { 
         success: true, 
-        message: 'อัปโหลดภาพเฉลยเรียบร้อยแล้ว', 
+        message: 'อัปโหลดภาพเฉลยเรียบร้อยแล้ว (' + uploadedUrls.length + ' ภาพ)', 
         activityId: activityId, 
-        solutionImageUrl: solutionUrl 
+        solutionImages: currentImgs,
+        solutionImageUrl: currentImgs[0] || ''
+      };
+    } else {
+      return { success: false, message: 'ไม่พบรหัสภารกิจ ' + activityId };
+    }
+  });
+}
+
+/**
+ * API: Delete a Solution Image from an Activity (Admin)
+ */
+function apiDeleteSolutionImage(activityId, imageUrl, sessionToken) {
+  const auth = verifyAuth(sessionToken, ['Admin']);
+  if (!auth.success) return auth;
+
+  if (!imageUrl) {
+    return { success: false, message: 'ไม่พบ URL ภาพเฉลยที่ต้องการลบ' };
+  }
+
+  return withLock(function() {
+    const ss = getSpreadsheet();
+    const actSheet = getOrCreateSheet(ss, SHEET_NAMES.ACTIVITIES);
+    const actData = actSheet.getDataRange().getValues();
+
+    let foundRow = -1;
+    for (let i = 1; i < actData.length; i++) {
+      if (actData[i][0] === activityId) {
+        foundRow = i + 1;
+        break;
+      }
+    }
+
+    if (foundRow > 0) {
+      const existingRaw = actSheet.getRange(foundRow, 9).getValue();
+      let currentImgs = parseSolutionImages(existingRaw);
+
+      currentImgs = currentImgs.filter(function(u) { return String(u).trim() !== String(imageUrl).trim(); });
+
+      const valToSave = (currentImgs.length === 0) ? '' : (currentImgs.length === 1 ? currentImgs[0] : JSON.stringify(currentImgs));
+      actSheet.getRange(foundRow, 9).setValue(valToSave);
+
+      // In-place cache & Firebase sync
+      updateActivitySolutionImagesInCache(activityId, currentImgs);
+
+      return { 
+        success: true, 
+        message: 'ลบภาพเฉลยเรียบร้อยแล้ว', 
+        activityId: activityId, 
+        solutionImages: currentImgs,
+        solutionImageUrl: currentImgs[0] || ''
       };
     } else {
       return { success: false, message: 'ไม่พบรหัสภารกิจ ' + activityId };

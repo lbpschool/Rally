@@ -241,6 +241,20 @@
       
       <!-- Zoomable Image Container with Touch & Pinch Gestures -->
       <div id="imageZoomContainer" class="relative w-full flex items-center justify-center overflow-hidden rounded-2xl border border-white/20 bg-black/40 shadow-2xl select-none my-1" style="touch-action: none; min-height: 260px; max-height: 78vh;">
+        
+        <!-- Gallery Navigation Arrows (shown when multiple images) -->
+        <button type="button" id="imageModalPrevBtn" onclick="navigateImageModalGallery(-1)" style="display: none;" class="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 z-40 w-11 h-11 rounded-full bg-slate-900/85 hover:bg-slate-800 active:scale-90 text-white flex items-center justify-center text-base shadow-2xl border border-white/30 backdrop-blur-md transition-all cursor-pointer" title="ภาพก่อนหน้า">
+          <i class="fa-solid fa-chevron-left"></i>
+        </button>
+        <button type="button" id="imageModalNextBtn" onclick="navigateImageModalGallery(1)" style="display: none;" class="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 z-40 w-11 h-11 rounded-full bg-slate-900/85 hover:bg-slate-800 active:scale-90 text-white flex items-center justify-center text-base shadow-2xl border border-white/30 backdrop-blur-md transition-all cursor-pointer" title="ภาพถัดไป">
+          <i class="fa-solid fa-chevron-right"></i>
+        </button>
+
+        <!-- Gallery Counter Badge (shown when multiple images) -->
+        <div id="imageModalGalleryCounter" style="display: none;" class="absolute top-3 right-3 sm:right-4 z-40 px-3 py-1 rounded-full bg-slate-900/85 border border-white/30 text-amber-300 text-xs font-black shadow-xl">
+          1 / 1
+        </div>
+
         <img id="imageModalSrc" src="" alt="Zoom Image" class="max-w-full max-h-[78vh] object-contain cursor-grab active:cursor-grabbing will-change-transform" style="transform-origin: center center;">
         
         <!-- Floating Zoom Controls & Reset Pill (Always accessible on Mobile & Desktop) -->
@@ -1430,53 +1444,84 @@
 
 
   <!-- ================= MODAL: QUICK UPLOAD SOLUTION IMAGE (เฉพาะ Admin) ================= -->
-  <div id="modalQuickSolutionUpload" style="display: none;" class="fixed inset-0 z-50 items-center justify-center bg-slate-950/70 backdrop-blur-sm p-4 animate-fade-in" onclick="if(event.target === this) closeQuickSolutionModal()">
-    <div class="bg-white max-w-md w-full rounded-3xl p-6 relative shadow-2xl border-2 border-amber-300 overflow-hidden">
-      <button onclick="closeQuickSolutionModal()" class="absolute top-4 right-4 w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 flex items-center justify-center text-sm transition-colors cursor-pointer">
+  <div id="modalQuickSolutionUpload" style="display: none;" class="fixed inset-0 z-50 items-center justify-center bg-slate-950/70 backdrop-blur-sm p-3 sm:p-4 animate-fade-in" onclick="if(event.target === this) closeQuickSolutionModal()">
+    <div class="bg-white max-w-lg w-full rounded-3xl p-5 sm:p-6 relative shadow-2xl border-2 border-amber-300 overflow-hidden text-left max-h-[92vh] flex flex-col">
+      <button onclick="closeQuickSolutionModal()" class="absolute top-4 right-4 w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 flex items-center justify-center text-sm transition-colors cursor-pointer z-10" title="ปิด">
         <i class="fa-solid fa-xmark"></i>
       </button>
 
-      <div class="flex items-center gap-3 mb-3">
-        <div class="w-11 h-11 rounded-2xl bg-amber-100 text-amber-600 flex items-center justify-center text-xl shadow-sm border border-amber-200">
-          <i class="fa-solid fa-key"></i>
+      <!-- Header -->
+      <div class="flex items-center gap-3 pb-3 border-b border-amber-200 shrink-0 pr-8">
+        <div class="w-11 h-11 rounded-2xl bg-amber-100 text-amber-600 flex items-center justify-center text-xl shadow-sm border border-amber-200 shrink-0">
+          <i class="fa-solid fa-images"></i>
         </div>
         <div>
           <h3 id="quickSolutionTitle" class="text-base font-black text-slate-800">จัดการรูปภาพเฉลย</h3>
-          <p id="quickSolutionSubtitle" class="text-xs text-amber-700 font-semibold">อัปโหลดภาพเฉลยสำหรับแสดงผล (เฉพาะ Admin)</p>
+          <p id="quickSolutionSubtitle" class="text-xs text-amber-700 font-semibold">สามารถเพิ่มภาพเฉลยกี่ภาพก็ได้ พร้อมดูตัวอย่างและลบรายภาพได้</p>
         </div>
       </div>
 
       <input type="hidden" id="quickSolutionActId">
 
-      <div class="space-y-3.5 mt-4">
+      <!-- Scrollable Body -->
+      <div class="overflow-y-auto modal-body-scroll py-3.5 space-y-4 flex-1">
+        <!-- Section 1: Current Images in System -->
         <div>
-          <label class="block text-xs font-bold text-slate-700 mb-1.5">เลือกรูปภาพเฉลยจากเครื่อง:</label>
-          <input type="file" id="quickSolutionFileInput" accept="image/*" onchange="previewQuickSolutionFile(event)" class="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs text-slate-700 bg-slate-50 focus:bg-white outline-none">
-        </div>
-
-        <div id="quickSolutionPreviewBox" class="hidden rounded-2xl overflow-hidden border border-amber-200 max-h-52 bg-slate-50 flex flex-col items-center justify-center p-2 relative group">
-          <img id="quickSolutionPreviewImg" src="" class="max-h-48 object-contain rounded-xl shadow-sm" alt="Solution Preview">
-          <p class="text-[10px] text-slate-400 mt-1">ตัวอย่างภาพเฉลยที่จะบันทึก</p>
-        </div>
-
-        <div id="quickSolutionCurrentBox" class="hidden p-3 rounded-2xl bg-amber-50 border border-amber-200 text-xs flex items-center justify-between">
-          <div class="flex items-center gap-2">
-            <i class="fa-solid fa-circle-check text-emerald-600"></i>
-            <span class="font-bold text-amber-900">มีภาพเฉลยในระบบแล้ว</span>
+          <div class="flex items-center justify-between mb-2">
+            <label class="text-xs font-black text-slate-700 flex items-center gap-1.5">
+              <i class="fa-solid fa-layer-group text-amber-600"></i>
+              <span>ภาพเฉลยในระบบปัจจุบัน:</span>
+            </label>
+            <span id="quickSolutionCurrentCount" class="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-200">0 ภาพ</span>
           </div>
-          <button type="button" id="btnQuickViewCurrentSol" onclick="" class="text-xs text-amber-700 underline font-bold hover:text-amber-900 flex items-center gap-1">
-            <i class="fa-solid fa-eye"></i> ดูภาพปัจจุบัน
-          </button>
+
+          <!-- Empty State when no images exist -->
+          <div id="quickSolutionEmptyBox" class="p-4 rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50/80 text-center text-xs text-slate-400">
+            <i class="fa-regular fa-images text-2xl mb-1 text-slate-300 block"></i>
+            ยังไม่มีภาพเฉลยในภารกิจนี้ สามารถเลือกอัปโหลดรูปภาพด้านล่างได้ทันที
+          </div>
+
+          <!-- Grid of Existing Images -->
+          <div id="quickSolutionGrid" class="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+            <!-- Populated via JavaScript -->
+          </div>
         </div>
 
-        <div class="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
-          <button type="button" onclick="closeQuickSolutionModal()" class="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold text-xs cursor-pointer transition-colors">
-            ยกเลิก
-          </button>
-          <button type="button" onclick="handleQuickSolutionUploadSubmit()" class="px-5 py-2 rounded-xl bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 hover:from-amber-600 hover:to-orange-600 text-white font-black text-xs shadow-md shadow-amber-500/25 flex items-center gap-1.5 cursor-pointer active:scale-95 transition-all">
-            <i class="fa-solid fa-cloud-arrow-up"></i> บันทึกภาพเฉลย
-          </button>
+        <!-- Section 2: Upload New Solution Images -->
+        <div class="p-4 rounded-2xl bg-gradient-to-br from-amber-50/80 via-orange-50/30 to-slate-50 border border-amber-200 space-y-3">
+          <div class="flex items-center justify-between flex-wrap gap-1">
+            <label class="text-xs font-black text-amber-900 flex items-center gap-1.5">
+              <i class="fa-solid fa-cloud-arrow-up text-amber-600"></i>
+              <span>+ เพิ่มรูปภาพเฉลยใหม่ (กี่ภาพก็ได้):</span>
+            </label>
+            <span class="text-[10px] font-semibold text-amber-700 bg-amber-100/80 px-2 py-0.5 rounded-full">เลือกได้พร้อมกันหลายภาพ</span>
+          </div>
+
+          <input type="file" id="quickSolutionFileInput" accept="image/*" multiple onchange="previewQuickSolutionFiles(event)" class="w-full px-3 py-2 rounded-xl border border-amber-300 text-xs text-slate-700 bg-white focus:outline-none focus:ring-2 focus:ring-amber-500 cursor-pointer">
+
+          <!-- Preview of Selected New Files to Upload -->
+          <div id="quickSolutionNewPreviewBox" class="hidden space-y-2">
+            <div class="flex items-center justify-between text-[11px] font-bold text-slate-700">
+              <span>ภาพใหม่ที่เลือก (<span id="quickSolutionNewCount">0</span> ภาพ):</span>
+              <button type="button" onclick="clearQuickSolutionNewFiles()" class="text-rose-600 hover:text-rose-800 font-bold underline cursor-pointer text-[10px]">
+                ยกเลิกทั้งหมด
+              </button>
+            </div>
+            <div id="quickSolutionNewPreviewGrid" class="grid grid-cols-3 gap-2 max-h-36 overflow-y-auto modal-body-scroll p-2 bg-white rounded-xl border border-slate-200">
+              <!-- Populated with new image previews -->
+            </div>
+          </div>
         </div>
+      </div>
+
+      <!-- Footer Buttons -->
+      <div class="flex items-center justify-end gap-2 pt-3 border-t border-slate-100 shrink-0">
+        <button type="button" onclick="closeQuickSolutionModal()" class="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold text-xs cursor-pointer transition-colors">
+          ปิดหน้าต่าง
+        </button>
+        <button type="button" id="btnSubmitQuickSolution" onclick="handleQuickSolutionUploadSubmit()" class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 hover:from-amber-600 hover:to-orange-600 text-white font-black text-xs shadow-md shadow-amber-500/25 flex items-center gap-1.5 cursor-pointer active:scale-95 transition-all">
+          <i class="fa-solid fa-cloud-arrow-up"></i> บันทึกภาพเฉลยใหม่
+        </button>
       </div>
     </div>
   </div>
@@ -2643,8 +2688,38 @@
       });
     }
 
-    function openImageModal(src, caption, userOrMembers) {
-      if (!src) return;
+    // Solution Images Helper (supports Array, JSON string, or single URL string)
+    function getActivitySolutionImages(act) {
+      if (!act) return [];
+      if (Array.isArray(act.solutionImages) && act.solutionImages.length > 0) {
+        return act.solutionImages.filter(Boolean);
+      }
+      if (act.solutionImageUrl) {
+        var raw = String(act.solutionImageUrl).trim();
+        if (raw.startsWith('[') && raw.endsWith(']')) {
+          try {
+            var parsed = JSON.parse(raw);
+            if (Array.isArray(parsed)) return parsed.filter(Boolean);
+          } catch(e) {}
+        }
+        if (raw) return [raw];
+      }
+      return [];
+    }
+    window.getActivitySolutionImages = getActivitySolutionImages;
+
+    var currentGalleryImages = [];
+    var currentGalleryIndex = 0;
+    var currentGalleryCaption = '';
+
+    function openImageModal(src, caption, userOrMembers, galleryImages, galleryIndex) {
+      if (!src && (!galleryImages || galleryImages.length === 0)) return;
+
+      currentGalleryImages = (Array.isArray(galleryImages) && galleryImages.length > 0) ? galleryImages : (src ? [src] : []);
+      currentGalleryIndex = (typeof galleryIndex === 'number' && galleryIndex >= 0 && galleryIndex < currentGalleryImages.length) ? galleryIndex : 0;
+      currentGalleryCaption = caption || '';
+
+      var activeSrc = currentGalleryImages[currentGalleryIndex] || src;
       var imgEl = document.getElementById('imageModalSrc');
       resetImageModalZoom(false);
       var hint = document.getElementById('imageZoomHint');
@@ -2655,13 +2730,31 @@
         }, 2800);
       }
 
+      // Toggle Gallery Controls
+      var prevBtn = document.getElementById('imageModalPrevBtn');
+      var nextBtn = document.getElementById('imageModalNextBtn');
+      var counterEl = document.getElementById('imageModalGalleryCounter');
+
+      if (currentGalleryImages.length > 1) {
+        if (prevBtn) prevBtn.style.display = 'flex';
+        if (nextBtn) nextBtn.style.display = 'flex';
+        if (counterEl) {
+          counterEl.style.display = 'block';
+          counterEl.innerText = (currentGalleryIndex + 1) + ' / ' + currentGalleryImages.length;
+        }
+      } else {
+        if (prevBtn) prevBtn.style.display = 'none';
+        if (nextBtn) nextBtn.style.display = 'none';
+        if (counterEl) counterEl.style.display = 'none';
+      }
+
       var capEl = document.getElementById('imageModalCaption');
       var cardEl = document.getElementById('imageModalMembersCard');
       var teamNameEl = document.getElementById('imageModalTeamName');
       var countBadgeEl = document.getElementById('imageModalMemberCountBadge');
       var listEl = document.getElementById('imageModalMembersList');
 
-      if (imgEl) imgEl.src = src;
+      if (imgEl) imgEl.src = activeSrc;
 
       // Detect competitor car and get member list
       var user = null;
@@ -2679,7 +2772,7 @@
       if (!user && (!members || members.length === 0) && typeof usersData !== 'undefined' && Array.isArray(usersData)) {
         user = usersData.find(function(u) {
           if (u.role !== 'User' && u.role !== 'Sub-Admin') return false;
-          if (src && u.profileUrl && u.profileUrl.trim() === src.trim()) return true;
+          if (activeSrc && u.profileUrl && u.profileUrl.trim() === activeSrc.trim()) return true;
           if (caption && u.name && u.name.trim().toLowerCase() === caption.trim().toLowerCase()) return true;
           if (caption && u.username && u.username.trim().toLowerCase() === caption.trim().toLowerCase()) return true;
           return false;
@@ -2736,7 +2829,8 @@
         if (cardEl) cardEl.style.display = 'none';
         if (capEl) {
           capEl.style.display = 'block';
-          capEl.innerText = caption || '';
+          var extraCount = (currentGalleryImages.length > 1) ? ' (ภาพที่ ' + (currentGalleryIndex + 1) + ' จาก ' + currentGalleryImages.length + ' ภาพ)' : '';
+          capEl.innerText = (caption || '') + extraCount;
         }
       }
 
@@ -2745,8 +2839,85 @@
     }
     window.openImageModal = openImageModal;
 
+    function navigateImageModalGallery(direction) {
+      if (!currentGalleryImages || currentGalleryImages.length <= 1) return;
+      currentGalleryIndex = (currentGalleryIndex + direction + currentGalleryImages.length) % currentGalleryImages.length;
+      var newSrc = currentGalleryImages[currentGalleryIndex];
+
+      var imgEl = document.getElementById('imageModalSrc');
+      if (imgEl) imgEl.src = newSrc;
+      resetImageModalZoom(false);
+
+      var counterEl = document.getElementById('imageModalGalleryCounter');
+      if (counterEl) {
+        counterEl.innerText = (currentGalleryIndex + 1) + ' / ' + currentGalleryImages.length;
+      }
+
+      var capEl = document.getElementById('imageModalCaption');
+      if (capEl && capEl.style.display !== 'none') {
+        capEl.innerText = (currentGalleryCaption || '') + ' (ภาพที่ ' + (currentGalleryIndex + 1) + ' จาก ' + currentGalleryImages.length + ' ภาพ)';
+      }
+    }
+    window.navigateImageModalGallery = navigateImageModalGallery;
+
+    function openSolutionGalleryModal(actId, initialIndex) {
+      var act = activitiesData.find(function(a) { return a.id === actId; });
+      if (!act) return;
+      var sImages = getActivitySolutionImages(act);
+      if (sImages.length === 0) {
+        Swal.fire('ยังไม่มีภาพเฉลย', 'ภารกิจนี้ยังไม่มีภาพเฉลยในระบบ', 'info');
+        return;
+      }
+      openImageModal(sImages[initialIndex || 0], '🎯 ภาพเฉลย: ' + act.title, null, sImages, initialIndex || 0);
+    }
+    window.openSolutionGalleryModal = openSolutionGalleryModal;
+
+    // Keyboard navigation (Left / Right arrow) for gallery
+    window.addEventListener('keydown', function(e) {
+      var modal = document.getElementById('imageModal');
+      if (modal && modal.style.display !== 'none') {
+        if (e.key === 'ArrowLeft') {
+          navigateImageModalGallery(-1);
+        } else if (e.key === 'ArrowRight') {
+          navigateImageModalGallery(1);
+        } else if (e.key === 'Escape') {
+          closeImageModal();
+        }
+      }
+    });
+
+    // Touch swipe navigation for gallery
+    var galleryTouchStartX = 0;
+    var zoomContainerEl = document.getElementById('imageZoomContainer');
+    if (zoomContainerEl) {
+      zoomContainerEl.addEventListener('touchstart', function(e) {
+        if (e.touches && e.touches.length === 1 && (!imgZoomState || imgZoomState.scale <= 1)) {
+          galleryTouchStartX = e.touches[0].clientX;
+        }
+      }, { passive: true });
+      zoomContainerEl.addEventListener('touchend', function(e) {
+        if (galleryTouchStartX && (!imgZoomState || imgZoomState.scale <= 1)) {
+          var endX = e.changedTouches[0].clientX;
+          var diff = endX - galleryTouchStartX;
+          if (Math.abs(diff) > 45) {
+            if (diff > 0) navigateImageModalGallery(-1);
+            else navigateImageModalGallery(1);
+          }
+          galleryTouchStartX = 0;
+        }
+      }, { passive: true });
+    }
+
     function closeImageModal() {
       resetImageModalZoom(false);
+      currentGalleryImages = [];
+      currentGalleryIndex = 0;
+      var prevBtn = document.getElementById('imageModalPrevBtn');
+      var nextBtn = document.getElementById('imageModalNextBtn');
+      var counterEl = document.getElementById('imageModalGalleryCounter');
+      if (prevBtn) prevBtn.style.display = 'none';
+      if (nextBtn) nextBtn.style.display = 'none';
+      if (counterEl) counterEl.style.display = 'none';
       var modal = document.getElementById('imageModal');
       if (modal) modal.style.display = 'none';
     }
@@ -4397,13 +4568,15 @@
 
         var adminSolutionHTML = '';
         if (currentUser && currentUser.role === 'Admin') {
-          if (act.solutionImageUrl) {
+          var sImages = getActivitySolutionImages(act);
+          if (sImages.length > 0) {
+            var badgeCount = sImages.length > 1 ? ' (' + sImages.length + ' ภาพ)' : '';
             adminSolutionHTML = '<div class="mt-3 pt-3 border-t border-amber-200/70 flex flex-col gap-1.5">' +
-              '<button type="button" onclick="openImageModal(\'' + escapeHTML(act.solutionImageUrl) + '\', \'🎯 ภาพเฉลย: ' + escapeHTML(act.title) + '\')" class="w-full py-2.5 px-3 rounded-2xl bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 hover:from-amber-600 hover:to-orange-600 text-white font-black text-xs shadow-md shadow-amber-500/25 flex items-center justify-center gap-1.5 transition-all active:scale-95 cursor-pointer">' +
-              '<i class="fa-solid fa-key"></i> แสดงภาพเฉลย (เฉพาะ Admin)' +
+              '<button type="button" onclick="openSolutionGalleryModal(\'' + act.id + '\', 0)" class="w-full py-2.5 px-3 rounded-2xl bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 hover:from-amber-600 hover:to-orange-600 text-white font-black text-xs shadow-md shadow-amber-500/25 flex items-center justify-center gap-1.5 transition-all active:scale-95 cursor-pointer">' +
+              '<i class="fa-solid fa-key"></i> แสดงภาพเฉลย' + badgeCount + ' (เฉพาะ Admin)' +
               '</button>' +
               '<button type="button" onclick="openQuickSolutionModal(\'' + act.id + '\')" class="text-[11px] text-amber-700 hover:text-amber-900 font-bold flex items-center justify-center gap-1 cursor-pointer py-0.5">' +
-              '<i class="fa-solid fa-pen-to-square"></i> เปลี่ยนรูปภาพเฉลย' +
+              '<i class="fa-solid fa-images"></i> จัดการภาพเฉลย (' + sImages.length + ' ภาพ)' +
               '</button>' +
               '</div>';
           } else {
@@ -5586,21 +5759,8 @@
 
       document.getElementById('quickSolutionActId').value = actId;
       document.getElementById('quickSolutionTitle').innerText = 'จัดการภาพเฉลย: ' + act.title;
-      document.getElementById('quickSolutionFileInput').value = '';
-
-      var prevBox = document.getElementById('quickSolutionPreviewBox');
-      if (prevBox) prevBox.classList.add('hidden');
-
-      var curBox = document.getElementById('quickSolutionCurrentBox');
-      var btnView = document.getElementById('btnQuickViewCurrentSol');
-      if (curBox && btnView) {
-        if (act.solutionImageUrl) {
-          curBox.classList.remove('hidden');
-          btnView.setAttribute('onclick', 'openImageModal(\'' + escapeHTML(act.solutionImageUrl) + '\', \'🎯 ภาพเฉลย: ' + escapeHTML(act.title) + '\')');
-        } else {
-          curBox.classList.add('hidden');
-        }
-      }
+      clearQuickSolutionNewFiles();
+      renderQuickSolutionModalGrid(act);
 
       var modal = document.getElementById('modalQuickSolutionUpload');
       if (modal) modal.style.display = 'flex';
@@ -5608,27 +5768,100 @@
     window.openQuickSolutionModal = openQuickSolutionModal;
 
     function closeQuickSolutionModal() {
+      clearQuickSolutionNewFiles();
       var modal = document.getElementById('modalQuickSolutionUpload');
       if (modal) modal.style.display = 'none';
     }
     window.closeQuickSolutionModal = closeQuickSolutionModal;
 
-    function previewQuickSolutionFile(e) {
+    function renderQuickSolutionModalGrid(act) {
+      if (!act) return;
+      var sImages = getActivitySolutionImages(act);
+      var countEl = document.getElementById('quickSolutionCurrentCount');
+      if (countEl) countEl.innerText = sImages.length + ' ภาพ';
+
+      var emptyBox = document.getElementById('quickSolutionEmptyBox');
+      var grid = document.getElementById('quickSolutionGrid');
+
+      if (!grid) return;
+
+      if (sImages.length === 0) {
+        if (emptyBox) emptyBox.style.display = 'block';
+        grid.innerHTML = '';
+        return;
+      }
+
+      if (emptyBox) emptyBox.style.display = 'none';
+
+      grid.innerHTML = sImages.map(function(url, idx) {
+        return '<div class="relative group rounded-2xl overflow-hidden border border-amber-200 bg-slate-50 shadow-xs flex flex-col">' +
+          '<div class="relative h-28 w-full overflow-hidden bg-slate-900/10 cursor-pointer" onclick="openSolutionGalleryModal(\'' + act.id + '\', ' + idx + ')">' +
+            '<img src="' + escapeHTML(url) + '" class="w-full h-full object-cover group-hover:scale-105 transition-transform" alt="Solution ' + (idx + 1) + '">' +
+            '<span class="absolute top-1.5 left-1.5 px-2 py-0.5 rounded-md bg-slate-900/80 text-white text-[10px] font-bold shadow-sm backdrop-blur-xs">' +
+              'ภาพที่ ' + (idx + 1) +
+            '</span>' +
+            '<div class="absolute inset-0 bg-black/35 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-xs font-bold gap-1">' +
+              '<i class="fa-solid fa-magnifying-glass-plus"></i> ดูรูปเต็ม' +
+            '</div>' +
+          '</div>' +
+          '<div class="p-1.5 bg-white flex items-center justify-between border-t border-slate-100 gap-1">' +
+            '<button type="button" onclick="openSolutionGalleryModal(\'' + act.id + '\', ' + idx + ')" class="text-[10px] font-bold text-amber-700 hover:text-amber-900 flex items-center gap-1 cursor-pointer px-1 py-0.5 rounded hover:bg-amber-50">' +
+              '<i class="fa-solid fa-eye text-amber-600"></i> ดูเต็ม' +
+            '</button>' +
+            '<button type="button" onclick="handleDeleteSingleSolutionImage(\'' + act.id + '\', \'' + escapeHTML(url) + '\')" class="text-[10px] font-bold text-rose-600 hover:text-rose-800 flex items-center gap-1 px-1.5 py-0.5 rounded-lg hover:bg-rose-50 cursor-pointer transition-colors" title="ลบภาพนี้">' +
+              '<i class="fa-solid fa-trash-can"></i> ลบ' +
+            '</button>' +
+          '</div>' +
+        '</div>';
+      }).join('');
+    }
+    window.renderQuickSolutionModalGrid = renderQuickSolutionModalGrid;
+
+    function previewQuickSolutionFiles(e) {
       var input = e.target;
-      if (input.files && input.files[0]) {
+      var box = document.getElementById('quickSolutionNewPreviewBox');
+      var grid = document.getElementById('quickSolutionNewPreviewGrid');
+      var countSpan = document.getElementById('quickSolutionNewCount');
+
+      if (!input.files || input.files.length === 0) {
+        if (box) box.classList.add('hidden');
+        return;
+      }
+
+      var files = Array.from(input.files);
+      if (countSpan) countSpan.innerText = files.length;
+      if (box) box.classList.remove('hidden');
+      if (grid) grid.innerHTML = '<div class="col-span-full py-2 text-center text-xs text-slate-400">กำลังเตรียมตัวอย่างรูปภาพ...</div>';
+
+      var previewsHTML = [];
+      var loadedCount = 0;
+
+      files.forEach(function(f, idx) {
         var reader = new FileReader();
-        reader.onload = function(re) {
-          var img = document.getElementById('quickSolutionPreviewImg');
-          var box = document.getElementById('quickSolutionPreviewBox');
-          if (img && box) {
-            img.src = re.target.result;
-            box.classList.remove('hidden');
+        reader.onload = function(ev) {
+          previewsHTML[idx] = '<div class="relative rounded-xl overflow-hidden border border-amber-200 bg-slate-100 h-16 group">' +
+            '<img src="' + ev.target.result + '" class="w-full h-full object-cover" alt="New Preview">' +
+            '<span class="absolute bottom-0 inset-x-0 bg-slate-900/75 text-[9px] text-white font-semibold text-center truncate px-1 py-0.5">ภาพที่ ' + (idx + 1) + '</span>' +
+            '</div>';
+          loadedCount++;
+          if (loadedCount === files.length && grid) {
+            grid.innerHTML = previewsHTML.join('');
           }
         };
-        reader.readAsDataURL(input.files[0]);
-      }
+        reader.readAsDataURL(f);
+      });
     }
-    window.previewQuickSolutionFile = previewQuickSolutionFile;
+    window.previewQuickSolutionFiles = previewQuickSolutionFiles;
+
+    function clearQuickSolutionNewFiles() {
+      var input = document.getElementById('quickSolutionFileInput');
+      if (input) input.value = '';
+      var box = document.getElementById('quickSolutionNewPreviewBox');
+      if (box) box.classList.add('hidden');
+      var grid = document.getElementById('quickSolutionNewPreviewGrid');
+      if (grid) grid.innerHTML = '';
+    }
+    window.clearQuickSolutionNewFiles = clearQuickSolutionNewFiles;
 
     function handleQuickSolutionUploadSubmit() {
       if (!ensureAuthenticated()) return;
@@ -5636,58 +5869,147 @@
       var fileInput = document.getElementById('quickSolutionFileInput');
 
       if (!fileInput || !fileInput.files || fileInput.files.length === 0) {
-        Swal.fire('กรุณาเลือกรูปภาพ', 'กรุณาเลือกไฟล์รูปภาพเฉลยที่ต้องการอัปโหลด', 'info');
+        Swal.fire('กรุณาเลือกรูปภาพ', 'กรุณาเลือกไฟล์รูปภาพที่ต้องการเพิ่มเป็นภาพเฉลยใหม่ก่อนกดบันทึก', 'info');
         return;
       }
 
-      var file = fileInput.files[0];
-      showLoading('กำลังบีบอัดและอัปโหลดภาพเฉลยขึ้น Google Drive...');
+      var files = Array.from(fileInput.files);
+      showLoading('กำลังบีบอัดภาพ ' + files.length + ' ภาพ กรุณารอสักครู่...');
 
-      readFileAsBase64(file, function(base64) {
-        var imageFileObj = {
-          base64: base64,
-          fileName: 'solution_' + actId + '_' + Date.now() + '.jpg',
-          mimeType: file.type
-        };
+      var compressedFiles = [];
+      var curIdx = 0;
 
-        if (isMockMode) {
-          setTimeout(function() {
-            var act = activitiesData.find(function(a) { return a.id === actId; });
-            if (act) act.solutionImageUrl = 'https://images.unsplash.com/photo-1544829099-b9a0c07fad1a?auto=format&fit=crop&w=600&q=80';
-            hideLoading();
-            closeQuickSolutionModal();
+      function compressNextFile() {
+        if (curIdx >= files.length) {
+          uploadCompressedSolutionFiles(actId, compressedFiles);
+          return;
+        }
+
+        var f = files[curIdx];
+        readFileAsBase64(f, function(b64) {
+          if (b64) {
+            compressedFiles.push({
+              base64: b64,
+              fileName: 'solution_' + actId + '_' + Date.now() + '_' + curIdx + '.jpg',
+              mimeType: 'image/jpeg'
+            });
+          }
+          curIdx++;
+          compressNextFile();
+        });
+      }
+
+      compressNextFile();
+    }
+    window.handleQuickSolutionUploadSubmit = handleQuickSolutionUploadSubmit;
+
+    function uploadCompressedSolutionFiles(actId, compressedFiles) {
+      if (!compressedFiles || compressedFiles.length === 0) {
+        hideLoading();
+        Swal.fire('ข้อผิดพลาด', 'ไม่สามารถประมวลผลรูปภาพที่เลือกได้', 'error');
+        return;
+      }
+
+      showLoading('กำลังอัปโหลดภาพเฉลย ' + compressedFiles.length + ' ภาพขึ้น Google Drive...');
+
+      if (isMockMode) {
+        setTimeout(function() {
+          var act = activitiesData.find(function(a) { return a.id === actId; });
+          if (act) {
+            if (!act.solutionImages) act.solutionImages = act.solutionImageUrl ? [act.solutionImageUrl] : [];
+            compressedFiles.forEach(function(cf, i) {
+              act.solutionImages.push('https://images.unsplash.com/photo-1544829099-b9a0c07fad1a?auto=format&fit=crop&w=600&q=80&sig=' + Date.now() + i);
+            });
+            act.solutionImageUrl = act.solutionImages[0] || '';
+            renderQuickSolutionModalGrid(act);
+            clearQuickSolutionNewFiles();
             renderUserMissionsGrid();
             renderAdminActivitiesTable();
-            Swal.fire({ icon: 'success', title: 'บันทึกภาพเฉลยสำเร็จ', timer: 1500, showConfirmButton: false });
-          }, 400);
-        } else {
-          if (typeof google !== 'undefined' && google.script && google.script.run) {
-            google.script.run
-              .withSuccessHandler(function(res) {
-                hideLoading();
-                if (res.success) {
-                  var act = activitiesData.find(function(a) { return a.id === actId; });
-                  if (act && res.solutionImageUrl) {
-                    act.solutionImageUrl = res.solutionImageUrl;
-                  }
-                  closeQuickSolutionModal();
+          }
+          hideLoading();
+          Swal.fire({ icon: 'success', title: 'เพิ่มภาพเฉลยสำเร็จ (' + compressedFiles.length + ' ภาพ)', timer: 1800, showConfirmButton: false });
+        }, 500);
+      } else {
+        if (typeof google !== 'undefined' && google.script && google.script.run) {
+          google.script.run
+            .withSuccessHandler(function(res) {
+              hideLoading();
+              if (res && res.success) {
+                var act = activitiesData.find(function(a) { return a.id === actId; });
+                if (act) {
+                  act.solutionImages = res.solutionImages || [];
+                  act.solutionImageUrl = res.solutionImageUrl || '';
+                  renderQuickSolutionModalGrid(act);
+                  clearQuickSolutionNewFiles();
                   renderUserMissionsGrid();
                   renderAdminActivitiesTable();
-                  Swal.fire({ icon: 'success', title: 'บันทึกภาพเฉลยสำเร็จ', timer: 1500, showConfirmButton: false });
-                } else {
-                  handleApiResponseError(res, 'ไม่สามารถอัปโหลดภาพเฉลยได้');
                 }
-              })
-              .withFailureHandler(function(err) {
-                hideLoading();
-                Swal.fire('ข้อผิดพลาดระบบ', err.message, 'error');
-              })
-              .apiUploadSolutionImage(actId, imageFileObj, sessionToken);
+                Swal.fire({ icon: 'success', title: 'บันทึกภาพเฉลยสำเร็จ (' + compressedFiles.length + ' ภาพ)', timer: 1800, showConfirmButton: false });
+              } else {
+                handleApiResponseError(res, 'ไม่สามารถอัปโหลดภาพเฉลยได้');
+              }
+            })
+            .withFailureHandler(function(err) {
+              hideLoading();
+              Swal.fire('ข้อผิดพลาดระบบ', err.message, 'error');
+            })
+            .apiUploadSolutionImage(actId, compressedFiles, sessionToken);
+        }
+      }
+    }
+
+    function handleDeleteSingleSolutionImage(actId, imgUrl) {
+      if (!ensureAuthenticated()) return;
+      var act = activitiesData.find(function(a) { return a.id === actId; });
+      if (!act) return;
+
+      Swal.fire({
+        title: 'ยืนยันลบภาพเฉลยนี้?',
+        text: 'ภาพเฉลยนี้จะถูกลบออกจากภารกิจทันที',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#e11d48',
+        cancelButtonColor: '#64748b',
+        confirmButtonText: '<i class="fa-solid fa-trash-can mr-1"></i> ยืนยันลบ',
+        cancelButtonText: 'ยกเลิก'
+      }).then(function(result) {
+        if (result.isConfirmed) {
+          showLoading('กำลังลบภาพเฉลย...');
+          if (isMockMode) {
+            act.solutionImages = (act.solutionImages || []).filter(function(u) { return u !== imgUrl; });
+            act.solutionImageUrl = act.solutionImages[0] || '';
+            renderQuickSolutionModalGrid(act);
+            renderUserMissionsGrid();
+            renderAdminActivitiesTable();
+            hideLoading();
+            Swal.fire({ icon: 'success', title: 'ลบภาพเฉลยเรียบร้อย', timer: 1200, showConfirmButton: false });
+          } else {
+            if (typeof google !== 'undefined' && google.script && google.script.run) {
+              google.script.run
+                .withSuccessHandler(function(res) {
+                  hideLoading();
+                  if (res && res.success) {
+                    act.solutionImages = res.solutionImages || [];
+                    act.solutionImageUrl = res.solutionImageUrl || '';
+                    renderQuickSolutionModalGrid(act);
+                    renderUserMissionsGrid();
+                    renderAdminActivitiesTable();
+                    Swal.fire({ icon: 'success', title: 'ลบภาพเฉลยเรียบร้อย', timer: 1200, showConfirmButton: false });
+                  } else {
+                    handleApiResponseError(res, 'ไม่สามารถลบภาพเฉลยได้');
+                  }
+                })
+                .withFailureHandler(function(err) {
+                  hideLoading();
+                  Swal.fire('ข้อผิดพลาดระบบ', err.message, 'error');
+                })
+                .apiDeleteSolutionImage(actId, imgUrl, sessionToken);
+            }
           }
         }
       });
     }
-    window.handleQuickSolutionUploadSubmit = handleQuickSolutionUploadSubmit;
+    window.handleDeleteSingleSolutionImage = handleDeleteSingleSolutionImage;
 
         function renderAdminActivitiesTable(filterText, filterCategory) {
       filterText = filterText || '';
@@ -5715,7 +6037,12 @@
           '<td class="py-3 px-4 text-slate-800 font-medium">' +
             '<div class="flex items-center gap-2 flex-wrap">' +
             '<span>' + escapeHTML(a.title) + '</span>' +
-            (a.solutionImageUrl ? '<button type="button" onclick="openImageModal(\'' + escapeHTML(a.solutionImageUrl) + '\', \'🎯 ภาพเฉลย: ' + escapeHTML(a.title) + '\')" class="px-2 py-0.5 rounded-full text-[10px] font-black bg-amber-100 text-amber-800 border border-amber-300 hover:bg-amber-200 inline-flex items-center gap-1 cursor-pointer" title="คลิกเพื่อดูภาพเฉลย"><i class="fa-solid fa-key text-amber-600"></i> มีภาพเฉลย</button>' : '<button type="button" onclick="openQuickSolutionModal(\'' + a.id + '\')" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-500 border border-dashed border-slate-300 hover:bg-amber-50 hover:text-amber-700 hover:border-amber-300 inline-flex items-center gap-1 cursor-pointer" title="คลิกเพื่อเพิ่มภาพเฉลย"><i class="fa-solid fa-plus text-[9px]"></i> เพิ่มเฉลย</button>') +
+            (function() {
+              var sImgs = getActivitySolutionImages(a);
+              return (sImgs.length > 0)
+                ? '<button type="button" onclick="openSolutionGalleryModal(\'' + a.id + '\', 0)" class="px-2 py-0.5 rounded-full text-[10px] font-black bg-amber-100 text-amber-800 border border-amber-300 hover:bg-amber-200 inline-flex items-center gap-1 cursor-pointer" title="คลิกเพื่อดูภาพเฉลย (' + sImgs.length + ' ภาพ)"><i class="fa-solid fa-key text-amber-600"></i> ภาพเฉลย (' + sImgs.length + ')</button>'
+                : '<button type="button" onclick="openQuickSolutionModal(\'' + a.id + '\')" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-500 border border-dashed border-slate-300 hover:bg-amber-50 hover:text-amber-700 hover:border-amber-300 inline-flex items-center gap-1 cursor-pointer" title="คลิกเพื่อเพิ่มภาพเฉลย"><i class="fa-solid fa-plus text-[9px]"></i> เพิ่มเฉลย</button>';
+            })() +
             '</div>' +
           '</td>' +
           '<td class="py-3 px-4 text-slate-600">' + escapeHTML(a.scoringType) + '</td>' +
