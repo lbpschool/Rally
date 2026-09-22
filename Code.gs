@@ -22,7 +22,16 @@ function doGet(e) {
   if (e && e.parameter && e.parameter.action) {
     try {
       const action = e.parameter.action;
-      const payload = e.parameter.payload ? JSON.parse(e.parameter.payload) : e.parameter;
+      let payload = {};
+      if (e.parameter.payload) {
+        try {
+          payload = JSON.parse(e.parameter.payload);
+        } catch(pe) {
+          payload = e.parameter;
+        }
+      } else {
+        payload = e.parameter;
+      }
       const result = handleApiRequest(action, payload);
       return ContentService.createTextOutput(JSON.stringify(result))
         .setMimeType(ContentService.MimeType.JSON);

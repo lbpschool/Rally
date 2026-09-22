@@ -2074,8 +2074,11 @@
             apiSaveActivity: function(activityData) {
               callFetch('saveActivity', { activityData: activityData });
             },
-            apiUploadSolutionImage: function(activityId, imageFileObj) {
-              callFetch('uploadSolutionImage', { activityId: activityId, imageFileObj: imageFileObj });
+            apiUploadSolutionImage: function(activityId, imageFileObj, token) {
+              callFetch('uploadSolutionImage', { activityId: activityId, imageFileObj: imageFileObj, sessionToken: token || sessionToken });
+            },
+            apiDeleteSolutionImage: function(activityId, imageUrl, token) {
+              callFetch('deleteSolutionImage', { activityId: activityId, imageUrl: imageUrl, sessionToken: token || sessionToken });
             },
             apiDeleteActivity: function(activityId) {
               callFetch('deleteActivity', { activityId: activityId });
@@ -2115,7 +2118,7 @@
               payload.sessionToken = sessionToken;
             }
             var currentRetry = retryCount || 0;
-            var maxRetries = 1;
+            var maxRetries = 2; // Allow up to 2 automatic retries (3 attempts total)
 
             var controller = null;
             var timeoutId = null;
@@ -2136,46 +2139,23 @@
               }, timeoutDuration);
             }
 
-            // For lightweight requests without image uploads, use GET with query parameters for maximum speed and 0% redirect failure
-            var canUseGet = !hasImagePayload && (
-              action === 'login' || action === 'getInitialData' || action === 'setBoobyRank' || 
-              action === 'setScoreVisibility' || action === 'setVotingStatus' || action === 'setVoteVisibility' || 
-              action === 'castVote' || action === 'resetVotes' || action === 'updateBonusPoints' ||
-              action === 'deleteActivity' || action === 'deleteUser' || action === 'gradeSubmission' ||
-              action === 'saveUser' || action === 'saveActivity' || action === 'swapCars' ||
-              action === 'resetCompetitorProfiles' || action === 'updateSelfProfile' ||
-              action === 'batchGradeActivity' || action === 'clearAllSubmissions' || action === 'clearAllActivities'
-            );
-
+            // Always use POST with Content-Type text/plain for 100% reliability, no URL length limits, and no Google Drive 404 redirect issues
             var reqUrl = GAS_API_URL;
-            var fetchOptions = {};
-
-            if (canUseGet) {
-              var queryParts = ['action=' + encodeURIComponent(action)];
-              for (var k in payload) {
-                if (payload.hasOwnProperty(k) && typeof payload[k] !== 'object' && payload[k] !== undefined) {
-                  queryParts.push(encodeURIComponent(k) + '=' + encodeURIComponent(String(payload[k])));
-                }
-              }
-              queryParts.push('payload=' + encodeURIComponent(JSON.stringify(payload)));
-              reqUrl = GAS_API_URL + '?' + queryParts.join('&');
-              fetchOptions = {
-                method: 'GET',
-                signal: controller ? controller.signal : undefined
-              };
-            } else {
-              fetchOptions = {
-                method: 'POST',
-                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                body: JSON.stringify({ action: action, payload: payload }),
-                signal: controller ? controller.signal : undefined
-              };
-            }
+            var fetchOptions = {
+              method: 'POST',
+              headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+              body: JSON.stringify({ action: action, payload: payload }),
+              signal: controller ? controller.signal : undefined
+            };
 
             fetch(reqUrl, fetchOptions)
             .then(function(res) {
               if (timeoutId) clearTimeout(timeoutId);
-              if (!res.ok) throw new Error('HTTP ' + res.status + ' ' + res.statusText);
+              if (!res.ok) {
+                var httpErr = new Error('HTTP ' + res.status + (res.statusText ? ' ' + res.statusText : ''));
+                httpErr.status = res.status;
+                throw httpErr;
+              }
               return res.text();
             })
             .then(function(text) {
@@ -2183,6 +2163,12 @@
                 return JSON.parse(text);
               } catch (parseErr) {
                 console.warn('[RallyApp] Non-JSON API response:', text.substring(0, 300));
+                // If response is Google Drive 404 or maintenance page
+                if (text.includes('ไม่พบเพจ') || text.includes('404') || text.includes('drive.google.com')) {
+                  var err404 = new Error('HTTP 404 (Server Warmup)');
+                  err404.status = 404;
+                  throw err404;
+                }
                 throw new Error('เซิร์ฟเวอร์ตอบสนองไม่ถูกต้อง กรุณารอสักครู่แล้วลองใหม่อีกครั้ง');
               }
             })
@@ -2193,33 +2179,40 @@
               if (timeoutId) clearTimeout(timeoutId);
               console.warn('[RallyApp] API (' + action + ') attempt ' + (currentRetry + 1) + ' error:', err);
 
-              // Auto-retry once on network error or timeout
-              if (currentRetry < maxRetries) {
-                console.log('[RallyApp] Auto-retrying API (' + action + ')...');
+              var is404 = err && (err.status === 404 || String(err.message).includes('404'));
+              var isServerBusy = err && (err.status === 502 || err.status === 503 || err.status === 500);
+              var isNetworkOrTimeout = !err || err.name === 'AbortError' || String(err).includes('abort') || err.isTimeout || String(err).includes('Failed to fetch');
+
+              // Auto-retry up to maxRetries on 404, 5xx, or network issues with exponential delay
+              if (currentRetry < maxRetries && (is404 || isServerBusy || isNetworkOrTimeout)) {
+                var delayMs = (currentRetry + 1) * 1500;
+                console.log('[RallyApp] Auto-retrying API (' + action + ') in ' + delayMs + 'ms (attempt ' + (currentRetry + 2) + '/' + (maxRetries + 1) + ')...');
                 setTimeout(function() {
                   callFetch(action, payload, currentRetry + 1);
-                }, 1000);
+                }, delayMs);
                 return;
               }
 
               hideLoading();
-              var isTimeout = !err || err.name === 'AbortError' || String(err).includes('abort') || err.isTimeout;
-              if (isTimeout) {
+
+              if (isNetworkOrTimeout) {
                 var timeoutErr = new Error('การประมวลผลใช้เวลานานเนื่องจากมีผู้ใช้งานพร้อมกัน ระบบได้บันทึกข้อมูลขึ้น Realtime เรียบร้อยแล้ว');
                 timeoutErr.name = 'AbortError';
                 timeoutErr.isTimeout = true;
                 err = timeoutErr;
+              } else if (is404) {
+                err = new Error('เซิร์ฟเวอร์ Google Apps Script กำลังเริ่มต้นการทำงานหรือปรับปรุงระบบ (Server Warmup) กรุณารอสักครู่แล้วกดลองใหม่อีกครั้ง');
+              } else if (isServerBusy) {
+                err = new Error('เซิร์ฟเวอร์กำลังประมวลผลคำขอจำนวนมาก กรุณารอสักครู่แล้วลองใหม่อีกครั้ง');
               }
 
               if (typeof failureHandler === 'function') {
                 failureHandler(err);
               } else {
-                var msg = isTimeout
-                  ? 'การเชื่อมต่อหมดเวลา (Timeout) ข้อมูลสดได้รับการอัปเดตบน Realtime เรียบร้อยแล้ว'
-                  : 'ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้ กรุณาตรวจสอบสัญญาณอินเทอร์เน็ตแล้วลองใหม่อีกครั้ง';
+                var msg = (err && err.message) ? err.message : 'ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้ กรุณาตรวจสอบสัญญาณอินเทอร์เน็ตแล้วลองใหม่อีกครั้ง';
                 Swal.fire({
-                  icon: isTimeout ? 'info' : 'error',
-                  title: isTimeout ? 'บันทึกขึ้นระบบสดแล้ว' : 'การเชื่อมต่อขัดข้อง',
+                  icon: (err && err.isTimeout) ? 'info' : 'error',
+                  title: (err && err.isTimeout) ? 'บันทึกขึ้นระบบสดแล้ว' : 'การเชื่อมต่อขัดข้อง',
                   text: msg,
                   confirmButtonText: 'ตกลง'
                 });
