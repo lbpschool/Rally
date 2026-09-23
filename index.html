@@ -3018,9 +3018,14 @@
       };
 
       if (file) {
-        var reader = new FileReader();
-        reader.onload = function(evt) {
-          var base64Data = evt.target.result.split(',')[1];
+        showLoading('กำลังประมวลผลรูปโปรไฟล์...');
+        compressAndReadFileAsBase64(file, function(dataUrl) {
+          if (!dataUrl) {
+            hideLoading();
+            Swal.fire('ข้อผิดพลาด', 'ไม่สามารถอ่านไฟล์รูปภาพได้', 'error');
+            return;
+          }
+          var base64Data = dataUrl.includes(',') ? dataUrl.split(',')[1] : dataUrl;
           if (!isMockMode && typeof google !== 'undefined' && google.script && google.script.run) {
             google.script.run
               .withSuccessHandler(function(uploadRes) {
@@ -3035,12 +3040,11 @@
                 hideLoading();
                 Swal.fire('ข้อผิดพลาด', err.message, 'error');
               })
-              .uploadFileToDrive(base64Data, file.name, file.type);
+              .uploadFileToDrive(base64Data, file.name, 'image/jpeg');
           } else {
-            doSave(evt.target.result);
+            doSave(dataUrl);
           }
-        };
-        reader.readAsDataURL(file);
+        }, 800, 0.82);
       } else {
         doSave(currentUser.profileUrl);
       }
@@ -10221,7 +10225,7 @@
               renderUserDashboard();
               renderAdminUsersTable();
             }
-            showSyncSuccessToast();
+            // Silent background UI sync (no disruptive toast popup on every live event)
           }
         });
       } catch (err) {
