@@ -1621,14 +1621,24 @@
 
           <!-- Dynamic Auto Answers Rule Builder -->
           <div id="autoAnswersSection" class="p-4 rounded-2xl bg-purple-50/40 border border-purple-200 space-y-3">
-            <p class="text-xs font-semibold text-slate-600">ระบบจะตรวจคำตอบอัตโนมัติตามข้อความด้านล่าง</p>
+            <div class="flex items-center justify-between gap-2">
+              <p class="text-xs font-semibold text-slate-600">ระบบจะตรวจคำตอบอัตโนมัติตามข้อความด้านล่าง</p>
+              <span id="autoAnswersTemplateBadge" class="text-[10px] font-bold text-purple-700 bg-purple-100/80 px-2.5 py-0.5 rounded-full border border-purple-200/80">
+                <i class="fa-solid fa-sparkles text-[9px] mr-0.5"></i> จำสีตาม RC 1
+              </span>
+            </div>
 
             <div id="autoAnswersRowsContainer" class="space-y-2.5">
             </div>
 
-            <button type="button" onclick="addAutoAnswerRow()" class="mt-2 px-4 py-2 rounded-2xl bg-white border border-purple-300 text-purple-700 hover:bg-purple-50 font-bold text-xs transition-all shadow-sm flex items-center gap-1.5">
-              <i class="fa-solid fa-plus text-xs"></i> เพิ่มตัวเลือกคำตอบ
-            </button>
+            <div class="flex flex-wrap items-center gap-2 mt-2">
+              <button type="button" onclick="addAutoAnswerRow()" class="px-3.5 py-2 rounded-2xl bg-white border border-purple-300 text-purple-700 hover:bg-purple-50 font-bold text-xs transition-all shadow-xs flex items-center gap-1.5 cursor-pointer">
+                <i class="fa-solid fa-plus text-xs"></i> เพิ่มตัวเลือกคำตอบ
+              </button>
+              <button type="button" onclick="applyRcColorTemplate(true)" class="px-3.5 py-2 rounded-2xl bg-purple-100/70 border border-purple-300 text-purple-800 hover:bg-purple-200 font-bold text-xs transition-all shadow-xs flex items-center gap-1.5 cursor-pointer" title="รีเซ็ตและคัดลอกรายการสีทั้งหมดจาก RC จุดที่ 1">
+                <i class="fa-solid fa-arrows-rotate text-xs"></i> ดึงแม่แบบสีจาก RC 1
+              </button>
+            </div>
           </div>
 
           <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-200">
@@ -6123,8 +6133,109 @@
       }).join('');
     }
 
+    function getRcColorTemplate() {
+      // 1. Look for RC 1 or first RC activity in activitiesData that has autoAnswers
+      var rc1 = null;
+      if (Array.isArray(activitiesData)) {
+        rc1 = activitiesData.find(function(a) {
+          return a.category === 'RC' && (String(a.title || '').includes('1') || String(a.id || '').endsWith('001') || String(a.id || '').endsWith('1')) && Array.isArray(a.autoAnswers) && a.autoAnswers.length > 0;
+        });
+        if (!rc1) {
+          rc1 = activitiesData.find(function(a) {
+            return a.category === 'RC' && Array.isArray(a.autoAnswers) && a.autoAnswers.length > 0;
+          });
+        }
+      }
+
+      if (rc1 && Array.isArray(rc1.autoAnswers) && rc1.autoAnswers.length > 0) {
+        return rc1.autoAnswers.map(function(row) {
+          return {
+            answer: '',
+            color: row.color || 'Red',
+            points: Number(row.points) !== undefined ? Number(row.points) : (Number(rc1.maxPoints) || 10)
+          };
+        });
+      }
+
+      // 2. Check cached template in localStorage
+      var cachedStr = safeGetStorage('rally_rc_auto_answers_template');
+      if (cachedStr) {
+        try {
+          var parsed = JSON.parse(cachedStr);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            return parsed.map(function(row) {
+              return { answer: '', color: row.color || 'Red', points: Number(row.points) || 10 };
+            });
+          }
+        } catch(e) {}
+      }
+
+      // 3. Fallback: extract distinct car colors from active competitors in usersData
+      if (Array.isArray(usersData)) {
+        var competitors = usersData.filter(function(u) { return u.role === 'User' && u.carColor; });
+        var seenColors = {};
+        var userColors = [];
+        competitors.forEach(function(u) {
+          var col = (u.carColor || '').trim();
+          if (col && !seenColors[col.toLowerCase()]) {
+            seenColors[col.toLowerCase()] = true;
+            userColors.push(col);
+          }
+        });
+        if (userColors.length > 0) {
+          return userColors.map(function(c) {
+            return { answer: '', color: c, points: 10 };
+          });
+        }
+      }
+
+      // 4. Default fallback: Red, Blue, Yellow, Green, Pink
+      return [
+        { answer: '', color: 'Red', points: 10 },
+        { answer: '', color: 'Blue', points: 10 },
+        { answer: '', color: 'Yellow', points: 10 },
+        { answer: '', color: 'Green', points: 10 },
+        { answer: '', color: 'Pink', points: 10 }
+      ];
+    }
+
+    function applyRcColorTemplate(showAlert) {
+      var template = getRcColorTemplate();
+      if (!template || template.length === 0) {
+        if (showAlert) Swal.fire('แจ้งเตือน', 'ยังไม่มีการบันทึกสีในจุด RC ที่ 1 ระบบจะใช้ชุดสีเริ่มต้น', 'info');
+        return;
+      }
+      var maxPts = Number(document.getElementById('actFormMaxPoints').value) || 10;
+      currentAutoAnswerRows = template.map(function(tplRow) {
+        var existing = currentAutoAnswerRows.find(function(cur) {
+          return (cur.color || '').toLowerCase() === (tplRow.color || '').toLowerCase();
+        });
+        return {
+          answer: existing ? existing.answer : '',
+          color: tplRow.color,
+          points: tplRow.points || maxPts
+        };
+      });
+      renderAutoAnswerRows();
+      if (showAlert) {
+        Swal.fire({
+          icon: 'success',
+          title: 'ดึงแม่แบบสีสำเร็จ',
+          text: 'คัดลอกรายการสี ' + template.length + ' สีจาก RC จุดที่ 1 เรียบร้อยแล้ว',
+          timer: 1500,
+          showConfirmButton: false
+        });
+      }
+    }
+    window.applyRcColorTemplate = applyRcColorTemplate;
+    window.getRcColorTemplate = getRcColorTemplate;
+
     function addAutoAnswerRow() {
-      currentAutoAnswerRows.push({ answer: '', color: 'Red', points: 500 });
+      var maxPts = Number(document.getElementById('actFormMaxPoints').value) || 10;
+      var allColors = ['Red', 'Blue', 'Yellow', 'Green', 'Orange', 'Purple', 'Pink', 'Default'];
+      var usedColors = currentAutoAnswerRows.map(function(r) { return r.color; });
+      var nextColor = allColors.find(function(c) { return !usedColors.includes(c); }) || 'Red';
+      currentAutoAnswerRows.push({ answer: '', color: nextColor, points: maxPts });
       renderAutoAnswerRows();
     }
 
@@ -6181,11 +6292,7 @@
           if (autoAns.Pink && autoAns.Pink.answer) currentAutoAnswerRows.push({ answer: autoAns.Pink.answer, color: 'Pink', points: Number(autoAns.Pink.points) || act.maxPoints });
           if (autoAns.default && autoAns.default.answer) currentAutoAnswerRows.push({ answer: autoAns.default.answer, color: 'Default', points: Number(autoAns.default.points) || act.maxPoints });
         } else {
-          currentAutoAnswerRows = [
-            { answer: '', color: 'Red', points: 500 },
-            { answer: '', color: 'Blue', points: 500 },
-            { answer: '', color: 'Green', points: 500 }
-          ];
+          currentAutoAnswerRows = getRcColorTemplate();
         }
 
         renderAutoAnswerRows();
@@ -6205,11 +6312,8 @@
         var solFileInput = document.getElementById('actFormSolutionFile');
         if (solFileInput) solFileInput.value = '';
 
-        currentAutoAnswerRows = [
-          { answer: 'TT', color: 'Red', points: 500 },
-          { answer: 'AB', color: 'Blue', points: 500 },
-          { answer: 'DF', color: 'Green', points: 500 }
-        ];
+        // Auto-load color template from RC 1 or saved RC template
+        currentAutoAnswerRows = getRcColorTemplate();
 
         renderAutoAnswerRows();
         toggleAutoAnswersConfig('AUTO');
@@ -6333,6 +6437,14 @@
         imageUrl: existingImageUrl,
         autoAnswers: currentAutoAnswerRows
       };
+
+      // Save RC color template to storage for automatic reuse across future RC checkpoints
+      if (category === 'RC' && Array.isArray(currentAutoAnswerRows) && currentAutoAnswerRows.length > 0) {
+        var tplToSave = currentAutoAnswerRows.map(function(r) {
+          return { color: r.color || 'Red', points: Number(r.points) || maxPoints };
+        });
+        safeSetStorage('rally_rc_auto_answers_template', JSON.stringify(tplToSave));
+      }
 
       var existingSolUrl = document.getElementById('actFormSolutionImageUrl') ? document.getElementById('actFormSolutionImageUrl').value.trim() : '';
       actDataPayload.solutionImageUrl = existingSolUrl;
@@ -7987,7 +8099,23 @@
 
       var actScoringSelect = document.getElementById('actFormScoringType');
       if (actScoringSelect) {
-        actScoringSelect.addEventListener('change', function(e) { toggleAutoAnswersConfig(e.target.value); });
+        actScoringSelect.addEventListener('change', function(e) {
+          toggleAutoAnswersConfig(e.target.value);
+          if (e.target.value === 'AUTO' && (!currentAutoAnswerRows || currentAutoAnswerRows.length === 0)) {
+            currentAutoAnswerRows = getRcColorTemplate();
+            renderAutoAnswerRows();
+          }
+        });
+      }
+
+      var actCategorySelect = document.getElementById('actFormCategory');
+      if (actCategorySelect) {
+        actCategorySelect.addEventListener('change', function(e) {
+          if (e.target.value === 'RC' && (!currentAutoAnswerRows || currentAutoAnswerRows.length === 0)) {
+            currentAutoAnswerRows = getRcColorTemplate();
+            renderAutoAnswerRows();
+          }
+        });
       }
 
       var activityForm = document.getElementById('activityForm');
