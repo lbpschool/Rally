@@ -2139,8 +2139,21 @@
               }, timeoutDuration);
             }
 
-            // Always use POST with Content-Type text/plain for 100% reliability, no URL length limits, and no Google Drive 404 redirect issues
-            var reqUrl = GAS_API_URL;
+            // Build query params: always pass action in URL so Google Apps Script routing never falls back to returning index.html
+            var queryParams = [];
+            if (action) {
+              queryParams.push('action=' + encodeURIComponent(action));
+            }
+            if (action === 'login' && payload) {
+              if (payload.username) queryParams.push('username=' + encodeURIComponent(payload.username));
+              if (payload.password) queryParams.push('password=' + encodeURIComponent(payload.password));
+            } else if (action === 'getInitialData' && payload) {
+              if (payload.username) queryParams.push('username=' + encodeURIComponent(payload.username));
+              if (payload.sessionToken) queryParams.push('sessionToken=' + encodeURIComponent(payload.sessionToken));
+            }
+            var queryString = queryParams.length > 0 ? (GAS_API_URL.indexOf('?') === -1 ? '?' : '&') + queryParams.join('&') : '';
+            var reqUrl = GAS_API_URL + queryString;
+
             var fetchOptions = {
               method: 'POST',
               headers: { 'Content-Type': 'text/plain;charset=utf-8' },
@@ -2162,9 +2175,14 @@
               try {
                 return JSON.parse(text);
               } catch (parseErr) {
-                console.warn('[RallyApp] Non-JSON API response:', text.substring(0, 300));
-                // If response is Google Drive 404 or maintenance page
-                if (text.includes('ไม่พบเพจ') || text.includes('404') || text.includes('drive.google.com')) {
+                console.warn('[RallyApp] Non-JSON API response (' + action + '):', text.substring(0, 300));
+                // Only treat genuine Google Drive 404 / error pages as Server Warmup (NOT index.html false positives)
+                var isGenuineGoogleError = text.includes('drive.google.com') ||
+                                           text.includes('Google Drive – Page Not Found') ||
+                                           text.includes('The requested URL was not found') ||
+                                           text.includes('ไม่พบหน้าเว็บ') ||
+                                           (text.includes('404') && (text.includes('Not Found') || text.includes('Error 404') || text.includes('That’s an error')));
+                if (isGenuineGoogleError) {
                   var err404 = new Error('HTTP 404 (Server Warmup)');
                   err404.status = 404;
                   throw err404;

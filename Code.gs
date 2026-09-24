@@ -19,9 +19,9 @@ const SHEET_NAMES = {
  */
 function doGet(e) {
   // If called with action query parameter, return JSON API response
-  if (e && e.parameter && e.parameter.action) {
+  const action = (e && e.parameter && e.parameter.action) ? e.parameter.action : '';
+  if (action) {
     try {
-      const action = e.parameter.action;
       let payload = {};
       if (e.parameter.payload) {
         try {
@@ -57,16 +57,25 @@ function doGet(e) {
  */
 function doPost(e) {
   try {
-    let action = '';
+    let action = (e && e.parameter && e.parameter.action) || '';
     let payload = {};
 
     if (e && e.postData && e.postData.contents) {
-      const data = JSON.parse(e.postData.contents);
-      action = data.action;
-      payload = data.payload || {};
-    } else if (e && e.parameter) {
-      action = e.parameter.action;
-      payload = e.parameter.payload ? JSON.parse(e.parameter.payload) : e.parameter;
+      try {
+        const data = JSON.parse(e.postData.contents);
+        if (data.action) action = data.action;
+        if (data.payload) payload = data.payload;
+      } catch (parseErr) {}
+    }
+
+    if (!payload || Object.keys(payload).length === 0) {
+      if (e && e.parameter) {
+        if (e.parameter.payload) {
+          try { payload = JSON.parse(e.parameter.payload); } catch(pe) { payload = e.parameter; }
+        } else {
+          payload = e.parameter;
+        }
+      }
     }
 
     const result = handleApiRequest(action, payload);
