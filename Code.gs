@@ -1255,6 +1255,20 @@ function apiSubmitAnswer(username, activityId, answerText, imageFileObj, session
     let isCorrect = false;
     let earnedPoints = 0;
 
+    function normColor(c) {
+      if (!c) return 'default';
+      const s = c.toString().trim().toLowerCase();
+      if (s === 'red' || s === 'แดง') return 'red';
+      if (s === 'blue' || s === 'น้ำเงิน') return 'blue';
+      if (s === 'yellow' || s === 'เหลือง') return 'yellow';
+      if (s === 'green' || s === 'เขียว') return 'green';
+      if (s === 'orange' || s === 'ส้ม') return 'orange';
+      if (s === 'purple' || s === 'ม่วง') return 'purple';
+      if (s === 'pink' || s === 'ชมพู') return 'pink';
+      if (s === 'default' || s === 'all' || s === 'ทั้งหมด') return 'default';
+      return s;
+    }
+
     const autoAnsRules = targetAct.autoAnswers;
     if (Array.isArray(autoAnsRules)) {
       for (let r = 0; r < autoAnsRules.length; r++) {
@@ -1262,15 +1276,16 @@ function apiSubmitAnswer(username, activityId, answerText, imageFileObj, session
         const ruleAns = (rule.answer || '').toString().trim().toLowerCase();
         const ruleColor = (rule.color || 'Default').toString().trim().toLowerCase();
         const uColor = (userColor || 'Default').toString().trim().toLowerCase();
+        const matchColor = (ruleColor === uColor || ruleColor === 'default' || ruleColor === 'all' || normColor(ruleColor) === normColor(uColor) || normColor(ruleColor) === 'default');
 
-        if (cleanUserAnswer === ruleAns && (ruleColor === uColor || ruleColor === 'default' || ruleColor === 'all')) {
+        if (cleanUserAnswer === ruleAns && matchColor) {
           isCorrect = true;
           earnedPoints = Number(rule.points) !== undefined ? Number(rule.points) : targetAct.maxPoints;
           break;
         }
       }
     } else if (autoAnsRules && typeof autoAnsRules === 'object') {
-      const colorRule = autoAnsRules[userColor] || autoAnsRules['default'] || autoAnsRules['Default'];
+      const colorRule = autoAnsRules[userColor] || autoAnsRules[normColor(userColor)] || autoAnsRules['default'] || autoAnsRules['Default'];
       if (colorRule && colorRule.answer) {
         const targetAnswer = colorRule.answer.toString().trim().toLowerCase();
         if (cleanUserAnswer === targetAnswer) {

@@ -1692,6 +1692,7 @@
                 <option value="Green">สีเขียว (Green)</option>
                 <option value="Orange">สีส้ม (Orange)</option>
                 <option value="Purple">สีม่วง (Purple)</option>
+                <option value="Pink">สีชมพู (Pink)</option>
               </select>
             </div>
           </div>
@@ -3080,6 +3081,7 @@
       if (c === 'green' || c === 'เขียว') return 'เขียว';
       if (c === 'purple' || c === 'ม่วง') return 'ม่วง';
       if (c === 'orange' || c === 'ส้ม') return 'ส้ม';
+      if (c === 'pink' || c === 'ชมพู') return 'ชมพู';
       if (c === 'white' || c === 'ขาว') return 'ขาว';
       if (c === 'black' || c === 'ดำ') return 'ดำ';
       return colorStr;
@@ -3093,6 +3095,7 @@
       if (c === 'green' || c === 'เขียว') return 'bg-emerald-100 text-emerald-700 border border-emerald-200';
       if (c === 'purple' || c === 'ม่วง') return 'bg-purple-100 text-purple-700 border border-purple-200';
       if (c === 'orange' || c === 'ส้ม') return 'bg-orange-100 text-orange-700 border border-orange-200';
+      if (c === 'pink' || c === 'ชมพู') return 'bg-pink-100 text-pink-700 border border-pink-200';
       return 'bg-purple-100 text-purple-700 border border-purple-200';
     }
 
@@ -3144,6 +3147,14 @@
           iconBoxClass: 'bg-orange-100 text-orange-600',
           textColorClass: 'text-orange-600',
           badgeClass: 'bg-orange-50 text-orange-700 border border-orange-200'
+        };
+      }
+      if (c === 'pink' || c === 'ชมพู') {
+        return {
+          borderLeftClass: 'border-l-pink-500',
+          iconBoxClass: 'bg-pink-100 text-pink-600',
+          textColorClass: 'text-pink-600',
+          badgeClass: 'bg-pink-50 text-pink-700 border border-pink-200'
         };
       }
       return {
@@ -4901,15 +4912,17 @@
             var rAns = (rule.answer || '').trim().toLowerCase();
             var rCol = (rule.color || 'Default').trim().toLowerCase();
             var uCol = (currentUser.carColor || 'Default').trim().toLowerCase();
+            var matchColor = (rCol === uCol || rCol === 'default' || rCol === 'all' || getCarColorThaiName(rCol) === getCarColorThaiName(uCol));
 
-            if (userAnsClean === rAns && (rCol === uCol || rCol === 'default' || rCol === 'all')) {
+            if (userAnsClean === rAns && matchColor) {
               isCorrect = true;
               earnedPoints = Number(rule.points) !== undefined ? Number(rule.points) : act.maxPoints;
               break;
             }
           }
         } else if (rules && typeof rules === 'object') {
-          var colorRule = rules[currentUser.carColor] || rules['default'] || rules['Default'];
+          var uColThai = getCarColorThaiName(currentUser.carColor);
+          var colorRule = rules[currentUser.carColor] || rules[uColThai] || rules['default'] || rules['Default'];
           if (colorRule && colorRule.answer) {
             if (userAnsClean === (colorRule.answer || '').trim().toLowerCase()) {
               isCorrect = true;
@@ -6099,6 +6112,7 @@
             '<option value="Green" ' + (row.color === 'Green' ? 'selected' : '') + '>🟢 เขียว</option>' +
             '<option value="Orange" ' + (row.color === 'Orange' ? 'selected' : '') + '>🟠 ส้ม</option>' +
             '<option value="Purple" ' + (row.color === 'Purple' ? 'selected' : '') + '>🟣 ม่วง</option>' +
+            '<option value="Pink" ' + (row.color === 'Pink' || row.color === 'ชมพู' ? 'selected' : '') + '>🩷 ชมพู</option>' +
             '<option value="Default" ' + (row.color === 'Default' || !row.color ? 'selected' : '') + '>⚪ ทั้งหมด</option>' +
           '</select>' +
           '<input type="number" value="' + (row.points !== undefined ? row.points : 500) + '" onchange="updateAutoAnswerRow(' + idx + ', \'points\', this.value)" placeholder="คะแนน" class="w-20 sm:w-24 px-2.5 py-2 rounded-xl glass-input text-xs font-bold text-center">' +
@@ -6161,6 +6175,10 @@
           if (autoAns.Red && autoAns.Red.answer) currentAutoAnswerRows.push({ answer: autoAns.Red.answer, color: 'Red', points: Number(autoAns.Red.points) || act.maxPoints });
           if (autoAns.Blue && autoAns.Blue.answer) currentAutoAnswerRows.push({ answer: autoAns.Blue.answer, color: 'Blue', points: Number(autoAns.Blue.points) || act.maxPoints });
           if (autoAns.Yellow && autoAns.Yellow.answer) currentAutoAnswerRows.push({ answer: autoAns.Yellow.answer, color: 'Yellow', points: Number(autoAns.Yellow.points) || act.maxPoints });
+          if (autoAns.Green && autoAns.Green.answer) currentAutoAnswerRows.push({ answer: autoAns.Green.answer, color: 'Green', points: Number(autoAns.Green.points) || act.maxPoints });
+          if (autoAns.Orange && autoAns.Orange.answer) currentAutoAnswerRows.push({ answer: autoAns.Orange.answer, color: 'Orange', points: Number(autoAns.Orange.points) || act.maxPoints });
+          if (autoAns.Purple && autoAns.Purple.answer) currentAutoAnswerRows.push({ answer: autoAns.Purple.answer, color: 'Purple', points: Number(autoAns.Purple.points) || act.maxPoints });
+          if (autoAns.Pink && autoAns.Pink.answer) currentAutoAnswerRows.push({ answer: autoAns.Pink.answer, color: 'Pink', points: Number(autoAns.Pink.points) || act.maxPoints });
           if (autoAns.default && autoAns.default.answer) currentAutoAnswerRows.push({ answer: autoAns.default.answer, color: 'Default', points: Number(autoAns.default.points) || act.maxPoints });
         } else {
           currentAutoAnswerRows = [
@@ -7632,8 +7650,8 @@
         });
       }
 
-      var colors = ['Red', 'Blue', 'Yellow', 'Green', 'Orange', 'Purple'];
-      var colorLabels = ['แดง', 'น้ำเงิน', 'เหลือง', 'เขียว', 'ส้ม', 'ม่วง'];
+      var colors = ['Red', 'Blue', 'Yellow', 'Green', 'Orange', 'Purple', 'Pink'];
+      var colorLabels = ['แดง', 'น้ำเงิน', 'เหลือง', 'เขียว', 'ส้ม', 'ม่วง', 'ชมพู'];
       var colorAvgs = colors.map(function(col, i) {
         var teamInColor = competitors.filter(function(u) {
           var c = (u.carColor || '').toLowerCase();
@@ -7653,11 +7671,11 @@
         chartColorAvgInstance = new Chart(ctxColorAvg.getContext('2d'), {
           type: 'bar',
           data: {
-            labels: ['สีแดง 🔴', 'สีน้ำเงิน 🔵', 'สีเหลือง 🟡', 'สีเขียว 🟢', 'สีส้ม 🟠', 'สีม่วง 🟣'],
+            labels: ['สีแดง 🔴', 'สีน้ำเงิน 🔵', 'สีเหลือง 🟡', 'สีเขียว 🟢', 'สีส้ม 🟠', 'สีม่วง 🟣', 'สีชมพู 🩷'],
             datasets: [{
               label: 'คะแนนเฉลี่ย',
               data: colorAvgs,
-              backgroundColor: ['#ef4444', '#3b82f6', '#eab308', '#10b981', '#f97316', '#a855f7'],
+              backgroundColor: ['#ef4444', '#3b82f6', '#eab308', '#10b981', '#f97316', '#a855f7', '#ec4899'],
               borderRadius: 8
             }]
           },
