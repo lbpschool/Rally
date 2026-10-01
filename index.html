@@ -4658,18 +4658,9 @@
         } else {
           // ตรวจสอบว่าผู้เล่นส่งคำตอบกิจกรรมนี้แล้วหรือไม่ (ล็อคส่งได้เพียง 1 ครั้ง & ไม่แสดงการเฉลยคำตอบ)
           if (sub) {
-            var statusNotice = '';
-            if (sub.status === 'passed') {
-              statusNotice = '<span class="text-emerald-700 font-bold bg-emerald-100/70 px-2 py-0.5 rounded-full text-[10px]"><i class="fa-solid fa-check-circle mr-1"></i>ตรวจแล้ว: ได้ ' + sub.score + ' / ' + act.maxPoints + ' คะแนน</span>';
-            } else if (sub.status === 'failed') {
-              statusNotice = '<span class="text-rose-600 font-bold bg-rose-100/70 px-2 py-0.5 rounded-full text-[10px]"><i class="fa-solid fa-circle-xmark mr-1"></i>ไม่ผ่าน (0 คะแนน)</span>';
-            } else {
-              statusNotice = '<span class="text-amber-800 font-bold bg-amber-100/80 px-2 py-0.5 rounded-full text-[10px]"><i class="fa-solid fa-hourglass-half mr-1"></i>รอกรรมการตรวจและให้คะแนน</span>';
-            }
             cardFooterHTML = '<div class="mt-3 p-3.5 rounded-2xl border border-emerald-200 bg-emerald-50 text-xs text-emerald-800 shadow-xs">' +
               '<div class="flex items-center justify-between gap-1.5 flex-wrap">' +
                 '<span class="font-extrabold flex items-center gap-1.5"><i class="fa-solid fa-circle-check text-emerald-600 text-sm"></i> ส่งคำตอบเรียบร้อยแล้ว</span>' +
-                statusNotice +
               '</div>' +
               (sub.answerText ? '<p class="mt-1 text-slate-700 font-bold">คำตอบที่ส่ง: "' + escapeHTML(sub.answerText) + '"</p>' : '') +
               (sub.imageUrl ? '<button type="button" onclick="openImageModal(\'' + escapeHTML(sub.imageUrl) + '\', \'' + escapeHTML(act.title) + '\')" class="mt-1.5 text-purple-700 underline font-bold hover:text-purple-900 flex items-center gap-1 text-[11px] cursor-pointer"><i class="fa-solid fa-image"></i> เปิดดูรูปผลงานที่ส่งแล้ว</button>' : '') +
