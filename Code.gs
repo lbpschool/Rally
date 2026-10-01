@@ -1309,6 +1309,65 @@ function apiSubmitAnswer(username, activityId, answerText, imageFileObj, session
       score = 0;
       judgeNotes = 'ตรวจคำตอบอัตโนมัติ: ไม่ถูกต้อง';
     }
+  } else if (targetAct.scoringType === 'AUTO_KEYWORDS') {
+    const cleanUserAnswer = (answerText || '').toString().trim().toLowerCase();
+    let earnedPoints = 0;
+    const matchedKeywords = [];
+    const seenKw = {};
+
+    function normColor(c) {
+      if (!c) return 'default';
+      const s = c.toString().trim().toLowerCase();
+      if (s === 'red' || s === 'แดง') return 'red';
+      if (s === 'blue' || s === 'น้ำเงิน' || s === 'ฟ้า' || s === 'สีฟ้า' || s === 'sky' || s === 'cyan') return 'blue';
+      if (s === 'yellow' || s === 'เหลือง') return 'yellow';
+      if (s === 'green' || s === 'เขียว') return 'green';
+      if (s === 'orange' || s === 'ส้ม') return 'orange';
+      if (s === 'purple' || s === 'ม่วง') return 'purple';
+      if (s === 'pink' || s === 'ชมพู') return 'pink';
+      if (s === 'default' || s === 'all' || s === 'ทั้งหมด') return 'default';
+      return s;
+    }
+
+    const autoAnsRules = targetAct.autoAnswers;
+    if (Array.isArray(autoAnsRules)) {
+      for (let r = 0; r < autoAnsRules.length; r++) {
+        const rule = autoAnsRules[r];
+        const rawAns = (rule.answer || '').toString().trim();
+        const rAns = rawAns.toLowerCase();
+        if (!rAns) continue;
+
+        const ruleColor = (rule.color || 'Default').toString().trim().toLowerCase();
+        const uColor = (userColor || 'Default').toString().trim().toLowerCase();
+        const matchColor = (ruleColor === uColor || ruleColor === 'default' || ruleColor === 'all' || normColor(ruleColor) === normColor(uColor) || normColor(ruleColor) === 'default');
+
+        if (matchColor && cleanUserAnswer.includes(rAns)) {
+          if (!seenKw[rAns]) {
+            seenKw[rAns] = true;
+            const pts = rule.points !== undefined ? Number(rule.points) : targetAct.maxPoints;
+            earnedPoints += pts;
+            matchedKeywords.push(rawAns + ' (' + (pts >= 0 ? '+' : '') + pts + ')');
+          }
+        }
+      }
+    }
+
+    if (matchedKeywords.length > 0) {
+      status = 'passed';
+      const rawTotal = earnedPoints;
+      if (earnedPoints > targetAct.maxPoints) {
+        earnedPoints = targetAct.maxPoints;
+      }
+      score = earnedPoints;
+      judgeNotes = 'ตรวจคำสำคัญอัตโนมัติ: พบ ' + matchedKeywords.length + ' คำ [' + matchedKeywords.join(', ') + '] รวม ' + score + ' คะแนน';
+      if (rawTotal > targetAct.maxPoints) {
+        judgeNotes += ' (คะแนนดิบ ' + rawTotal + ' จำกัดไม่เกิน ' + targetAct.maxPoints + ')';
+      }
+    } else {
+      status = 'failed';
+      score = 0;
+      judgeNotes = 'ตรวจคำสำคัญอัตโนมัติ: ไม่พบคำสำคัญตามเฉลย (0 คะแนน)';
+    }
   } else {
     status = 'pending';
     score = 0;

@@ -1561,7 +1561,8 @@
             <div>
               <label class="block text-slate-700 font-semibold mb-1">รูปแบบการตรวจคะแนน</label>
               <select id="actFormScoringType" required class="w-full px-3 py-2.5 rounded-xl glass-input">
-                <option value="AUTO">AUTO: ตรวจคำตอบอัตโนมัติ</option>
+                <option value="AUTO">AUTO: ตรวจคำตอบอัตโนมัติ (ตรงตามคำตอบ)</option>
+                <option value="AUTO_KEYWORDS">AUTO_KEYWORDS: ตรวจจับคำสำคัญในประโยค (Keyword สะสมคะแนน)</option>
                 <option value="MANUAL_TEXT">MANUAL_TEXT: ตรวจคำตอบเอง (ผู้เข้าแข่งขันพิมพ์ส่งคำตอบ)</option>
                 <option value="MANUAL">MANUAL: กรรมการตรวจแบบบรรยาย / ประเมินโดยกรรมการ</option>
                 <option value="IMAGE">IMAGE: อัปโหลดรูปภาพตรวจงาน</option>
@@ -1626,7 +1627,7 @@
           <!-- Dynamic Auto Answers Rule Builder -->
           <div id="autoAnswersSection" class="p-4 rounded-2xl bg-purple-50/40 border border-purple-200 space-y-3">
             <div class="flex items-center justify-between gap-2">
-              <p class="text-xs font-semibold text-slate-600">ระบบจะตรวจคำตอบอัตโนมัติตามข้อความด้านล่าง</p>
+              <p class="text-xs font-semibold text-slate-600" id="autoAnswersSectionTitle">ระบบจะตรวจคำตอบอัตโนมัติตามข้อความด้านล่าง</p>
               <span id="autoAnswersTemplateBadge" class="text-[10px] font-bold text-purple-700 bg-purple-100/80 px-2.5 py-0.5 rounded-full border border-purple-200/80">
                 <i class="fa-solid fa-sparkles text-[9px] mr-0.5"></i> จำสีตาม RC 1
               </span>
@@ -1637,9 +1638,9 @@
 
             <div class="flex flex-wrap items-center gap-2 mt-2">
               <button type="button" onclick="addAutoAnswerRow()" class="px-3.5 py-2 rounded-2xl bg-white border border-purple-300 text-purple-700 hover:bg-purple-50 font-bold text-xs transition-all shadow-xs flex items-center gap-1.5 cursor-pointer">
-                <i class="fa-solid fa-plus text-xs"></i> เพิ่มตัวเลือกคำตอบ
+                <i class="fa-solid fa-plus text-xs"></i> <span id="btnAddAutoAnswerText">เพิ่มตัวเลือกคำตอบ</span>
               </button>
-              <button type="button" onclick="applyRcColorTemplate(true)" class="px-3.5 py-2 rounded-2xl bg-purple-100/70 border border-purple-300 text-purple-800 hover:bg-purple-200 font-bold text-xs transition-all shadow-xs flex items-center gap-1.5 cursor-pointer" title="รีเซ็ตและคัดลอกรายการสีทั้งหมดจาก RC จุดที่ 1">
+              <button id="btnApplyRcTemplate" type="button" onclick="applyRcColorTemplate(true)" class="px-3.5 py-2 rounded-2xl bg-purple-100/70 border border-purple-300 text-purple-800 hover:bg-purple-200 font-bold text-xs transition-all shadow-xs flex items-center gap-1.5 cursor-pointer" title="รีเซ็ตและคัดลอกรายการสีทั้งหมดจาก RC จุดที่ 1">
                 <i class="fa-solid fa-arrows-rotate text-xs"></i> ดึงแม่แบบสีจาก RC 1
               </button>
             </div>
@@ -4672,9 +4673,16 @@
           } else {
             // ยังไม่เคยส่งคำตอบ: แสดงแบบฟอร์มให้ส่ง
             var formHTML = '';
-            if (act.scoringType === 'AUTO' || act.scoringType === 'MANUAL_TEXT') {
-              var placeholderText = act.scoringType === 'MANUAL_TEXT' ? 'พิมพ์คำตอบของคุณที่นี่...' : 'พิมพ์คำตอบคำใบ้ที่นี่...';
-              var helperBadge = act.scoringType === 'MANUAL_TEXT' ? '<p class="text-[10px] text-amber-700 font-semibold mb-1"><i class="fa-solid fa-user-pen mr-1"></i>ส่งข้อความคำตอบเพื่อให้กรรมการตรวจให้คะแนน</p>' : '';
+            if (act.scoringType === 'AUTO' || act.scoringType === 'AUTO_KEYWORDS' || act.scoringType === 'MANUAL_TEXT') {
+              var placeholderText = act.scoringType === 'MANUAL_TEXT' 
+                ? 'พิมพ์คำตอบของคุณที่นี่...' 
+                : (act.scoringType === 'AUTO_KEYWORDS' ? 'พิมพ์ข้อความคำตอบที่นี่...' : 'พิมพ์คำตอบคำใบ้ที่นี่...');
+              var helperBadge = '';
+              if (act.scoringType === 'MANUAL_TEXT') {
+                helperBadge = '<p class="text-[10px] text-amber-700 font-semibold mb-1"><i class="fa-solid fa-user-pen mr-1"></i>ส่งข้อความคำตอบเพื่อให้กรรมการตรวจให้คะแนน</p>';
+              } else if (act.scoringType === 'AUTO_KEYWORDS') {
+                helperBadge = '<p class="text-[10px] text-purple-700 font-semibold mb-1"><i class="fa-solid fa-wand-magic-sparkles mr-1"></i>ระบบตรวจจับคำสำคัญและรวมคะแนนบวกลบอัตโนมัติ</p>';
+              }
               formHTML = '<form onsubmit="handleUserSubmit(event, \'' + act.id + '\')" class="mt-2.5 space-y-2">' +
                 helperBadge +
                 '<input type="text" id="inputAns_' + act.id + '" required placeholder="' + placeholderText + '" class="w-full px-3.5 py-2.5 rounded-xl border-2 border-purple-300 focus:border-purple-600 bg-white text-slate-800 text-xs font-semibold shadow-sm focus:ring-2 focus:ring-purple-200 outline-none transition-all">' +
@@ -4982,6 +4990,51 @@
           score = 0;
           notes = 'คำตอบไม่ถูกต้อง';
         }
+      } else if (act.scoringType === 'AUTO_KEYWORDS') {
+        var userAnsClean = (answerText || '').trim().toLowerCase();
+        var earnedPoints = 0;
+        var matchedKeywords = [];
+        var seenKw = {};
+
+        var rules = act.autoAnswers;
+        if (Array.isArray(rules)) {
+          for (var r = 0; r < rules.length; r++) {
+            var rule = rules[r];
+            var rawAns = (rule.answer || '').trim();
+            var rAns = rawAns.toLowerCase();
+            if (!rAns) continue;
+
+            var rCol = (rule.color || 'Default').trim().toLowerCase();
+            var uCol = (currentUser.carColor || 'Default').trim().toLowerCase();
+            var matchColor = (rCol === uCol || rCol === 'default' || rCol === 'all' || getCarColorThaiName(rCol) === getCarColorThaiName(uCol));
+
+            if (matchColor && userAnsClean.includes(rAns)) {
+              if (!seenKw[rAns]) {
+                seenKw[rAns] = true;
+                var pts = rule.points !== undefined ? Number(rule.points) : act.maxPoints;
+                earnedPoints += pts;
+                matchedKeywords.push(rawAns + ' (' + (pts >= 0 ? '+' : '') + pts + ')');
+              }
+            }
+          }
+        }
+
+        if (matchedKeywords.length > 0) {
+          status = 'passed';
+          var rawTotal = earnedPoints;
+          if (earnedPoints > act.maxPoints) {
+            earnedPoints = act.maxPoints;
+          }
+          score = earnedPoints;
+          notes = 'ตรวจพบ ' + matchedKeywords.length + ' คำ [' + matchedKeywords.join(', ') + '] รวม ' + score + ' คะแนน';
+          if (rawTotal > act.maxPoints) {
+            notes += ' (คะแนนดิบ ' + rawTotal + ' จำกัดไม่เกิน ' + act.maxPoints + ')';
+          }
+        } else {
+          status = 'failed';
+          score = 0;
+          notes = 'ไม่พบคำสำคัญตามเฉลย (0 คะแนน)';
+        }
       } else if (act.scoringType === 'MANUAL_TEXT') {
         status = 'pending';
         score = 0;
@@ -5083,10 +5136,10 @@
       if (!act) return false;
 
       var answerText = '';
-      if (act.scoringType === 'AUTO' || act.scoringType === 'MANUAL_TEXT') {
+      if (act.scoringType === 'AUTO' || act.scoringType === 'AUTO_KEYWORDS' || act.scoringType === 'MANUAL_TEXT') {
         var input = document.getElementById('inputAns_' + actId);
         if (input) answerText = input.value.trim();
-        if (act.scoringType === 'MANUAL_TEXT' && !answerText) {
+        if ((act.scoringType === 'MANUAL_TEXT' || act.scoringType === 'AUTO_KEYWORDS') && !answerText) {
           Swal.fire('กรุณาระบุคำตอบ', 'โปรดพิมพ์ข้อความคำตอบก่อนกดส่ง', 'warning');
           return false;
         }
@@ -5646,6 +5699,11 @@
           '<i class="fa-solid fa-wand-magic-sparkles text-purple-600 text-sm shrink-0"></i>' +
           '<span><strong>โหมดตรวจคำตอบอัตโนมัติ (AUTO):</strong> ระบบคิดคะแนนให้อัตโนมัติตามเฉลี่ยคำตอบทันทีเมื่อผู้แข่งขันส่งงาน (กรรมการสามารถปรับเปลี่ยนคะแนนเพิ่มเติมได้หากต้องการ)</span>' +
           '</div>';
+      } else if (act.scoringType === 'AUTO_KEYWORDS') {
+        autoInfoBanner = '<div class="p-3.5 rounded-2xl bg-fuchsia-50 border border-fuchsia-200 text-xs text-fuchsia-900 flex items-center gap-2 font-medium mb-4 shadow-sm">' +
+          '<i class="fa-solid fa-tags text-fuchsia-600 text-sm shrink-0"></i>' +
+          '<span><strong>โหมดตรวจคำสำคัญสะสมคะแนน (AUTO_KEYWORDS):</strong> ระบบตรวจจับคำสำคัญในข้อความและรวมคะแนนบวกลบให้อัตโนมัติ (กรรมการสามารถปรับเปลี่ยนคะแนนเพิ่มเติมได้หากต้องการ)</span>' +
+          '</div>';
       } else if (act.scoringType === 'MANUAL_TEXT') {
         autoInfoBanner = '<div class="p-3.5 rounded-2xl bg-indigo-50 border border-indigo-200 text-xs text-indigo-900 flex items-center gap-2 font-medium mb-4 shadow-sm">' +
           '<i class="fa-solid fa-file-pen text-indigo-600 text-sm shrink-0"></i>' +
@@ -5677,12 +5735,13 @@
 
         var submittedTextHTML = '';
         if (sub && sub.answerText && sub.answerText !== '[ประเมินโดยกรรมการ]') {
-          var isManualText = (act.scoringType === 'MANUAL_TEXT');
-          submittedTextHTML = '<div class="mt-2.5 p-3 rounded-xl ' + (isManualText ? 'bg-indigo-50/70 border border-indigo-200 text-indigo-950' : 'bg-slate-50 border border-slate-200 text-slate-700') + ' text-xs">' +
-            '<div class="font-bold flex items-center gap-1.5 mb-1 text-' + (isManualText ? 'indigo-700' : 'slate-800') + '"><i class="fa-solid fa-comment-dots"></i> ข้อความคำตอบที่ส่งมา:</div>' +
-            '<div class="bg-white p-2.5 rounded-lg border ' + (isManualText ? 'border-indigo-100 font-semibold' : 'border-slate-100') + ' text-slate-800 text-sm whitespace-pre-wrap break-words shadow-xs">' + escapeHTML(sub.answerText) + '</div>' +
+          var isTextTask = (act.scoringType === 'MANUAL_TEXT' || act.scoringType === 'AUTO_KEYWORDS');
+          submittedTextHTML = '<div class="mt-2.5 p-3 rounded-xl ' + (isTextTask ? 'bg-indigo-50/70 border border-indigo-200 text-indigo-950' : 'bg-slate-50 border border-slate-200 text-slate-700') + ' text-xs">' +
+            '<div class="font-bold flex items-center gap-1.5 mb-1 text-' + (isTextTask ? 'indigo-700' : 'slate-800') + '"><i class="fa-solid fa-comment-dots"></i> ข้อความคำตอบที่ส่งมา:</div>' +
+            '<div class="bg-white p-2.5 rounded-lg border ' + (isTextTask ? 'border-indigo-100 font-semibold' : 'border-slate-100') + ' text-slate-800 text-sm whitespace-pre-wrap break-words shadow-xs">' + escapeHTML(sub.answerText) + '</div>' +
+            (sub.judgeNotes ? '<p class="mt-1 text-[11px] text-fuchsia-700 font-bold"><i class="fa-solid fa-calculator mr-1"></i>' + escapeHTML(sub.judgeNotes) + '</p>' : '') +
             '</div>';
-        } else if (act.scoringType === 'MANUAL_TEXT') {
+        } else if (act.scoringType === 'MANUAL_TEXT' || act.scoringType === 'AUTO_KEYWORDS') {
           submittedTextHTML = '<div class="mt-2 p-2 rounded-lg bg-amber-50 border border-amber-200 text-xs text-amber-700 flex items-center gap-1.5">' +
             '<i class="fa-solid fa-clock-rotate-left"></i> ยังไม่ส่งคำตอบ' +
             '</div>';
@@ -5710,9 +5769,9 @@
           
           '<!-- Active Grading Inputs -->' +
           '<div class="border-t md:border-t-0 md:border-l border-slate-200/80 pt-3 md:pt-0 md:pl-4 shrink-0 space-y-1">' +
-          '<label class="block text-xs font-bold text-slate-700 mb-1">ให้คะแนน (เต็ม ' + act.maxPoints + ')</label>' +
+          '<label class="block text-xs font-bold text-slate-700 mb-1">' + (act.scoringType === 'AUTO_KEYWORDS' ? 'คะแนนสุทธิ (บวกลบได้ สูงสุด ' + act.maxPoints + ')' : 'ให้คะแนน (เต็ม ' + act.maxPoints + ')') + '</label>' +
           '<div class="flex items-center gap-3">' +
-          '<input type="number" id="gradeScore_' + comp.username + '" min="0" max="' + act.maxPoints + '" value="' + currentScoreVal + '" class="w-28 sm:w-32 px-3 py-2.5 rounded-xl bg-white border-2 border-purple-300 focus:border-purple-600 text-sm font-extrabold text-slate-800 text-center shadow-sm transition-all" placeholder="0">' +
+          '<input type="number" id="gradeScore_' + comp.username + '" ' + (act.scoringType === 'AUTO_KEYWORDS' ? '' : 'min="0" ') + 'max="' + act.maxPoints + '" value="' + currentScoreVal + '" class="w-28 sm:w-32 px-3 py-2.5 rounded-xl bg-white border-2 border-purple-300 focus:border-purple-600 text-sm font-extrabold text-slate-800 text-center shadow-sm transition-all" placeholder="0">' +
           '<button onclick="saveGradeScore(\'' + comp.username + '\', \'' + act.id + '\', \'' + subIdVal + '\')" class="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-md transition-all flex items-center justify-center gap-1.5 whitespace-nowrap">' +
           '<i class="fa-solid fa-check text-xs"></i> บันทึกคะแนน</button>' +
           '</div>' +
@@ -5741,7 +5800,11 @@
       if (targetSub) {
         targetSub.status = 'passed';
         targetSub.score = score;
-        targetSub.judgeNotes = notes;
+        if (notes) {
+          targetSub.judgeNotes = notes;
+        } else if (!targetSub.judgeNotes) {
+          targetSub.judgeNotes = 'ประเมินโดยกรรมการ: ' + score + ' คะแนน';
+        }
         targetSub.judgeUsername = currentUser.username;
       } else {
         var act = (activitiesData || []).find(function(a) { return a && String(a.id || '').trim() === aNorm; }) || {};
@@ -6142,6 +6205,7 @@
           '<td class="py-3 px-4">' +
             (function() {
               if (a.scoringType === 'AUTO') return '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-100 text-purple-700 border border-purple-200">AUTO: ตรวจคำตอบอัตโนมัติ</span>';
+              if (a.scoringType === 'AUTO_KEYWORDS') return '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-fuchsia-100 text-fuchsia-700 border border-fuchsia-200">AUTO_KEYWORDS: ตรวจคำสำคัญสะสมคะแนน</span>';
               if (a.scoringType === 'MANUAL_TEXT') return '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-100 text-indigo-700 border border-indigo-200">MANUAL_TEXT: ตรวจคำตอบเอง</span>';
               if (a.scoringType === 'IMAGE') return '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-sky-100 text-sky-700 border border-sky-200">IMAGE: ส่งรูปตรวจ</span>';
               return '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-600 border border-slate-200">' + escapeHTML(a.scoringType || '-') + '</span>';
@@ -6160,9 +6224,27 @@
 
     function toggleAutoAnswersConfig(scoringType) {
       var section = document.getElementById('autoAnswersSection');
+      var title = document.getElementById('autoAnswersSectionTitle');
+      var tplBadge = document.getElementById('autoAnswersTemplateBadge');
+      var rcBtn = document.getElementById('btnApplyRcTemplate');
+      var addBtnText = document.getElementById('btnAddAutoAnswerText');
       if (section) {
-        if (scoringType === 'AUTO') section.style.display = 'block';
-        else section.style.display = 'none';
+        if (scoringType === 'AUTO' || scoringType === 'AUTO_KEYWORDS') {
+          section.style.display = 'block';
+          if (scoringType === 'AUTO_KEYWORDS') {
+            if (title) title.innerText = 'ระบบจะตรวจจับคำสำคัญในประโยคและรวมคะแนนบวกลบอัตโนมัติตามรายการด้านล่าง';
+            if (tplBadge) tplBadge.style.display = 'none';
+            if (rcBtn) rcBtn.style.display = 'none';
+            if (addBtnText) addBtnText.innerText = 'เพิ่มคำสำคัญ (Keyword)';
+          } else {
+            if (title) title.innerText = 'ระบบจะตรวจคำตอบอัตโนมัติตามข้อความด้านล่าง';
+            if (tplBadge) tplBadge.style.display = 'inline-flex';
+            if (rcBtn) rcBtn.style.display = 'inline-flex';
+            if (addBtnText) addBtnText.innerText = 'เพิ่มตัวเลือกคำตอบ';
+          }
+        } else {
+          section.style.display = 'none';
+        }
       }
     }
 
@@ -6177,7 +6259,7 @@
 
       container.innerHTML = currentAutoAnswerRows.map(function(row, idx) {
         return '<div class="flex items-center gap-2 bg-white p-2 rounded-2xl border border-slate-100 shadow-sm">' +
-          '<input type="text" value="' + escapeHTML(row.answer || '') + '" onchange="updateAutoAnswerRow(' + idx + ', \'answer\', this.value)" placeholder="พิมพ์คำตอบที่ถูกต้อง..." class="flex-1 px-3 py-2 rounded-xl glass-input text-xs font-semibold">' +
+          '<input type="text" value="' + escapeHTML(row.answer || '') + '" onchange="updateAutoAnswerRow(' + idx + ', \'answer\', this.value)" placeholder="พิมพ์คำตอบ/คำสำคัญ..." class="flex-1 px-3 py-2 rounded-xl glass-input text-xs font-semibold">' +
           '<select onchange="updateAutoAnswerRow(' + idx + ', \'color\', this.value)" class="w-32 sm:w-36 px-2.5 py-2 rounded-xl glass-input text-xs font-semibold">' +
             '<option value="Red" ' + (row.color === 'Red' ? 'selected' : '') + '>🔴 แดง</option>' +
             '<option value="Blue" ' + (row.color === 'Blue' || row.color === 'ฟ้า' || row.color === 'สีฟ้า' || row.color === 'น้ำเงิน' || row.color === 'Sky' ? 'selected' : '') + '>🔵 ฟ้า</option>' +
@@ -6295,10 +6377,15 @@
 
     function addAutoAnswerRow() {
       var maxPts = Number(document.getElementById('actFormMaxPoints').value) || 10;
-      var allColors = ['Red', 'Blue', 'Yellow', 'Green', 'Orange', 'Purple', 'Pink', 'Default'];
-      var usedColors = currentAutoAnswerRows.map(function(r) { return r.color; });
-      var nextColor = allColors.find(function(c) { return !usedColors.includes(c); }) || 'Red';
-      currentAutoAnswerRows.push({ answer: '', color: nextColor, points: maxPts });
+      var curType = document.getElementById('actFormScoringType') ? document.getElementById('actFormScoringType').value : 'AUTO';
+      if (curType === 'AUTO_KEYWORDS') {
+        currentAutoAnswerRows.push({ answer: '', color: 'Default', points: maxPts });
+      } else {
+        var allColors = ['Red', 'Blue', 'Yellow', 'Green', 'Orange', 'Purple', 'Pink', 'Default'];
+        var usedColors = currentAutoAnswerRows.map(function(r) { return r.color; });
+        var nextColor = allColors.find(function(c) { return !usedColors.includes(c); }) || 'Red';
+        currentAutoAnswerRows.push({ answer: '', color: nextColor, points: maxPts });
+      }
       renderAutoAnswerRows();
     }
 
@@ -6360,7 +6447,7 @@
           if (autoAns.Pink && autoAns.Pink.answer) currentAutoAnswerRows.push({ answer: autoAns.Pink.answer, color: 'Pink', points: Number(autoAns.Pink.points) || act.maxPoints });
           if (autoAns.default && autoAns.default.answer) currentAutoAnswerRows.push({ answer: autoAns.default.answer, color: 'Default', points: Number(autoAns.default.points) || act.maxPoints });
         } else {
-          currentAutoAnswerRows = getRcColorTemplate();
+          currentAutoAnswerRows = (act.scoringType === 'AUTO_KEYWORDS' ? [] : getRcColorTemplate());
         }
 
         renderAutoAnswerRows();
@@ -6511,7 +6598,7 @@
       };
 
       // Save RC color template to storage for automatic reuse across future RC checkpoints
-      if (category === 'RC' && Array.isArray(currentAutoAnswerRows) && currentAutoAnswerRows.length > 0) {
+      if (category === 'RC' && scoringType === 'AUTO' && Array.isArray(currentAutoAnswerRows) && currentAutoAnswerRows.length > 0) {
         var tplToSave = currentAutoAnswerRows.map(function(r) {
           return { color: r.color || 'Red', points: Number(r.points) || maxPoints };
         });
@@ -8178,6 +8265,10 @@
           toggleAutoAnswersConfig(e.target.value);
           if (e.target.value === 'AUTO' && (!currentAutoAnswerRows || currentAutoAnswerRows.length === 0)) {
             currentAutoAnswerRows = getRcColorTemplate();
+            renderAutoAnswerRows();
+          } else if (e.target.value === 'AUTO_KEYWORDS' && (!currentAutoAnswerRows || currentAutoAnswerRows.length === 0)) {
+            var maxPts = Number(document.getElementById('actFormMaxPoints').value) || 10;
+            currentAutoAnswerRows = [{ answer: '', color: 'Default', points: maxPts }];
             renderAutoAnswerRows();
           }
         });
