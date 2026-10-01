@@ -459,6 +459,9 @@
               <div id="sideNavGrading" style="display: none;" onclick="switchView('Grading')" class="sidebar-item">
                 <i class="fa-solid fa-clipboard-check text-base text-purple-600"></i> ตรวจและให้คะแนน
               </div>
+              <div id="sideNavMissionsAll" style="display: none;" onclick="switchViewFilter('ALL')" class="sidebar-item">
+                <i class="fa-solid fa-list-check text-base text-purple-600"></i> ภารกิจทั้งหมด
+              </div>
               <div id="sideNavRC" style="display: none;" onclick="switchViewFilter('RC')" class="sidebar-item">
                 <i class="fa-solid fa-flag text-base text-blue-500"></i> จุด RC
               </div>
@@ -4059,6 +4062,7 @@
       var navDashboard = document.getElementById('sideNavDashboard');
       var navLeaderboard = document.getElementById('sideNavLeaderboard');
       var navGrading = document.getElementById('sideNavGrading');
+      var navMissionsAll = document.getElementById('sideNavMissionsAll');
       var navRC = document.getElementById('sideNavRC');
       var navBase = document.getElementById('sideNavBase');
       var navQuiz = document.getElementById('sideNavQuiz');
@@ -4093,6 +4097,7 @@
         if (navDashboard) navDashboard.style.display = 'flex';
         if (navLeaderboard) navLeaderboard.style.display = 'flex';
         if (navGrading) navGrading.style.display = 'flex';
+        if (navMissionsAll) navMissionsAll.style.display = 'flex';
         if (navRC) navRC.style.display = 'flex';
         if (navBase) navBase.style.display = 'flex';
         if (navQuiz) navQuiz.style.display = 'flex';
@@ -4113,6 +4118,7 @@
           '<button onclick="switchView(\'UserDashboard\'); closeMobileSidebar();" class="w-full text-left py-2 px-3 rounded-xl font-semibold text-xs text-purple-700 bg-purple-50 flex items-center gap-2.5"><i class="fa-solid fa-gauge-high text-sm text-purple-600"></i> Dashboard</button>' +
           '<button onclick="switchView(\'Leaderboard\'); closeMobileSidebar();" class="w-full text-left py-2 px-3 rounded-xl font-semibold text-xs text-slate-700 hover:bg-purple-50 hover:text-purple-700 flex items-center gap-2.5"><i class="fa-solid fa-trophy text-sm text-amber-500"></i> ดูคะแนนรวม (Leaderboard)</button>' +
           '<button onclick="switchView(\'Grading\'); closeMobileSidebar();" class="w-full text-left py-2 px-3 rounded-xl font-semibold text-xs text-slate-700 hover:bg-purple-50 hover:text-purple-700 flex items-center gap-2.5"><i class="fa-solid fa-clipboard-check text-sm text-purple-600"></i> ตรวจและให้คะแนน</button>' +
+          '<button onclick="switchViewFilter(\'ALL\'); closeMobileSidebar();" class="w-full text-left py-2 px-3 rounded-xl font-semibold text-xs text-slate-700 hover:bg-purple-50 hover:text-purple-700 flex items-center gap-2.5"><i class="fa-solid fa-list-check text-sm text-purple-600"></i> ภารกิจทั้งหมด</button>' +
           '<button onclick="switchViewFilter(\'RC\'); closeMobileSidebar();" class="w-full text-left py-2 px-3 rounded-xl font-semibold text-xs text-slate-700 hover:bg-purple-50 hover:text-purple-700 flex items-center gap-2.5"><i class="fa-solid fa-flag text-sm text-blue-500"></i> จุด RC</button>' +
           '<button onclick="switchViewFilter(\'Base\'); closeMobileSidebar();" class="w-full text-left py-2 px-3 rounded-xl font-semibold text-xs text-slate-700 hover:bg-purple-50 hover:text-purple-700 flex items-center gap-2.5"><i class="fa-solid fa-puzzle-piece text-sm text-purple-500"></i> กิจกรรมฐาน</button>' +
           '<button onclick="switchViewFilter(\'Quiz\'); closeMobileSidebar();" class="w-full text-left py-2 px-3 rounded-xl font-semibold text-xs text-slate-700 hover:bg-purple-50 hover:text-purple-700 flex items-center gap-2.5"><i class="fa-solid fa-gamepad text-sm text-emerald-500"></i> เกมส์คำถาม</button>' +
@@ -4138,6 +4144,7 @@
         if (navGrading) navGrading.style.display = 'flex';
         if (navHistory) navHistory.style.display = 'flex';
 
+        if (navMissionsAll) navMissionsAll.style.display = 'none';
         if (navRC) navRC.style.display = 'none';
         if (navBase) navBase.style.display = 'none';
         if (navQuiz) navQuiz.style.display = 'none';
@@ -4164,6 +4171,7 @@
       } else {
         // USER (COMPETITOR) ROLE: ONLY Dashboard, RC, Base, Quiz, History, Leaderboard (if open)
         if (navDashboard) navDashboard.style.display = 'flex';
+        if (navMissionsAll) navMissionsAll.style.display = 'flex';
         if (navRC) navRC.style.display = 'flex';
         if (navBase) navBase.style.display = 'flex';
         if (navQuiz) navQuiz.style.display = 'flex';
@@ -4185,6 +4193,7 @@
           '<div class="space-y-1">' +
           '<button onclick="switchView(\'UserDashboard\'); closeMobileSidebar();" class="w-full text-left py-2 px-3 rounded-xl font-semibold text-xs text-slate-700 hover:bg-purple-50 hover:text-purple-700 flex items-center gap-2.5"><i class="fa-solid fa-gauge-high text-sm text-purple-600"></i> Dashboard</button>' +
           (showLeaderboardTab ? '<button onclick="switchView(\'Leaderboard\'); closeMobileSidebar();" class="w-full text-left py-2 px-3 rounded-xl font-semibold text-xs text-slate-700 hover:bg-purple-50 hover:text-purple-700 flex items-center gap-2.5"><i class="fa-solid fa-trophy text-sm text-amber-500"></i> ดูคะแนนรวม (Leaderboard)</button>' : '') +
+          '<button onclick="switchViewFilter(\'ALL\'); closeMobileSidebar();" class="w-full text-left py-2 px-3 rounded-xl font-semibold text-xs text-slate-700 hover:bg-purple-50 hover:text-purple-700 flex items-center gap-2.5"><i class="fa-solid fa-list-check text-sm text-purple-600"></i> ภารกิจทั้งหมด</button>' +
           '<button onclick="switchViewFilter(\'RC\'); closeMobileSidebar();" class="w-full text-left py-2 px-3 rounded-xl font-semibold text-xs text-slate-700 hover:bg-purple-50 hover:text-purple-700 flex items-center gap-2.5"><i class="fa-solid fa-flag text-sm text-blue-500"></i> จุด RC</button>' +
           '<button onclick="switchViewFilter(\'Base\'); closeMobileSidebar();" class="w-full text-left py-2 px-3 rounded-xl font-semibold text-xs text-slate-700 hover:bg-purple-50 hover:text-purple-700 flex items-center gap-2.5"><i class="fa-solid fa-puzzle-piece text-sm text-purple-500"></i> กิจกรรมฐาน</button>' +
           '<button onclick="switchViewFilter(\'Quiz\'); closeMobileSidebar();" class="w-full text-left py-2 px-3 rounded-xl font-semibold text-xs text-slate-700 hover:bg-purple-50 hover:text-purple-700 flex items-center gap-2.5"><i class="fa-solid fa-gamepad text-sm text-emerald-500"></i> เกมส์คำถาม</button>' +
@@ -4240,6 +4249,8 @@
         updateActiveSidebarItem('sideNavBase');
       } else if (cat === 'Quiz') {
         updateActiveSidebarItem('sideNavQuiz');
+      } else if (cat === 'ALL') {
+        updateActiveSidebarItem('sideNavMissionsAll');
       } else {
         updateActiveSidebarItem('sideNavDashboard');
       }
@@ -4791,6 +4802,16 @@
         } else {
           title.innerHTML = '<i class="fa-solid fa-list-check text-purple-600"></i> รายการภารกิจและกิจกรรมทั้งหมด';
         }
+      }
+
+      if (cat === 'RC') {
+        updateActiveSidebarItem('sideNavRC');
+      } else if (cat === 'Base') {
+        updateActiveSidebarItem('sideNavBase');
+      } else if (cat === 'Quiz') {
+        updateActiveSidebarItem('sideNavQuiz');
+      } else if (cat === 'ALL') {
+        updateActiveSidebarItem('sideNavMissionsAll');
       }
 
       renderUserMissionsGrid();
