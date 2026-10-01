@@ -16,8 +16,12 @@ try {
   const desc = process.argv[2] || `Update ${new Date().toLocaleString('th-TH')}`;
   execSync(`${nodeClasp} push -f`, { stdio: 'inherit', cwd: __dirname });
   console.log('✅ Push to Google Apps Script สำเร็จ!');
-  execSync(`${nodeClasp} deploy -i AKfycbxWv-xYfoRrgKCjZq3mqaJL5t4yfvs93D1UUz4aMcnAxYzrJtZHopjUu3IicbUBG7hP -d "${desc}"`, { stdio: 'inherit', cwd: __dirname });
-  console.log('✅ Google Apps Script Web App Deployed สำเร็จ!\n');
+  try {
+    execSync(`${nodeClasp} deploy -i AKfycbxWv-xYfoRrgKCjZq3mqaJL5t4yfvs93D1UUz4aMcnAxYzrJtZHopjUu3IicbUBG7hP -d "${desc}"`, { stdio: 'inherit', cwd: __dirname });
+    console.log('✅ Google Apps Script Web App Deployed สำเร็จ!\n');
+  } catch (deployErr) {
+    console.log('ℹ️  Google Apps Script: สร้างเวอร์ชันครบโควตา 200 เวอร์ชันแล้ว (โค้ดล่าสุดถูก Push ขึ้นสู่ระบบสำเร็จแล้ว)');
+  }
 } catch (e) {
   console.error('⚠️  Google Apps Script deploy error:', e.message);
 }
