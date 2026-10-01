@@ -408,12 +408,13 @@ function deleteCachedUser(username) {
 
 function updateCachedActivity(actData) {
   try {
+    if (!actData || !actData.id) return;
     const shared = getCachedSharedData();
-    if (!shared || !shared.activities) return;
+    if (!shared || !Array.isArray(shared.activities)) return;
     const aNorm = String(actData.id || '').trim();
     let found = false;
     for (let i = 0; i < shared.activities.length; i++) {
-      if (String(shared.activities[i].id || '').trim() === aNorm) {
+      if (shared.activities[i] && String(shared.activities[i].id || '').trim() === aNorm) {
         shared.activities[i].category = actData.category;
         shared.activities[i].scoringType = actData.scoringType;
         shared.activities[i].title = actData.title;
@@ -449,11 +450,12 @@ function updateCachedActivity(actData) {
 
 function deleteCachedActivity(id) {
   try {
+    if (!id) return;
     const shared = getCachedSharedData();
-    if (!shared || !shared.activities) return;
+    if (!shared || !Array.isArray(shared.activities)) return;
     const aNorm = String(id || '').trim();
     shared.activities = shared.activities.filter(function(a) {
-      return String(a.id || '').trim() !== aNorm;
+      return a && String(a.id || '').trim() !== aNorm;
     });
     setCachedSharedData(shared);
   } catch (e) {
@@ -511,16 +513,17 @@ function fetchSharedDataFromSheets() {
   const actRaw = actSheet.getDataRange().getValues();
   const activities = [];
   for (let i = 1; i < actRaw.length; i++) {
+    if (!actRaw[i][0]) continue;
     let autoAns = {};
     try { autoAns = JSON.parse(actRaw[i][7] || '{}'); } catch(e) {}
     const sImgs = parseSolutionImages(actRaw[i][8]);
     activities.push({
-      id: actRaw[i][0],
-      category: actRaw[i][1],
-      title: actRaw[i][2],
-      description: actRaw[i][3],
-      imageUrl: actRaw[i][4],
-      scoringType: actRaw[i][5],
+      id: String(actRaw[i][0] || '').trim(),
+      category: actRaw[i][1] || 'Base',
+      title: actRaw[i][2] || '',
+      description: actRaw[i][3] || '',
+      imageUrl: actRaw[i][4] || '',
+      scoringType: actRaw[i][5] || 'AUTO',
       maxPoints: Number(actRaw[i][6]) || 0,
       autoAnswers: autoAns,
       solutionImages: sImgs,
@@ -991,35 +994,35 @@ function apiGetInitialData(username, sessionToken) {
   const isPrivileged = (requesterRole === 'Admin' || requesterRole === 'Sub-Admin');
 
   // Filter activities: solutionImageUrl and solutionImages are sent ONLY to Admin
-  const activities = (shared.activities || []).map(function(a) {
+  const activities = (shared.activities || []).filter(function(a) { return a && a.id; }).map(function(a) {
     if (isAdmin) return a;
     return {
       id: a.id,
-      category: a.category,
-      title: a.title,
-      description: a.description,
-      imageUrl: a.imageUrl,
-      scoringType: a.scoringType,
-      maxPoints: a.maxPoints,
-      autoAnswers: a.autoAnswers,
+      category: a.category || '',
+      title: a.title || '',
+      description: a.description || '',
+      imageUrl: a.imageUrl || '',
+      scoringType: a.scoringType || 'AUTO',
+      maxPoints: Number(a.maxPoints) || 0,
+      autoAnswers: a.autoAnswers || {},
       solutionImageUrl: '',
       solutionImages: []
     };
   });
 
   // Filter submissions: Privileged or owner gets full details; others get leaderboard-safe summary
-  const submissions = (shared.submissions || []).map(function(s) {
+  const submissions = (shared.submissions || []).filter(function(s) { return s && s.id; }).map(function(s) {
     const isOwn = (uname && String(s.username).toLowerCase() === uname);
     if (isPrivileged || isOwn) {
       return s;
     }
     return {
       id: s.id,
-      username: s.username,
-      activityId: s.activityId,
-      category: s.category,
-      status: s.status,
-      score: s.score
+      username: s.username || '',
+      activityId: s.activityId || '',
+      category: s.category || '',
+      status: s.status || 'pending',
+      score: Number(s.score) || 0
     };
   });
 
@@ -1205,9 +1208,9 @@ function apiSubmitAnswer(username, activityId, answerText, imageFileObj, session
   let targetAct = null;
   let userColor = 'Default';
 
-  if (shared && shared.activities && shared.users) {
-    targetAct = shared.activities.find(function(a) { return a.id === activityId; });
-    const uObj = shared.users.find(function(u) { return u.username === username; });
+  if (shared && Array.isArray(shared.activities) && Array.isArray(shared.users)) {
+    targetAct = shared.activities.find(function(a) { return a && a.id === activityId; });
+    const uObj = shared.users.find(function(u) { return u && u.username === username; });
     if (uObj && uObj.carColor) userColor = uObj.carColor;
   }
 
@@ -1416,8 +1419,8 @@ function apiGradeSubmission(submissionId, score, judgeNotes, judgeUsername, user
     if (username && activityId) {
       let category = 'Base';
       const shared = getCachedSharedData();
-      if (shared && shared.activities) {
-        const act = shared.activities.find(function(a) { return String(a.id).trim() === aNorm; });
+      if (shared && Array.isArray(shared.activities)) {
+        const act = shared.activities.find(function(a) { return a && String(a.id || '').trim() === aNorm; });
         if (act) category = act.category || 'Base';
       } else {
         const actsSheet = getOrCreateSheet(ss, SHEET_NAMES.ACTIVITIES);
@@ -1494,6 +1497,10 @@ function apiUpdateBonusPoints(carUsername, bonusPoints, sessionToken) {
 function apiSaveActivity(activityData, sessionToken) {
   const auth = verifyAuth(sessionToken, ['Admin']);
   if (!auth.success) return auth;
+
+  if (!activityData || typeof activityData !== 'object') {
+    return { success: false, message: 'ข้อมูลภารกิจไม่ถูกต้องหรือไม่ครบถ้วน' };
+  }
 
   const id = activityData.id || ('ACT-' + String(Date.now()).slice(-6));
   let imageUrl = activityData.imageUrl || '';
@@ -1584,10 +1591,10 @@ function apiSaveActivity(activityData, sessionToken) {
 function updateActivitySolutionImagesInCache(activityId, currentImgs) {
   try {
     const shared = getCachedSharedData();
-    if (!shared || !shared.activities) return;
+    if (!shared || !Array.isArray(shared.activities)) return;
     const aNorm = String(activityId || '').trim();
     for (let i = 0; i < shared.activities.length; i++) {
-      if (String(shared.activities[i].id || '').trim() === aNorm) {
+      if (shared.activities[i] && String(shared.activities[i].id || '').trim() === aNorm) {
         shared.activities[i].solutionImages = currentImgs;
         shared.activities[i].solutionImageUrl = currentImgs[0] || '';
         break;

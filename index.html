@@ -234,10 +234,27 @@
   <!-- ================= Image Lightbox Fullscreen Modal ================= -->
   <div id="imageModal" style="display: none;" class="fixed inset-0 z-50 items-center justify-center bg-slate-950/85 backdrop-blur-md p-3 sm:p-4 overflow-y-auto" onclick="closeImageModal()">
     <div class="relative max-w-4xl w-full max-h-[94vh] flex flex-col items-center my-auto py-2 sm:py-3 overflow-y-auto modal-body-scroll" onclick="event.stopPropagation()">
-      <!-- Close Button -->
-      <button onclick="closeImageModal()" class="self-end mb-2 w-10 h-10 rounded-full bg-slate-900/80 hover:bg-slate-800 text-white text-xl flex items-center justify-center transition-all z-20 cursor-pointer shadow-xl border border-white/30 backdrop-blur-md sticky top-0" title="ปิดหน้าต่าง">
-        <i class="fa-solid fa-xmark"></i>
-      </button>
+      <!-- Header Toolbar: Zoom Controls (อยู่ก่อนหน้าปุ่มปิด) & Close Button -->
+      <div class="self-end mb-2 flex items-center gap-2 sticky top-0 z-20">
+        <!-- Floating Zoom Controls & Reset Pill -->
+        <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-900/85 backdrop-blur-md border border-white/30 text-white shadow-xl text-xs font-semibold select-none">
+          <button type="button" onclick="zoomImageModal(-0.5)" class="w-7 h-7 rounded-full bg-white/10 hover:bg-white/25 active:scale-90 flex items-center justify-center transition-all cursor-pointer" title="ย่อรูป">
+            <i class="fa-solid fa-minus text-[11px]"></i>
+          </button>
+          <span id="imageModalZoomLevel" class="px-2 text-[11px] font-bold tracking-tight text-purple-200 min-w-[42px] text-center">100%</span>
+          <button type="button" onclick="zoomImageModal(0.5)" class="w-7 h-7 rounded-full bg-white/10 hover:bg-white/25 active:scale-90 flex items-center justify-center transition-all cursor-pointer" title="ขยายรูป">
+            <i class="fa-solid fa-plus text-[11px]"></i>
+          </button>
+          <button type="button" onclick="resetImageModalZoom(true)" class="ml-1 px-2.5 py-1 rounded-full bg-purple-600/90 hover:bg-purple-600 active:scale-95 text-[10px] font-bold flex items-center gap-1 transition-all cursor-pointer" title="รีเซ็ตขนาดปกติ">
+            <i class="fa-solid fa-rotate-left text-[9px]"></i> รีเซ็ต
+          </button>
+        </div>
+
+        <!-- Close Button -->
+        <button type="button" onclick="closeImageModal()" class="w-10 h-10 rounded-full bg-slate-900/80 hover:bg-slate-800 text-white text-xl flex items-center justify-center transition-all cursor-pointer shadow-xl border border-white/30 backdrop-blur-md shrink-0" title="ปิดหน้าต่าง">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
       
       <!-- Zoomable Image Container with Touch & Pinch Gestures -->
       <div id="imageZoomContainer" class="relative w-full flex items-center justify-center overflow-hidden rounded-2xl border border-white/20 bg-black/40 shadow-2xl select-none my-1" style="touch-action: none; min-height: 260px; max-height: 78vh;">
@@ -256,20 +273,6 @@
         </div>
 
         <img id="imageModalSrc" src="" alt="Zoom Image" class="max-w-full max-h-[78vh] object-contain cursor-grab active:cursor-grabbing will-change-transform" style="transform-origin: center center;">
-        
-        <!-- Floating Zoom Controls & Reset Pill (Always accessible on Mobile & Desktop) -->
-        <div class="absolute bottom-3 left-1/2 -translate-x-1/2 z-30 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-900/85 backdrop-blur-md border border-white/30 text-white shadow-xl text-xs font-semibold select-none">
-          <button type="button" onclick="zoomImageModal(-0.5)" class="w-7 h-7 rounded-full bg-white/10 hover:bg-white/25 active:scale-90 flex items-center justify-center transition-all cursor-pointer" title="ย่อรูป">
-            <i class="fa-solid fa-minus text-[11px]"></i>
-          </button>
-          <span id="imageModalZoomLevel" class="px-2 text-[11px] font-bold tracking-tight text-purple-200 min-w-[42px] text-center">100%</span>
-          <button type="button" onclick="zoomImageModal(0.5)" class="w-7 h-7 rounded-full bg-white/10 hover:bg-white/25 active:scale-90 flex items-center justify-center transition-all cursor-pointer" title="ขยายรูป">
-            <i class="fa-solid fa-plus text-[11px]"></i>
-          </button>
-          <button type="button" onclick="resetImageModalZoom(true)" class="ml-1 px-2.5 py-1 rounded-full bg-purple-600/90 hover:bg-purple-600 active:scale-95 text-[10px] font-bold flex items-center gap-1 transition-all cursor-pointer" title="รีเซ็ตขนาดปกติ">
-            <i class="fa-solid fa-rotate-left text-[9px]"></i> รีเซ็ต
-          </button>
-        </div>
 
         <!-- Hint Badge (auto fades out) -->
         <div id="imageZoomHint" class="absolute top-3 left-1/2 -translate-x-1/2 z-30 px-3 py-1 rounded-full bg-black/70 backdrop-blur-md border border-white/20 text-white/90 text-[11px] font-medium pointer-events-none transition-opacity duration-500">
@@ -2074,17 +2077,17 @@
             apiResetVotes: function() {
               callFetch('resetVotes', {});
             },
-            apiSubmitAnswer: function(username, activityId, answerText, imageFileObj) {
-              callFetch('submitAnswer', { username: username, activityId: activityId, answerText: answerText, imageFileObj: imageFileObj });
+            apiSubmitAnswer: function(username, activityId, answerText, imageFileObj, token) {
+              callFetch('submitAnswer', { username: username, activityId: activityId, answerText: answerText, imageFileObj: imageFileObj, sessionToken: token || sessionToken });
             },
-            apiGradeSubmission: function(submissionId, score, judgeNotes, judgeUsername, username, activityId) {
-              callFetch('gradeSubmission', { submissionId: submissionId, score: score, judgeNotes: judgeNotes, judgeUsername: judgeUsername, username: username, activityId: activityId });
+            apiGradeSubmission: function(submissionId, score, judgeNotes, judgeUsername, username, activityId, token) {
+              callFetch('gradeSubmission', { submissionId: submissionId, score: score, judgeNotes: judgeNotes, judgeUsername: judgeUsername, username: username, activityId: activityId, sessionToken: token || sessionToken });
             },
-            apiUpdateBonusPoints: function(carUsername, bonusPoints) {
-              callFetch('updateBonusPoints', { carUsername: carUsername, bonusPoints: bonusPoints });
+            apiUpdateBonusPoints: function(carUsername, bonusPoints, token) {
+              callFetch('updateBonusPoints', { carUsername: carUsername, bonusPoints: bonusPoints, sessionToken: token || sessionToken });
             },
-            apiSaveActivity: function(activityData) {
-              callFetch('saveActivity', { activityData: activityData });
+            apiSaveActivity: function(activityData, token) {
+              callFetch('saveActivity', { activityData: activityData, sessionToken: token || sessionToken });
             },
             apiUploadSolutionImage: function(activityId, imageFileObj, token) {
               callFetch('uploadSolutionImage', { activityId: activityId, imageFileObj: imageFileObj, sessionToken: token || sessionToken });
@@ -2092,32 +2095,32 @@
             apiDeleteSolutionImage: function(activityId, imageUrl, token) {
               callFetch('deleteSolutionImage', { activityId: activityId, imageUrl: imageUrl, sessionToken: token || sessionToken });
             },
-            apiDeleteActivity: function(activityId) {
-              callFetch('deleteActivity', { activityId: activityId });
+            apiDeleteActivity: function(activityId, token) {
+              callFetch('deleteActivity', { activityId: activityId, sessionToken: token || sessionToken });
             },
-            apiSaveUser: function(userData) {
-              callFetch('saveUser', { userData: userData });
+            apiSaveUser: function(userData, token) {
+              callFetch('saveUser', { userData: userData, sessionToken: token || sessionToken });
             },
-            apiDeleteUser: function(username) {
-              callFetch('deleteUser', { username: username });
+            apiDeleteUser: function(username, token) {
+              callFetch('deleteUser', { username: username, sessionToken: token || sessionToken });
             },
             apiSwapCars: function(usernameA, usernameB, token) {
               callFetch('swapCars', { usernameA: usernameA, usernameB: usernameB, sessionToken: token || sessionToken });
             },
-            apiUpdateSelfProfile: function(username, name, profileUrl) {
-              callFetch('updateSelfProfile', { username: username, name: name, profileUrl: profileUrl });
+            apiUpdateSelfProfile: function(username, name, profileUrl, token) {
+              callFetch('updateSelfProfile', { username: username, name: name, profileUrl: profileUrl, sessionToken: token || sessionToken });
             },
-            apiClearAllSubmissions: function() {
-              callFetch('clearAllSubmissions', {});
+            apiClearAllSubmissions: function(token) {
+              callFetch('clearAllSubmissions', { sessionToken: token || sessionToken });
             },
-            apiClearAllActivities: function() {
-              callFetch('clearAllActivities', {});
+            apiClearAllActivities: function(token) {
+              callFetch('clearAllActivities', { sessionToken: token || sessionToken });
             },
-            apiBatchGradeActivity: function(activityId, score) {
-              callFetch('batchGradeActivity', { activityId: activityId, score: score });
+            apiBatchGradeActivity: function(activityId, score, token) {
+              callFetch('batchGradeActivity', { activityId: activityId, score: score, sessionToken: token || sessionToken });
             },
-            apiResetCompetitorProfiles: function() {
-              callFetch('resetCompetitorProfiles', {});
+            apiResetCompetitorProfiles: function(token) {
+              callFetch('resetCompetitorProfiles', { sessionToken: token || sessionToken });
             },
             uploadFileToDrive: function(base64Data, fileName, mimeType) {
               callFetch('uploadFileToDrive', { base64Data: base64Data, fileName: fileName, mimeType: mimeType });
@@ -2280,6 +2283,26 @@
     var submissionsData = [];
     var votesData = [];
     var isScoresHidden = false;
+
+    // Activities Integrity & Cleaning Helper
+    function setActivitiesDataClean(rawList) {
+      if (!rawList) {
+        activitiesData = [];
+        return;
+      }
+      var list = rawList;
+      if (!Array.isArray(rawList) && typeof rawList === 'object') {
+        list = Object.values(rawList);
+      }
+      if (!Array.isArray(list)) {
+        activitiesData = [];
+        return;
+      }
+      activitiesData = list.filter(function(a) {
+        return a && typeof a === 'object' && a.id && String(a.id).trim().length > 0;
+      });
+    }
+    window.setActivitiesDataClean = setActivitiesDataClean;
 
     // Submissions Deduplication & Integrity Helper
     function setSubmissionsDataClean(rawList) {
@@ -2884,7 +2907,7 @@
     window.navigateImageModalGallery = navigateImageModalGallery;
 
     function openSolutionGalleryModal(actId, initialIndex) {
-      var act = activitiesData.find(function(a) { return a.id === actId; });
+      var act = (activitiesData || []).find(function(a) { return a && a.id === actId; });
       if (!act) return;
       var sImages = getActivitySolutionImages(act);
       if (sImages.length === 0) {
@@ -3668,7 +3691,7 @@
                 // Direct single-roundtrip login: use bundled appData if available!
                 if (res.appData) {
                   usersData = res.appData.users || [];
-                  activitiesData = res.appData.activities || [];
+                  setActivitiesDataClean(res.appData.activities);
                   setSubmissionsDataClean(res.appData.submissions || []);
                   votesData = res.appData.votes || [];
                   if (typeof res.appData.boobyRank !== 'undefined') boobyRank = Number(res.appData.boobyRank || 0);
@@ -4149,7 +4172,7 @@
               if (refreshIcon) refreshIcon.classList.remove('fa-spin');
               if (res.success) {
                 usersData = res.users;
-                activitiesData = res.activities;
+                setActivitiesDataClean(res.activities);
                 setSubmissionsDataClean(res.submissions);
                 if (typeof res.isScoresHidden !== 'undefined') {
                   isScoresHidden = res.isScoresHidden;
@@ -4288,16 +4311,17 @@
       // Calculate Stats
       var shouldHide = isScoresHidden && (currentUser && currentUser.role !== 'Admin');
 
-      var rcTotal = activitiesData.filter(function(a) { return a.category === 'RC'; }).length;
-      var baseTotal = activitiesData.filter(function(a) { return a.category === 'Base'; }).length;
-      var quizTotal = activitiesData.filter(function(a) { return a.category === 'Quiz'; }).length;
+      var validActs = (activitiesData || []).filter(function(a) { return a && a.id; });
+      var rcTotal = validActs.filter(function(a) { return a.category === 'RC'; }).length;
+      var baseTotal = validActs.filter(function(a) { return a.category === 'Base'; }).length;
+      var quizTotal = validActs.filter(function(a) { return a.category === 'Quiz'; }).length;
 
       var rcDone = 0, baseDone = 0, quizDone = 0;
       if (currentUser && currentUser.role === 'User') {
-        var userSubs = submissionsData.filter(function(s) { return s.username === currentUser.username; });
+        var userSubs = (submissionsData || []).filter(function(s) { return s && s.username === currentUser.username; });
         var userRcMap = {}, userBaseMap = {}, userQuizMap = {};
         userSubs.forEach(function(s) {
-          var act = activitiesData.find(function(a) { return a.id === s.activityId; });
+          var act = validActs.find(function(a) { return a.id === s.activityId; });
           var cat = act ? act.category : s.category;
           if (cat === 'RC') userRcMap[s.activityId] = true;
           if (cat === 'Base') userBaseMap[s.activityId] = true;
@@ -4307,10 +4331,10 @@
         baseDone = Object.keys(userBaseMap).length;
         quizDone = Object.keys(userQuizMap).length;
       } else {
-        var passedSubs = submissionsData.filter(function(s) { return s.status === 'passed'; });
+        var passedSubs = (submissionsData || []).filter(function(s) { return s && s.status === 'passed'; });
         var rcActMap = {}, baseActMap = {}, quizActMap = {};
         passedSubs.forEach(function(s) {
-          var act = activitiesData.find(function(a) { return a.id === s.activityId; });
+          var act = validActs.find(function(a) { return a.id === s.activityId; });
           var cat = act ? act.category : s.category;
           if (cat === 'RC') rcActMap[s.activityId] = true;
           if (cat === 'Base') baseActMap[s.activityId] = true;
@@ -4333,7 +4357,7 @@
       var myPassedSubs = getCompetitorPassedSubs(currentUser.username);
       var myEarnedScore = myPassedSubs.reduce(function(a, b) { return a + Number(b.score || 0); }, 0) + Number(currentUser.bonusPoints || 0);
 
-      var totalMaxPointsPossible = activitiesData.reduce(function(acc, act) {
+      var totalMaxPointsPossible = validActs.reduce(function(acc, act) {
         return acc + (Number(act.maxPoints) || 0);
       }, 0);
 
@@ -4532,7 +4556,7 @@
         adminResetBtn.style.display = (currentUser && currentUser.role === 'Admin') ? 'block' : 'none';
       }
 
-      var filtered = activitiesData || [];
+      var filtered = (activitiesData || []).filter(function(a) { return a && a.id; });
       if (userCategoryFilter !== 'ALL') {
         filtered = filtered.filter(function(a) { return a.category === userCategoryFilter; });
       }
@@ -4560,7 +4584,8 @@
       }
 
       container.innerHTML = filtered.map(function(act) {
-        var sub = submissionsData.find(function(s) { return s.username === currentUser.username && s.activityId === act.id; });
+        if (!act || !act.id) return '';
+        var sub = (submissionsData || []).find(function(s) { return s && s.username === currentUser.username && s.activityId === act.id; });
         
         var statusBadge = '';
         if (!currentUser || currentUser.role !== 'Admin') {
@@ -4753,7 +4778,7 @@
           if (s.status !== 'passed' && s.status !== 'failed') return false;
           if (s.judgeUsername === currentUser.username) return true;
 
-          var act = activitiesData.find(function(a) { return a.id === s.activityId; });
+          var act = (activitiesData || []).find(function(a) { return a && a.id === s.activityId; });
           if (act && act.category === 'Base') {
             var codeStr = String(currentUser.carCode || currentUser.username || '');
             var matches = codeStr.match(/\d+/);
@@ -4778,8 +4803,8 @@
         }
 
         tbody.innerHTML = subAdminSubs.map(function(s) {
-          var act = activitiesData.find(function(a) { return a.id === s.activityId; }) || {};
-          var userObj = usersData.find(function(u) { return u.username === s.username; }) || {};
+          var act = (activitiesData || []).find(function(a) { return a && a.id === s.activityId; }) || {};
+          var userObj = (usersData || []).find(function(u) { return u && u.username === s.username; }) || {};
           var timeStr = s.timestamp ? new Date(s.timestamp).toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' }) : '-';
           var teamName = userObj.name || s.username;
           var carCode = userObj.carCode || '-';
@@ -4807,8 +4832,8 @@
           '<th class="py-3 px-3.5 font-bold whitespace-nowrap text-center">คะแนนที่ให้</th>' +
           '</tr>';
 
-        var allJudgeGradingSubs = submissionsData.filter(function(s) {
-          return (s.category === 'Base' || s.category === 'Quiz') && (s.status === 'passed' || s.status === 'failed');
+        var allJudgeGradingSubs = (submissionsData || []).filter(function(s) {
+          return s && (s.category === 'Base' || s.category === 'Quiz') && (s.status === 'passed' || s.status === 'failed');
         });
 
         if (allJudgeGradingSubs.length === 0) {
@@ -4817,7 +4842,7 @@
         }
 
         tbody.innerHTML = allJudgeGradingSubs.map(function(s) {
-          var act = activitiesData.find(function(a) { return a.id === s.activityId; }) || {};
+          var act = (activitiesData || []).find(function(a) { return a && a.id === s.activityId; }) || {};
           var userObj = usersData.find(function(u) { return u.username === s.username; }) || {};
           var judgeObj = usersData.find(function(u) { return u.username === s.judgeUsername; }) || {};
           var judgeName = judgeObj.name || s.judgeUsername || 'กรรมการ';
@@ -4866,8 +4891,8 @@
       var shouldHide = isScoresHidden && currentUser.role !== 'Admin';
 
       tbody.innerHTML = displaySubmissions.map(function(s) {
-        var act = activitiesData.find(function(a) { return a.id === s.activityId; }) || {};
-        var userObj = usersData.find(function(u) { return u.username === s.username; }) || {};
+        var act = (activitiesData || []).find(function(a) { return a && a.id === s.activityId; }) || {};
+        var userObj = (usersData || []).find(function(u) { return u && u.username === s.username; }) || {};
 
         var resultTag = '';
         var scoreTag = '';
@@ -4913,7 +4938,7 @@
     }
 
     function processSubmissionData(actId, answerText, fileObj) {
-      var act = activitiesData.find(function(a) { return a.id === actId; });
+      var act = (activitiesData || []).find(function(a) { return a && a.id === actId; });
       if (!act) return;
 
       showLoading('กำลังบันทึกข้อมูลการส่งงาน...');
@@ -5062,7 +5087,7 @@
         return false;
       }
 
-      var act = activitiesData.find(function(a) { return a.id === actId; });
+      var act = (activitiesData || []).find(function(a) { return a && a.id === actId; });
       if (!act) return false;
 
       var answerText = '';
@@ -5477,13 +5502,13 @@
       }
       if (!select) return;
 
-      var availableActs = activitiesData;
+      var availableActs = (activitiesData || []).filter(function(a) { return a && a.id; });
 
       if (currentUser && currentUser.role === 'Sub-Admin') {
-        var baseActs = activitiesData.filter(function(a) { return a.category === 'Base'; });
+        var baseActs = availableActs.filter(function(a) { return a.category === 'Base'; });
         availableActs = filterActivitiesForSubAdmin(baseActs, currentUser);
       } else if (gradingCategoryFilter && gradingCategoryFilter !== 'ALL') {
-        availableActs = activitiesData.filter(function(a) { return a.category === gradingCategoryFilter; });
+        availableActs = availableActs.filter(function(a) { return a.category === gradingCategoryFilter; });
       }
 
       if (availableActs.length === 0) {
@@ -5504,7 +5529,7 @@
       }
 
       var actId = select.value;
-      var act = activitiesData.find(function(a) { return a.id === actId; });
+      var act = (activitiesData || []).find(function(a) { return a && a.id === actId; });
       if (!act) return;
 
       var defaultScore = act.maxPoints || 500;
@@ -5611,12 +5636,12 @@
       if (!select || !select.value) return;
 
       var actId = select.value;
-      var act = activitiesData.find(function(a) { return a.id === actId; });
+      var act = (activitiesData || []).find(function(a) { return a && a.id === actId; });
       var container = document.getElementById('gradingListContainer');
 
       if (!act || !container) return;
 
-      var competitors = usersData.filter(function(u) { return u.role === 'User'; });
+      var competitors = (usersData || []).filter(function(u) { return u && u.role === 'User'; });
 
       if (competitors.length === 0) {
         container.innerHTML = '<div class="text-center py-8 text-slate-400 glass-card">ไม่มีรายการผู้แข่งขันในระบบ</div>';
@@ -5637,7 +5662,8 @@
       }
 
       var listHTML = competitors.map(function(comp) {
-        var sub = submissionsData.find(function(s) { return s.username === comp.username && s.activityId === actId; });
+        if (!comp || !comp.username) return '';
+        var sub = (submissionsData || []).find(function(s) { return s && s.username === comp.username && s.activityId === actId; });
         
         var statusBadge = '<span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-500 border border-slate-200">ยังไม่ได้ให้คะแนน</span>';
         if (sub) {
@@ -5726,7 +5752,7 @@
         targetSub.judgeNotes = notes;
         targetSub.judgeUsername = currentUser.username;
       } else {
-        var act = activitiesData.find(function(a) { return String(a.id || '').trim() === aNorm; }) || {};
+        var act = (activitiesData || []).find(function(a) { return a && String(a.id || '').trim() === aNorm; }) || {};
         targetSub = {
           id: realSubId,
           timestamp: new Date().toISOString(),
@@ -5826,7 +5852,7 @@
         Swal.fire('ไม่มีสิทธิ์', 'เฉพาะผู้ดูแลระบบ (Admin) เท่านั้นที่สามารถจัดการภาพเฉลยได้', 'warning');
         return;
       }
-      var act = activitiesData.find(function(a) { return a.id === actId; });
+      var act = (activitiesData || []).find(function(a) { return a && a.id === actId; });
       if (!act) return;
 
       document.getElementById('quickSolutionActId').value = actId;
@@ -5986,7 +6012,7 @@
 
       if (isMockMode) {
         setTimeout(function() {
-          var act = activitiesData.find(function(a) { return a.id === actId; });
+          var act = (activitiesData || []).find(function(a) { return a && a.id === actId; });
           if (act) {
             if (!act.solutionImages) act.solutionImages = act.solutionImageUrl ? [act.solutionImageUrl] : [];
             compressedFiles.forEach(function(cf, i) {
@@ -6007,7 +6033,7 @@
             .withSuccessHandler(function(res) {
               hideLoading();
               if (res && res.success) {
-                var act = activitiesData.find(function(a) { return a.id === actId; });
+                var act = (activitiesData || []).find(function(a) { return a && a.id === actId; });
                 if (act) {
                   act.solutionImages = res.solutionImages || [];
                   act.solutionImageUrl = res.solutionImageUrl || '';
@@ -6032,7 +6058,7 @@
 
     function handleDeleteSingleSolutionImage(actId, imgUrl) {
       if (!ensureAuthenticated()) return;
-      var act = activitiesData.find(function(a) { return a.id === actId; });
+      var act = (activitiesData || []).find(function(a) { return a && a.id === actId; });
       if (!act) return;
 
       Swal.fire({
@@ -6083,18 +6109,22 @@
     }
     window.handleDeleteSingleSolutionImage = handleDeleteSingleSolutionImage;
 
-        function renderAdminActivitiesTable(filterText, filterCategory) {
+    function renderAdminActivitiesTable(filterText, filterCategory) {
       filterText = filterText || '';
       var tbody = document.getElementById('adminActivitiesTableBody');
       if (!tbody) return;
 
-      var filtered = activitiesData;
+      var filtered = (activitiesData || []).filter(function(a) { return a && a.id; });
       if (filterCategory) {
-        filtered = filtered.filter(function(a) { return a.category === filterCategory; });
+        filtered = filtered.filter(function(a) { return (a.category || '') === filterCategory; });
       }
       if (filterText) {
         var q = filterText.toLowerCase();
-        filtered = filtered.filter(function(a) { return a.title.toLowerCase().includes(q) || a.category.toLowerCase().includes(q) || a.id.toLowerCase().includes(q); });
+        filtered = filtered.filter(function(a) {
+          return (a.title || '').toLowerCase().includes(q) ||
+                 (a.category || '').toLowerCase().includes(q) ||
+                 (a.id || '').toLowerCase().includes(q);
+        });
       }
 
       if (filtered.length === 0) {
@@ -6179,11 +6209,11 @@
       var rc1 = null;
       if (Array.isArray(activitiesData)) {
         rc1 = activitiesData.find(function(a) {
-          return a.category === 'RC' && (String(a.title || '').includes('1') || String(a.id || '').endsWith('001') || String(a.id || '').endsWith('1')) && Array.isArray(a.autoAnswers) && a.autoAnswers.length > 0;
+          return a && a.category === 'RC' && (String(a.title || '').includes('1') || String(a.id || '').endsWith('001') || String(a.id || '').endsWith('1')) && Array.isArray(a.autoAnswers) && a.autoAnswers.length > 0;
         });
         if (!rc1) {
           rc1 = activitiesData.find(function(a) {
-            return a.category === 'RC' && Array.isArray(a.autoAnswers) && a.autoAnswers.length > 0;
+            return a && a.category === 'RC' && Array.isArray(a.autoAnswers) && a.autoAnswers.length > 0;
           });
         }
       }
@@ -6298,7 +6328,11 @@
       var prevContainer = document.getElementById('actFormImagePreviewContainer');
 
       if (actId) {
-        var act = activitiesData.find(function(a) { return a.id === actId; });
+        var act = (activitiesData || []).find(function(a) { return a && a.id === actId; });
+        if (!act) {
+          Swal.fire('ข้อผิดพลาด', 'ไม่พบข้อมูลภารกิจรหัส ' + actId, 'error');
+          return;
+        }
         document.getElementById('modalActivityTitle').innerHTML = '<i class="fa-solid fa-pen-to-square text-purple-600"></i> แก้ไขภารกิจ (' + actId + ')';
         document.getElementById('actFormCategory').value = act.category;
         document.getElementById('actFormScoringType').value = act.scoringType;
@@ -6376,7 +6410,8 @@
         showLoading('กำลังอัปโหลดรูปภาพภารกิจ...');
       }
 
-      var idx = activitiesData.findIndex(function(a) { return a.id === actData.id; });
+      if (!Array.isArray(activitiesData)) activitiesData = [];
+      var idx = activitiesData.findIndex(function(a) { return a && a.id === actData.id; });
       var imgUrl = actData.imageFileObj ? 'https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?auto=format&fit=crop&w=600&q=80' : actData.imageUrl;
 
       var newAct = {
@@ -6554,7 +6589,7 @@
         cancelButtonText: 'ยกเลิก'
       }).then(function(result) {
         if (result.isConfirmed) {
-          activitiesData = activitiesData.filter(function(a) { return a.id !== id; });
+          activitiesData = (activitiesData || []).filter(function(a) { return a && a.id !== id; });
           renderAdminActivitiesTable();
           renderUserMissionsGrid();
           renderUserDashboard();
@@ -7530,9 +7565,9 @@
       var tbody = document.getElementById('analyticsMatrixTbody');
       if (!thead || !tbody) return;
 
-      var filteredActs = activitiesData;
+      var filteredActs = (activitiesData || []).filter(function(a) { return a && a.id; });
       if (analyticsMatrixCategory && analyticsMatrixCategory !== 'ALL') {
-        filteredActs = activitiesData.filter(function(a) { return a.category === analyticsMatrixCategory; });
+        filteredActs = filteredActs.filter(function(a) { return a.category === analyticsMatrixCategory; });
       }
 
       if (filteredActs.length === 0) {
@@ -7623,6 +7658,7 @@
     function renderAnalyticsCharts() {
       var competitors = usersData.filter(function(u) { return u.role === 'User'; });
       var totalCompetitors = competitors.length || 1;
+      var validActs = (activitiesData || []).filter(function(a) { return a && a.id; });
 
       var competitorStats = competitors.map(function(comp) {
         var mySubs = getCompetitorPassedSubs(comp.username);
@@ -7640,7 +7676,7 @@
       var sumAllScores = competitorStats.reduce(function(acc, curr) { return acc + curr.totalScore; }, 0);
       var avgScore = Math.round(sumAllScores / totalCompetitors);
 
-      var totalMissionsPossible = activitiesData.length * totalCompetitors;
+      var totalMissionsPossible = validActs.length * totalCompetitors;
       var totalPassedSubs = submissionsData.filter(function(s) { return s.status === 'passed'; }).length;
       var completionRate = totalMissionsPossible > 0 ? ((totalPassedSubs / totalMissionsPossible) * 100).toFixed(1) : '0';
 
@@ -7658,7 +7694,7 @@
       renderAnalyticsScoreMatrix();
 
       // 2. Render Base Activities Score Breakdown Bar Chart
-      var baseActs = activitiesData.filter(function(a) { return a.category === 'Base'; });
+      var baseActs = validActs.filter(function(a) { return a.category === 'Base'; });
       var ctxBase = document.getElementById('chartBaseBreakdown');
       if (ctxBase && baseActs.length > 0) {
         if (chartBaseBreakdownInstance) chartBaseBreakdownInstance.destroy();
@@ -7703,7 +7739,7 @@
       }
 
       // 3. Render Quiz Games Score Breakdown Bar Chart
-      var quizActs = activitiesData.filter(function(a) { return a.category === 'Quiz'; });
+      var quizActs = validActs.filter(function(a) { return a.category === 'Quiz'; });
       var ctxQuiz = document.getElementById('chartQuizBreakdown');
       if (ctxQuiz && quizActs.length > 0) {
         if (chartQuizBreakdownInstance) chartQuizBreakdownInstance.destroy();
@@ -7878,7 +7914,7 @@
           var baseDone = mySubs.filter(function(s) { return s.category === 'Base'; }).length;
           var quizDone = mySubs.filter(function(s) { return s.category === 'Quiz'; }).length;
           
-          var totalActs = activitiesData.length || 1;
+          var totalActs = validActs.length || 1;
           var pRate = Math.round((mySubs.length / totalActs) * 100);
 
           return '<tr class="hover:bg-slate-50 transition-colors">' +
@@ -10329,9 +10365,9 @@
             .withSuccessHandler(function(res) {
               resetRefreshBtn();
               if (res && res.success) {
-                usersData = res.users;
-                activitiesData = res.activities;
-                setSubmissionsDataClean(res.submissions);
+                if (res.users) usersData = res.users;
+                if (res.activities) setActivitiesDataClean(res.activities);
+                if (res.submissions) setSubmissionsDataClean(res.submissions);
                 if (typeof res.isScoresHidden !== 'undefined') isScoresHidden = res.isScoresHidden;
                 if (typeof res.isVotingOpen !== 'undefined') isVotingOpen = res.isVotingOpen;
                 if (typeof res.boobyRank !== 'undefined') boobyRank = Number(res.boobyRank || 0);
@@ -10397,6 +10433,9 @@
                 currentUser.members = me.members;
               }
             }
+          }
+          if (live.activities) {
+            setActivitiesDataClean(live.activities);
           }
           if (live.submissions && Array.isArray(live.submissions)) {
             setSubmissionsDataClean(live.submissions);
