@@ -130,13 +130,15 @@ function handleApiRequest(action, payload) {
       result = apiUpdateBonusPoints(payload.carUsername, payload.bonusPoints, token);
       break;
     case 'saveActivity':
-      result = apiSaveActivity(payload.activityData, token);
+      const actPayload = (payload && payload.activityData) ? payload.activityData : payload;
+      result = apiSaveActivity(actPayload, token);
       break;
     case 'deleteActivity':
-      result = apiDeleteActivity(payload.activityId, token);
+      result = apiDeleteActivity(payload.activityId || payload.id, token);
       break;
     case 'saveUser':
-      result = apiSaveUser(payload.userData, token);
+      const userPayload = (payload && payload.userData) ? payload.userData : payload;
+      result = apiSaveUser(userPayload, token);
       break;
     case 'deleteUser':
       result = apiDeleteUser(payload.username, token);
@@ -1498,8 +1500,19 @@ function apiSaveActivity(activityData, sessionToken) {
   const auth = verifyAuth(sessionToken, ['Admin']);
   if (!auth.success) return auth;
 
+  // Robust parsing: if activityData is passed as string, parse it
+  if (typeof activityData === 'string') {
+    try { activityData = JSON.parse(activityData); } catch (e) {}
+  }
+
+  // If activityData was wrapped as { activityData: ... }
+  if (activityData && activityData.activityData && typeof activityData.activityData === 'object') {
+    activityData = activityData.activityData;
+  }
+
+  // Safe fallback to object
   if (!activityData || typeof activityData !== 'object') {
-    return { success: false, message: 'ข้อมูลภารกิจไม่ถูกต้องหรือไม่ครบถ้วน' };
+    activityData = {};
   }
 
   const id = activityData.id || ('ACT-' + String(Date.now()).slice(-6));

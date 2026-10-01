@@ -2142,7 +2142,8 @@
               payload.base64Data ||
               payload.imageBase64 ||
               (payload.userData && payload.userData.imageFileObj && payload.userData.imageFileObj.base64) ||
-              (payload.activityData && payload.activityData.imageFileObj && payload.activityData.imageFileObj.base64)
+              (payload.activityData && payload.activityData.imageFileObj && payload.activityData.imageFileObj.base64) ||
+              (payload.activityData && payload.activityData.solutionImageFileObj && payload.activityData.solutionImageFileObj.base64)
             );
 
             // Timeout durations: 90s for image uploads, 60s for scoring, 45s for standard requests
@@ -6405,7 +6406,10 @@
     function processActivitySave(actData) {
       if (!ensureAuthenticated()) return;
 
-      var hasImageUpload = !!(actData.imageFileObj && actData.imageFileObj.base64);
+      var hasImageUpload = !!(
+        (actData.imageFileObj && actData.imageFileObj.base64) ||
+        (actData.solutionImageFileObj && actData.solutionImageFileObj.base64)
+      );
       if (hasImageUpload) {
         showLoading('กำลังอัปโหลดรูปภาพภารกิจ...');
       }
