@@ -1307,7 +1307,7 @@ function apiSubmitAnswer(username, activityId, answerText, imageFileObj, session
   } else {
     status = 'pending';
     score = 0;
-    judgeNotes = 'รอการตรวจและให้คะแนนจากกรรมการ';
+    judgeNotes = targetAct.scoringType === 'MANUAL_TEXT' ? 'ส่งคำตอบแล้ว รอการตรวจจากกรรมการ' : 'รอการตรวจและให้คะแนนจากกรรมการ';
   }
 
   const subId = 'SUB-' + Date.now();
