@@ -3968,9 +3968,14 @@
       var wrapper = document.getElementById('mainAppWrapper');
       if (wrapper) wrapper.style.display = 'flex';
 
-      // Auto-route based on role: Sub-Admin (กรรมการประจำฐาน) opens Grading view automatically
+      // Auto-route based on role:
+      // - Sub-Admin (กรรมการประจำฐาน) opens Grading view automatically
+      // - User (ทีมผู้เข้าแข่งขัน) opens UserMissions (หน้ารายการภารกิจทั้งหมด) as requested
+      // - Admin opens UserDashboard (แดชบอร์ดภาพรวม)
       if (currentUser && currentUser.role === 'Sub-Admin') {
         switchView('Grading');
+      } else if (currentUser && currentUser.role === 'User') {
+        switchViewFilter('ALL');
       } else {
         switchView('UserDashboard');
       }
@@ -3982,6 +3987,8 @@
         if (currentUser && currentUser.role === 'Sub-Admin') {
           renderGradingSelectOptions();
           renderGradingList();
+        } else if (currentUser && currentUser.role === 'User') {
+          renderUserMissionsGrid();
         } else {
           renderUserDashboard();
           renderAdminUsersTable();
@@ -4227,19 +4234,14 @@
     function switchViewFilter(cat) {
       switchView('UserMissions');
       filterUserCategory(cat);
-      var title = document.getElementById('userMissionsHeaderTitle');
       if (cat === 'RC') {
         updateActiveSidebarItem('sideNavRC');
-        if (title) title.innerHTML = '<i class="fa-solid fa-flag text-purple-600"></i> ภารกิจจุด RC';
       } else if (cat === 'Base') {
         updateActiveSidebarItem('sideNavBase');
-        if (title) title.innerHTML = '<i class="fa-solid fa-puzzle-piece text-purple-600"></i> ภารกิจกิจกรรมฐาน';
       } else if (cat === 'Quiz') {
         updateActiveSidebarItem('sideNavQuiz');
-        if (title) title.innerHTML = '<i class="fa-solid fa-gamepad text-purple-600"></i> ภารกิจเกมส์คำถาม';
       } else {
         updateActiveSidebarItem('sideNavDashboard');
-        if (title) title.innerHTML = '<i class="fa-solid fa-list-check text-purple-600"></i> รายการภารกิจและกิจกรรมทั้งหมด';
       }
       if ((!activitiesData || activitiesData.length === 0) && currentUser) {
         loadAppData(true);
@@ -4776,6 +4778,21 @@
           else btn.className = 'px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-xl text-slate-600 hover:text-purple-600 transition-all font-bold text-xs sm:text-sm';
         }
       });
+
+      // Update header title to match selected tab
+      var title = document.getElementById('userMissionsHeaderTitle');
+      if (title) {
+        if (cat === 'RC') {
+          title.innerHTML = '<i class="fa-solid fa-flag text-purple-600"></i> ภารกิจจุด RC';
+        } else if (cat === 'Base') {
+          title.innerHTML = '<i class="fa-solid fa-puzzle-piece text-purple-600"></i> ภารกิจกิจกรรมฐาน';
+        } else if (cat === 'Quiz') {
+          title.innerHTML = '<i class="fa-solid fa-gamepad text-purple-600"></i> ภารกิจเกมส์คำถาม';
+        } else {
+          title.innerHTML = '<i class="fa-solid fa-list-check text-purple-600"></i> รายการภารกิจและกิจกรรมทั้งหมด';
+        }
+      }
+
       renderUserMissionsGrid();
     }
 
