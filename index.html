@@ -2881,52 +2881,44 @@
     var currentGalleryImages = [];
     var currentGalleryIndex = 0;
     var currentGalleryCaption = '';
+    var currentGalleryItems = [];
 
-    function openImageModal(src, caption, userOrMembers, galleryImages, galleryIndex) {
-      if (!src && (!galleryImages || galleryImages.length === 0)) return;
-
-      currentGalleryImages = (Array.isArray(galleryImages) && galleryImages.length > 0) ? galleryImages : (src ? [src] : []);
-      currentGalleryIndex = (typeof galleryIndex === 'number' && galleryIndex >= 0 && galleryIndex < currentGalleryImages.length) ? galleryIndex : 0;
-      currentGalleryCaption = caption || '';
-
-      var activeSrc = currentGalleryImages[currentGalleryIndex] || src;
-      var imgEl = document.getElementById('imageModalSrc');
-      resetImageModalZoom(false);
-      var hint = document.getElementById('imageZoomHint');
-      if (hint) {
-        hint.style.opacity = '1';
-        setTimeout(function() {
-          if (hint) hint.style.opacity = '0';
-        }, 2800);
-      }
-
-      // Toggle Gallery Controls
-      var prevBtn = document.getElementById('imageModalPrevBtn');
-      var nextBtn = document.getElementById('imageModalNextBtn');
-      var counterEl = document.getElementById('imageModalGalleryCounter');
-
-      if (currentGalleryImages.length > 1) {
-        if (prevBtn) prevBtn.style.display = 'flex';
-        if (nextBtn) nextBtn.style.display = 'flex';
-        if (counterEl) {
-          counterEl.style.display = 'block';
-          counterEl.innerText = (currentGalleryIndex + 1) + ' / ' + currentGalleryImages.length;
-        }
-      } else {
-        if (prevBtn) prevBtn.style.display = 'none';
-        if (nextBtn) nextBtn.style.display = 'none';
-        if (counterEl) counterEl.style.display = 'none';
-      }
-
+    function renderImageModalDetails(userOrMembers) {
       var capEl = document.getElementById('imageModalCaption');
       var cardEl = document.getElementById('imageModalMembersCard');
       var teamNameEl = document.getElementById('imageModalTeamName');
       var countBadgeEl = document.getElementById('imageModalMemberCountBadge');
       var listEl = document.getElementById('imageModalMembersList');
+      var counterEl = document.getElementById('imageModalGalleryCounter');
 
-      if (imgEl) imgEl.src = activeSrc;
+      if (counterEl) {
+        if (currentGalleryImages.length > 1) {
+          counterEl.style.display = 'block';
+          counterEl.innerText = (currentGalleryIndex + 1) + ' / ' + currentGalleryImages.length;
+        } else {
+          counterEl.style.display = 'none';
+        }
+      }
 
-      // Detect competitor car and get member list
+      // 1. Check if custom gallery items exist (e.g. competitor submissions gallery)
+      if (currentGalleryItems && currentGalleryItems.length > 0 && currentGalleryItems[currentGalleryIndex]) {
+        var item = currentGalleryItems[currentGalleryIndex];
+        if (cardEl) cardEl.style.display = 'none';
+        if (capEl) {
+          capEl.style.display = 'block';
+          if (item.captionHTML) {
+            capEl.innerHTML = item.captionHTML + '<div class="mt-1.5 text-[11px] text-slate-400 font-medium">ภาพที่ ' + (currentGalleryIndex + 1) + ' จากทั้งหมด ' + currentGalleryImages.length + ' ภาพ (กดลูกศร ◀ ▶ เพื่อเลื่อนดูผลงานของแต่ละทีม)</div>';
+          } else {
+            capEl.innerText = (item.caption || currentGalleryCaption || '') + ' (ภาพที่ ' + (currentGalleryIndex + 1) + ' จาก ' + currentGalleryImages.length + ' ภาพ)';
+          }
+        }
+        return;
+      }
+
+      var activeSrc = currentGalleryImages[currentGalleryIndex] || '';
+      var caption = currentGalleryCaption;
+
+      // 2. Detect competitor car and get member list
       var user = null;
       var members = [];
 
@@ -3003,6 +2995,42 @@
           capEl.innerText = (caption || '') + extraCount;
         }
       }
+    }
+
+    function openImageModal(src, caption, userOrMembers, galleryImages, galleryIndex, galleryItems) {
+      if (!src && (!galleryImages || galleryImages.length === 0)) return;
+
+      currentGalleryImages = (Array.isArray(galleryImages) && galleryImages.length > 0) ? galleryImages : (src ? [src] : []);
+      currentGalleryIndex = (typeof galleryIndex === 'number' && galleryIndex >= 0 && galleryIndex < currentGalleryImages.length) ? galleryIndex : 0;
+      currentGalleryCaption = caption || '';
+      currentGalleryItems = (Array.isArray(galleryItems) && galleryItems.length > 0) ? galleryItems : [];
+
+      var activeSrc = currentGalleryImages[currentGalleryIndex] || src;
+      var imgEl = document.getElementById('imageModalSrc');
+      resetImageModalZoom(false);
+      var hint = document.getElementById('imageZoomHint');
+      if (hint) {
+        hint.style.opacity = '1';
+        setTimeout(function() {
+          if (hint) hint.style.opacity = '0';
+        }, 2800);
+      }
+
+      // Toggle Gallery Controls
+      var prevBtn = document.getElementById('imageModalPrevBtn');
+      var nextBtn = document.getElementById('imageModalNextBtn');
+
+      if (currentGalleryImages.length > 1) {
+        if (prevBtn) prevBtn.style.display = 'flex';
+        if (nextBtn) nextBtn.style.display = 'flex';
+      } else {
+        if (prevBtn) prevBtn.style.display = 'none';
+        if (nextBtn) nextBtn.style.display = 'none';
+      }
+
+      if (imgEl) imgEl.src = activeSrc;
+
+      renderImageModalDetails(userOrMembers);
 
       var modal = document.getElementById('imageModal');
       if (modal) modal.style.display = 'flex';
@@ -3018,15 +3046,7 @@
       if (imgEl) imgEl.src = newSrc;
       resetImageModalZoom(false);
 
-      var counterEl = document.getElementById('imageModalGalleryCounter');
-      if (counterEl) {
-        counterEl.innerText = (currentGalleryIndex + 1) + ' / ' + currentGalleryImages.length;
-      }
-
-      var capEl = document.getElementById('imageModalCaption');
-      if (capEl && capEl.style.display !== 'none') {
-        capEl.innerText = (currentGalleryCaption || '') + ' (ภาพที่ ' + (currentGalleryIndex + 1) + ' จาก ' + currentGalleryImages.length + ' ภาพ)';
-      }
+      renderImageModalDetails();
     }
     window.navigateImageModalGallery = navigateImageModalGallery;
 
@@ -3041,6 +3061,74 @@
       openImageModal(sImages[initialIndex || 0], '🎯 ภาพเฉลย: ' + act.title, null, sImages, initialIndex || 0);
     }
     window.openSolutionGalleryModal = openSolutionGalleryModal;
+
+    function openMissionSubmissionsGallery(actId) {
+      var act = (activitiesData || []).find(function(a) { return a && String(a.id || '').trim() === String(actId || '').trim(); });
+      if (!act) return;
+
+      var actIdNorm = String(act.id || '').trim();
+      var submittedSubs = (submissionsData || []).filter(function(s) {
+        return s && String(s.activityId || '').trim() === actIdNorm && s.imageUrl && s.imageUrl.trim();
+      });
+
+      if (submittedSubs.length === 0) {
+        Swal.fire({
+          icon: 'info',
+          title: 'ยังไม่มีรูปภาพ',
+          text: 'ยังไม่มีผู้เข้าแข่งขันส่งรูปภาพสำหรับภารกิจ "' + (act.title || act.id) + '"',
+          confirmButtonColor: '#7c3aed'
+        });
+        return;
+      }
+
+      var galleryImages = [];
+      var galleryItems = [];
+
+      submittedSubs.forEach(function(sub) {
+        var userObj = (usersData || []).find(function(u) { return u && u.username === sub.username; }) || {};
+        var teamName = userObj.name || sub.username || 'ผู้เข้าแข่งขัน';
+        var carCode = userObj.carCode || sub.username;
+        var carCol = userObj.carColor || sub.carColor || '';
+        var carColName = getCarColorThaiName(carCol) || 'ไม่ระบุสี';
+        var timeStr = sub.timestamp ? new Date(sub.timestamp).toLocaleString('th-TH') : '-';
+
+        var isPassed = (sub.status === 'passed');
+        var isPending = (!sub.status || sub.status === 'pending');
+        var statusBadge = '';
+        if (isPassed) {
+          statusBadge = '<span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-400/40 inline-flex items-center gap-1"><i class="fa-solid fa-circle-check text-emerald-400"></i> ตรวจแล้ว (' + (sub.score !== undefined ? sub.score : 0) + ' คะแนน)</span>';
+        } else if (isPending) {
+          statusBadge = '<span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-blue-500/20 text-blue-300 border border-blue-400/40 inline-flex items-center gap-1"><i class="fa-solid fa-hourglass-half text-blue-400"></i> รอตรวจ</span>';
+        } else {
+          statusBadge = '<span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-rose-500/20 text-rose-300 border border-rose-400/40 inline-flex items-center gap-1">0 คะแนน</span>';
+        }
+
+        var captionHTML = '<div class="space-y-2 max-w-xl mx-auto text-center">' +
+          '<div class="flex items-center justify-center gap-2 flex-wrap">' +
+            '<span class="font-black text-white text-sm sm:text-base tracking-wide">' + escapeHTML(teamName) + '</span>' +
+            '<span class="px-2.5 py-0.5 rounded-full text-[11px] font-mono font-bold bg-white/10 text-purple-200 border border-white/20">' + escapeHTML(carCode) + '</span>' +
+            '<span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold ' + getCarColorStyle(carCol) + '">' + escapeHTML(carColName) + '</span>' +
+            statusBadge +
+          '</div>' +
+          '<div class="text-[11px] text-slate-300 flex items-center justify-center gap-3 flex-wrap">' +
+            '<span><i class="fa-solid fa-flag-checkered text-amber-400 mr-1"></i>' + escapeHTML(act.title || act.id) + '</span>' +
+            '<span><i class="fa-regular fa-clock text-slate-400 mr-1"></i>ส่งเมื่อ: ' + timeStr + '</span>' +
+          '</div>' +
+          (sub.answerText && sub.answerText !== '[ประเมินโดยกรรมการ]' ? '<div class="text-xs text-purple-100 font-medium bg-white/10 py-1.5 px-3 rounded-xl border border-white/15 max-w-md mx-auto whitespace-pre-wrap text-left"><i class="fa-regular fa-message mr-1 text-purple-300"></i>' + escapeHTML(sub.answerText) + '</div>' : '') +
+          '</div>';
+
+        galleryImages.push(sub.imageUrl.trim());
+        galleryItems.push({
+          src: sub.imageUrl.trim(),
+          captionHTML: captionHTML,
+          user: userObj,
+          sub: sub
+        });
+      });
+
+      openImageModal(galleryImages[0], '', null, galleryImages, 0, galleryItems);
+    }
+    window.openMissionSubmissionsGallery = openMissionSubmissionsGallery;
 
     // Keyboard navigation (Left / Right arrow) for gallery
     window.addEventListener('keydown', function(e) {
@@ -4754,10 +4842,28 @@
 
         var adminSolutionHTML = '';
         if (currentUser && currentUser.role === 'Admin') {
+          var actIdNorm = String(act.id || '').trim();
+          var submittedImagesSubs = (submissionsData || []).filter(function(s) {
+            return s && String(s.activityId || '').trim() === actIdNorm && s.imageUrl && s.imageUrl.trim();
+          });
+          var subCount = submittedImagesSubs.length;
+
+          var competitorImagesBtn = '';
+          if (subCount > 0) {
+            competitorImagesBtn = '<button type="button" onclick="openMissionSubmissionsGallery(\'' + act.id + '\')" class="w-full py-2.5 px-3 rounded-2xl bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-700 hover:from-indigo-700 hover:to-purple-700 text-white font-black text-xs shadow-md shadow-indigo-500/25 flex items-center justify-center gap-1.5 transition-all active:scale-95 cursor-pointer">' +
+              '<i class="fa-solid fa-camera-retro"></i> ดูรูปภาพที่ผู้แข่งขันส่งมา (' + subCount + ' ภาพ)' +
+              '</button>';
+          } else {
+            competitorImagesBtn = '<button type="button" onclick="openMissionSubmissionsGallery(\'' + act.id + '\')" class="w-full py-2 px-3 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-500 font-bold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer">' +
+              '<i class="fa-solid fa-camera text-slate-400"></i> ยังไม่มีรูปภาพที่ส่งมา (0 ภาพ)' +
+              '</button>';
+          }
+
           var sImages = getActivitySolutionImages(act);
           if (sImages.length > 0) {
             var badgeCount = sImages.length > 1 ? ' (' + sImages.length + ' ภาพ)' : '';
-            adminSolutionHTML = '<div class="mt-3 pt-3 border-t border-amber-200/70 flex flex-col gap-1.5">' +
+            adminSolutionHTML = '<div class="mt-3 pt-3 border-t border-slate-200/80 flex flex-col gap-2">' +
+              competitorImagesBtn +
               '<button type="button" onclick="openSolutionGalleryModal(\'' + act.id + '\', 0)" class="w-full py-2.5 px-3 rounded-2xl bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 hover:from-amber-600 hover:to-orange-600 text-white font-black text-xs shadow-md shadow-amber-500/25 flex items-center justify-center gap-1.5 transition-all active:scale-95 cursor-pointer">' +
               '<i class="fa-solid fa-key"></i> แสดงภาพเฉลย' + badgeCount + ' (เฉพาะ Admin)' +
               '</button>' +
@@ -4766,7 +4872,8 @@
               '</button>' +
               '</div>';
           } else {
-            adminSolutionHTML = '<div class="mt-3 pt-3 border-t border-slate-100">' +
+            adminSolutionHTML = '<div class="mt-3 pt-3 border-t border-slate-200/80 flex flex-col gap-2">' +
+              competitorImagesBtn +
               '<button type="button" onclick="openQuickSolutionModal(\'' + act.id + '\')" class="w-full py-2 px-3 rounded-2xl bg-amber-50/90 hover:bg-amber-100 text-amber-800 border border-dashed border-amber-300 font-bold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer active:scale-95">' +
               '<i class="fa-solid fa-cloud-arrow-up text-amber-600"></i> + เพิ่มภาพเฉลย (Admin)' +
               '</button>' +
