@@ -53,6 +53,17 @@ function doGet(e) {
 }
 
 /**
+ * Normalizes answer text by removing all whitespace characters (spaces, tabs, newlines, non-breaking spaces)
+ * and converting to lowercase for robust, whitespace-agnostic comparison.
+ */
+function normalizeAnswerText(str) {
+  if (str === null || str === undefined) return '';
+  return String(str)
+    .replace(/[\s\u00A0\u200B\uFEFF]/g, '')
+    .toLowerCase();
+}
+
+/**
  * REST API POST Endpoint (Receives requests from GitHub Pages or External Web Clients)
  */
 function doPost(e) {
@@ -170,6 +181,9 @@ function handleApiRequest(action, payload) {
     case 'deleteSolutionImage':
       result = apiDeleteSolutionImage(payload.activityId, payload.imageUrl, token);
       break;
+    case 'regradeAutoSubmissions':
+      result = apiRegradeAutoSubmissions(token);
+      break;
     default:
       result = { success: false, message: 'Unknown API action: ' + action };
       break;
@@ -179,7 +193,7 @@ function handleApiRequest(action, payload) {
   // (Routine actions like submitAnswer, gradeSubmission, updateBonusPoints, castVote, saveUser, deleteUser, saveActivity, deleteActivity, resetCompetitorProfiles update the cache in-place!)
   const structuralActions = [
     'setBoobyRank', 'setScoreVisibility', 'setVotingStatus', 'setVoteVisibility',
-    'resetVotes', 'batchGradeActivity', 'swapCars', 'updateSelfProfile', 'clearAllSubmissions', 'clearAllActivities'
+    'resetVotes', 'batchGradeActivity', 'regradeAutoSubmissions', 'swapCars', 'updateSelfProfile', 'clearAllSubmissions', 'clearAllActivities'
   ];
   if (structuralActions.indexOf(action) !== -1 && result && result.success !== false) {
     invalidateGlobalCache();
@@ -1258,6 +1272,7 @@ function apiSubmitAnswer(username, activityId, answerText, imageFileObj, session
 
   if (targetAct.scoringType === 'AUTO') {
     const cleanUserAnswer = (answerText || '').toString().trim().toLowerCase();
+    const normUserAnswer = normalizeAnswerText(answerText);
     let isCorrect = false;
     let earnedPoints = 0;
 
@@ -1280,11 +1295,12 @@ function apiSubmitAnswer(username, activityId, answerText, imageFileObj, session
       for (let r = 0; r < autoAnsRules.length; r++) {
         const rule = autoAnsRules[r];
         const ruleAns = (rule.answer || '').toString().trim().toLowerCase();
+        const normRuleAns = normalizeAnswerText(rule.answer);
         const ruleColor = (rule.color || 'Default').toString().trim().toLowerCase();
         const uColor = (userColor || 'Default').toString().trim().toLowerCase();
         const matchColor = (ruleColor === uColor || ruleColor === 'default' || ruleColor === 'all' || normColor(ruleColor) === normColor(uColor) || normColor(ruleColor) === 'default');
 
-        if (cleanUserAnswer === ruleAns && matchColor) {
+        if ((cleanUserAnswer === ruleAns || normUserAnswer === normRuleAns) && matchColor) {
           isCorrect = true;
           earnedPoints = Number(rule.points) !== undefined ? Number(rule.points) : targetAct.maxPoints;
           break;
@@ -1294,7 +1310,8 @@ function apiSubmitAnswer(username, activityId, answerText, imageFileObj, session
       const colorRule = autoAnsRules[userColor] || autoAnsRules[normColor(userColor)] || autoAnsRules['default'] || autoAnsRules['Default'];
       if (colorRule && colorRule.answer) {
         const targetAnswer = colorRule.answer.toString().trim().toLowerCase();
-        if (cleanUserAnswer === targetAnswer) {
+        const normTargetAnswer = normalizeAnswerText(colorRule.answer);
+        if (cleanUserAnswer === targetAnswer || normUserAnswer === normTargetAnswer) {
           isCorrect = true;
           earnedPoints = Number(colorRule.points) !== undefined ? Number(colorRule.points) : targetAct.maxPoints;
         }
@@ -1312,6 +1329,7 @@ function apiSubmitAnswer(username, activityId, answerText, imageFileObj, session
     }
   } else if (targetAct.scoringType === 'AUTO_KEYWORDS') {
     const cleanUserAnswer = (answerText || '').toString().trim().toLowerCase();
+    const normUserAnswer = normalizeAnswerText(answerText);
     let earnedPoints = 0;
     const matchedKeywords = [];
     const seenKw = {};
@@ -1336,15 +1354,17 @@ function apiSubmitAnswer(username, activityId, answerText, imageFileObj, session
         const rule = autoAnsRules[r];
         const rawAns = (rule.answer || '').toString().trim();
         const rAns = rawAns.toLowerCase();
+        const normRAns = normalizeAnswerText(rawAns);
         if (!rAns) continue;
 
         const ruleColor = (rule.color || 'Default').toString().trim().toLowerCase();
         const uColor = (userColor || 'Default').toString().trim().toLowerCase();
         const matchColor = (ruleColor === uColor || ruleColor === 'default' || ruleColor === 'all' || normColor(ruleColor) === normColor(uColor) || normColor(ruleColor) === 'default');
 
-        if (matchColor && cleanUserAnswer.includes(rAns)) {
-          if (!seenKw[rAns]) {
+        if (matchColor && (cleanUserAnswer.includes(rAns) || (normRAns && normUserAnswer.includes(normRAns)))) {
+          if (!seenKw[rAns] && !seenKw[normRAns]) {
             seenKw[rAns] = true;
+            seenKw[normRAns] = true;
             const pts = rule.points !== undefined ? Number(rule.points) : targetAct.maxPoints;
             earnedPoints += pts;
             matchedKeywords.push(rawAns + ' (' + (pts >= 0 ? '+' : '') + pts + ')');
@@ -2318,4 +2338,197 @@ function apiResetCompetitorProfiles(sessionToken) {
 
   return result;
 }
+
+/**
+ * API: Re-evaluates all submissions for AUTO and AUTO_KEYWORDS activities
+ * using the enhanced whitespace-agnostic comparison logic.
+ * Updates scores and marks passed submissions automatically.
+ */
+function apiRegradeAutoSubmissions(sessionToken) {
+  const auth = verifyAuth(sessionToken, ['Admin']);
+  if (!auth.success) return auth;
+
+  const result = withLock(function() {
+    const ss = getSpreadsheet();
+    const subSheet = getOrCreateSheet(ss, SHEET_NAMES.SUBMISSIONS);
+    const actSheet = getOrCreateSheet(ss, SHEET_NAMES.ACTIVITIES);
+    const usersSheet = getOrCreateSheet(ss, SHEET_NAMES.USERS);
+
+    // Map users to get carColor
+    const usersData = usersSheet.getDataRange().getValues();
+    const userColorMap = {};
+    for (let i = 1; i < usersData.length; i++) {
+      const u = String(usersData[i][0] || '').trim().toLowerCase();
+      userColorMap[u] = usersData[i][5] || 'Default';
+    }
+
+    // Map activities
+    const actData = actSheet.getDataRange().getValues();
+    const actMap = {};
+    for (let i = 1; i < actData.length; i++) {
+      const actId = String(actData[i][0] || '').trim();
+      let autoAns = {};
+      try {
+        if (actData[i][7]) autoAns = JSON.parse(actData[i][7]);
+      } catch(e) {}
+
+      actMap[actId] = {
+        id: actId,
+        category: actData[i][1],
+        title: actData[i][2],
+        scoringType: actData[i][5],
+        maxPoints: Number(actData[i][6]) || 0,
+        autoAnswers: autoAns
+      };
+    }
+
+    function normColor(c) {
+      if (!c) return 'default';
+      const s = c.toString().trim().toLowerCase();
+      if (s === 'red' || s === 'แดง') return 'red';
+      if (s === 'blue' || s === 'น้ำเงิน' || s === 'ฟ้า' || s === 'สีฟ้า' || s === 'sky' || s === 'cyan') return 'blue';
+      if (s === 'yellow' || s === 'เหลือง') return 'yellow';
+      if (s === 'green' || s === 'เขียว') return 'green';
+      if (s === 'orange' || s === 'ส้ม') return 'orange';
+      if (s === 'purple' || s === 'ม่วง') return 'purple';
+      if (s === 'pink' || s === 'ชมพู') return 'pink';
+      if (s === 'default' || s === 'all' || s === 'ทั้งหมด') return 'default';
+      return s;
+    }
+
+    const subData = subSheet.getDataRange().getValues();
+    let updatedCount = 0;
+    let anyChanges = false;
+
+    for (let i = 1; i < subData.length; i++) {
+      const actId = String(subData[i][3] || '').trim();
+      const targetAct = actMap[actId];
+      if (!targetAct) continue;
+      if (targetAct.scoringType !== 'AUTO' && targetAct.scoringType !== 'AUTO_KEYWORDS') continue;
+
+      const rawAnswer = String(subData[i][6] || '');
+      if (!rawAnswer || rawAnswer === '[ประเมินโดยกรรมการ]') continue;
+
+      const username = String(subData[i][2] || '').trim();
+      const userColor = subData[i][5] || userColorMap[username.toLowerCase()] || 'Default';
+
+      const cleanUserAnswer = rawAnswer.trim().toLowerCase();
+      const normUserAnswer = normalizeAnswerText(rawAnswer);
+
+      let newStatus = subData[i][9];
+      let newScore = Number(subData[i][10]) || 0;
+      let newNotes = subData[i][11] || '';
+
+      if (targetAct.scoringType === 'AUTO') {
+        let isCorrect = false;
+        let earnedPoints = 0;
+
+        const autoAnsRules = targetAct.autoAnswers;
+        if (Array.isArray(autoAnsRules)) {
+          for (let r = 0; r < autoAnsRules.length; r++) {
+            const rule = autoAnsRules[r];
+            const ruleAns = (rule.answer || '').toString().trim().toLowerCase();
+            const normRuleAns = normalizeAnswerText(rule.answer);
+            const ruleColor = (rule.color || 'Default').toString().trim().toLowerCase();
+            const uColor = (userColor || 'Default').toString().trim().toLowerCase();
+            const matchColor = (ruleColor === uColor || ruleColor === 'default' || ruleColor === 'all' || normColor(ruleColor) === normColor(uColor) || normColor(ruleColor) === 'default');
+
+            if ((cleanUserAnswer === ruleAns || normUserAnswer === normRuleAns) && matchColor) {
+              isCorrect = true;
+              earnedPoints = Number(rule.points) !== undefined ? Number(rule.points) : targetAct.maxPoints;
+              break;
+            }
+          }
+        } else if (autoAnsRules && typeof autoAnsRules === 'object') {
+          const colorRule = autoAnsRules[userColor] || autoAnsRules[normColor(userColor)] || autoAnsRules['default'] || autoAnsRules['Default'];
+          if (colorRule && colorRule.answer) {
+            const targetAnswer = colorRule.answer.toString().trim().toLowerCase();
+            const normTargetAnswer = normalizeAnswerText(colorRule.answer);
+            if (cleanUserAnswer === targetAnswer || normUserAnswer === normTargetAnswer) {
+              isCorrect = true;
+              earnedPoints = Number(colorRule.points) !== undefined ? Number(colorRule.points) : targetAct.maxPoints;
+            }
+          }
+        }
+
+        if (isCorrect) {
+          newStatus = 'passed';
+          newScore = earnedPoints;
+          newNotes = 'ตรวจคำตอบอัตโนมัติ (Re-grade: ' + earnedPoints + ' คะแนน)';
+        }
+      } else if (targetAct.scoringType === 'AUTO_KEYWORDS') {
+        let earnedPoints = 0;
+        const matchedKeywords = [];
+        const seenKw = {};
+
+        const autoAnsRules = targetAct.autoAnswers;
+        if (Array.isArray(autoAnsRules)) {
+          for (let r = 0; r < autoAnsRules.length; r++) {
+            const rule = autoAnsRules[r];
+            const rawAns = (rule.answer || '').toString().trim();
+            const rAns = rawAns.toLowerCase();
+            const normRAns = normalizeAnswerText(rawAns);
+            if (!rAns) continue;
+
+            const ruleColor = (rule.color || 'Default').toString().trim().toLowerCase();
+            const uColor = (userColor || 'Default').toString().trim().toLowerCase();
+            const matchColor = (ruleColor === uColor || ruleColor === 'default' || ruleColor === 'all' || normColor(ruleColor) === normColor(uColor) || normColor(ruleColor) === 'default');
+
+            if (matchColor && (cleanUserAnswer.includes(rAns) || (normRAns && normUserAnswer.includes(normRAns)))) {
+              if (!seenKw[rAns] && !seenKw[normRAns]) {
+                seenKw[rAns] = true;
+                seenKw[normRAns] = true;
+                const pts = rule.points !== undefined ? Number(rule.points) : targetAct.maxPoints;
+                earnedPoints += pts;
+                matchedKeywords.push(rawAns + ' (' + (pts >= 0 ? '+' : '') + pts + ')');
+              }
+            }
+          }
+        }
+
+        if (matchedKeywords.length > 0) {
+          newStatus = 'passed';
+          if (earnedPoints > targetAct.maxPoints) {
+            earnedPoints = targetAct.maxPoints;
+          }
+          newScore = earnedPoints;
+          newNotes = 'ตรวจคำสำคัญอัตโนมัติ (Re-grade: พบ ' + matchedKeywords.length + ' คำ [' + matchedKeywords.join(', ') + '] รวม ' + newScore + ' คะแนน)';
+        }
+      }
+
+      // Check if status or score changed
+      if (newStatus === 'passed' && (subData[i][9] !== 'passed' || Number(subData[i][10]) !== newScore)) {
+        subData[i][9] = newStatus;
+        subData[i][10] = newScore;
+        subData[i][11] = newNotes;
+        subData[i][12] = 'Admin (Re-grade)';
+        updatedCount++;
+        anyChanges = true;
+      }
+    }
+
+    if (anyChanges && subData.length > 1) {
+      subSheet.getRange(1, 1, subData.length, subData[0].length).setValues(subData);
+    }
+
+    return {
+      success: true,
+      updatedCount: updatedCount,
+      message: 'ตรวจคำตอบใหม่อัตโนมัติเรียบร้อย อัปเดต ' + updatedCount + ' รายการ'
+    };
+  });
+
+  if (result && result.success) {
+    try {
+      invalidateGlobalCache();
+      const freshShared = fetchSharedDataFromSheets();
+      syncToFirebase(freshShared);
+    } catch (e) {
+      Logger.log('apiRegradeAutoSubmissions cache update error: ' + e);
+    }
+  }
+
+  return result;
+}
+
 

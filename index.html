@@ -679,6 +679,10 @@
             <button id="btnTabHistoryJudgeGrading" type="button" onclick="switchAdminHistoryTab('judgeGrading')" class="px-4 py-2 rounded-xl text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 transition-all cursor-pointer">
               <i class="fa-solid fa-file-signature mr-1.5 text-purple-600"></i> 2. ประวัติการให้คะแนนของกรรมการ (ทุกฐาน & ทุกเกมส์)
             </button>
+            <button id="btnRegradeAutoSubmissions" type="button" onclick="regradeAutoSubmissions()" class="sm:ml-auto px-4 py-2 rounded-xl text-amber-900 bg-gradient-to-r from-amber-100 to-amber-200 hover:from-amber-200 hover:to-amber-300 border border-amber-300 transition-all cursor-pointer shadow-xs font-bold flex items-center gap-1.5 active:scale-95" title="ตรวจคำตอบประเภท AUTO และ AUTO_KEYWORDS ใหม่อัตโนมัติทั้งหมด">
+              <i class="fa-solid fa-rotate text-amber-700"></i>
+              <span>ตรวจคำตอบ AUTO ใหม่อัตโนมัติ (Re-grade)</span>
+            </button>
           </div>
 
           <!-- Submissions Log Table -->
@@ -2658,6 +2662,14 @@
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#039;');
     }
+
+    function normalizeAnswerText(str) {
+      if (str === null || str === undefined) return '';
+      return String(str)
+        .replace(/[\s\u00A0\u200B\uFEFF]/g, '')
+        .toLowerCase();
+    }
+    window.normalizeAnswerText = normalizeAnswerText;
 
     function showLoading(msg) {
       msg = msg || 'กำลังบันทึกข้อมูล...';
@@ -5063,6 +5075,212 @@
       }
     }
 
+    function regradeAutoSubmissions() {
+      if (!ensureAuthenticated()) return;
+      if (!currentUser || currentUser.role !== 'Admin') {
+        Swal.fire('ไม่มีสิทธิ์', 'เฉพาะผู้ดูแลระบบ (Admin) เท่านั้นที่สามารถสั่งตรวจคำตอบใหม่ได้', 'error');
+        return;
+      }
+
+      Swal.fire({
+        title: 'ตรวจคำตอบ AUTO ใหม่อัตโนมัติ?',
+        html: '<div class="text-xs text-slate-600 space-y-2 text-left">' +
+              '<p>ระบบจะนำคำตอบทั้งหมดที่เป็นประเภท <strong>AUTO</strong> และ <strong>AUTO_KEYWORDS</strong> มาตรวจซ้ำด้วยเกณฑ์ใหม่ <em>(ตัดช่องว่างออกทั้งหมด เช่น "4 ขร 4444" = "4ขร4444")</em></p>' +
+              '<p class="text-purple-700 font-bold">✓ ผู้แข่งขันที่เคยได้ 0 คะแนนเพราะเว้นวรรค จะได้รับคะแนนและเปลี่ยนสถานะเป็น "ตรวจแล้ว" ทันที</p>' +
+              '</div>',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: '<i class="fa-solid fa-play mr-1.5"></i> เริ่มตรวจคำตอบใหม่',
+        cancelButtonText: 'ยกเลิก',
+        confirmButtonColor: '#7c3aed'
+      }).then(function(res) {
+        if (!res.isConfirmed) return;
+
+        showLoading('กำลังตรวจคำตอบ AUTO ใหม่อัตโนมัติ...');
+
+        var updatedCount = 0;
+
+        (submissionsData || []).forEach(function(sub) {
+          if (!sub || !sub.activityId) return;
+          var act = (activitiesData || []).find(function(a) { return a && String(a.id || '').trim() === String(sub.activityId || '').trim(); });
+          if (!act) return;
+          if (act.scoringType !== 'AUTO' && act.scoringType !== 'AUTO_KEYWORDS') return;
+
+          var rawAns = String(sub.answerText || '').trim();
+          if (!rawAns || rawAns === '[ประเมินโดยกรรมการ]') return;
+
+          var userObj = (usersData || []).find(function(u) { return u && u.username === sub.username; }) || {};
+          var userCol = (sub.carColor || userObj.carColor || 'Default').trim().toLowerCase();
+
+          var userAnsClean = rawAns.toLowerCase();
+          var userAnsNorm = normalizeAnswerText(rawAns);
+
+          var newStatus = sub.status;
+          var newScore = Number(sub.score) || 0;
+          var newNotes = sub.judgeNotes || '';
+
+          if (act.scoringType === 'AUTO') {
+            var isCorrect = false;
+            var earnedPoints = 0;
+
+            var rules = act.autoAnswers;
+            if (Array.isArray(rules)) {
+              for (var r = 0; r < rules.length; r++) {
+                var rule = rules[r];
+                var rAns = (rule.answer || '').trim().toLowerCase();
+                var rAnsNorm = normalizeAnswerText(rule.answer);
+                var rCol = (rule.color || 'Default').trim().toLowerCase();
+                var matchColor = (rCol === userCol || rCol === 'default' || rCol === 'all' || getCarColorThaiName(rCol) === getCarColorThaiName(userCol));
+
+                if ((userAnsClean === rAns || userAnsNorm === rAnsNorm) && matchColor) {
+                  isCorrect = true;
+                  earnedPoints = Number(rule.points) !== undefined ? Number(rule.points) : act.maxPoints;
+                  break;
+                }
+              }
+            } else if (rules && typeof rules === 'object') {
+              var uColThai = getCarColorThaiName(userCol);
+              var colorRule = rules[userCol] || rules[uColThai] || rules['default'] || rules['Default'];
+              if (colorRule && colorRule.answer) {
+                var targetAns = (colorRule.answer || '').trim().toLowerCase();
+                var targetAnsNorm = normalizeAnswerText(colorRule.answer);
+                if (userAnsClean === targetAns || userAnsNorm === targetAnsNorm) {
+                  isCorrect = true;
+                  earnedPoints = Number(colorRule.points) !== undefined ? Number(colorRule.points) : act.maxPoints;
+                }
+              }
+            }
+
+            if (isCorrect) {
+              newStatus = 'passed';
+              newScore = earnedPoints;
+              newNotes = 'ตรวจถูกอัตโนมัติ (Re-grade ' + earnedPoints + ' คะแนน)';
+            }
+          } else if (act.scoringType === 'AUTO_KEYWORDS') {
+            var earnedPoints = 0;
+            var matchedKeywords = [];
+            var seenKw = {};
+
+            var rules = act.autoAnswers;
+            if (Array.isArray(rules)) {
+              for (var r = 0; r < rules.length; r++) {
+                var rule = rules[r];
+                var rawKw = (rule.answer || '').trim();
+                var rAns = rawKw.toLowerCase();
+                var rAnsNorm = normalizeAnswerText(rawKw);
+                if (!rAns) continue;
+
+                var rCol = (rule.color || 'Default').trim().toLowerCase();
+                var matchColor = (rCol === userCol || rCol === 'default' || rCol === 'all' || getCarColorThaiName(rCol) === getCarColorThaiName(userCol));
+
+                if (matchColor && (userAnsClean.includes(rAns) || (rAnsNorm && userAnsNorm.includes(rAnsNorm)))) {
+                  if (!seenKw[rAns] && !seenKw[rAnsNorm]) {
+                    seenKw[rAns] = true;
+                    seenKw[rAnsNorm] = true;
+                    var pts = rule.points !== undefined ? Number(rule.points) : act.maxPoints;
+                    earnedPoints += pts;
+                    matchedKeywords.push(rawKw + ' (' + (pts >= 0 ? '+' : '') + pts + ')');
+                  }
+                }
+              }
+            }
+
+            if (matchedKeywords.length > 0) {
+              newStatus = 'passed';
+              if (earnedPoints > act.maxPoints) {
+                earnedPoints = act.maxPoints;
+              }
+              newScore = earnedPoints;
+              newNotes = 'ตรวจพบ ' + matchedKeywords.length + ' คำ [' + matchedKeywords.join(', ') + '] (Re-grade ' + newScore + ' คะแนน)';
+            }
+          }
+
+          if (newStatus === 'passed' && (sub.status !== 'passed' || Number(sub.score) !== newScore)) {
+            sub.status = newStatus;
+            sub.score = newScore;
+            sub.judgeNotes = newNotes;
+            sub.judgeUsername = (currentUser.username || 'Admin') + ' (Re-grade)';
+            updatedCount++;
+          }
+        });
+
+        // Instant Optimistic UI Update across screens
+        setSubmissionsDataClean(submissionsData);
+        renderUserHistoryTable(submissionsData);
+        renderGradingList();
+        renderUserDashboard();
+        renderLeaderboard();
+
+        // Broadcast to Firebase Realtime Database
+        try {
+          if (typeof firebase !== 'undefined' && firebase.apps && firebase.apps.length) {
+            firebase.database().ref('live_rally_data/submissions').set(submissionsData);
+            firebase.database().ref('live_rally_data/timestamp').set(Date.now());
+          }
+        } catch (fbErr) {
+          console.warn('[Firebase Realtime] Re-grade push notice:', fbErr);
+        }
+
+        // Call backend API to persist in Google Sheets
+        var token = currentUser.sessionToken;
+        if (typeof google !== 'undefined' && google.script && google.script.run) {
+          google.script.run
+            .withSuccessHandler(function(backendRes) {
+              hideLoading();
+              var count = (backendRes && backendRes.updatedCount !== undefined) ? backendRes.updatedCount : updatedCount;
+              Swal.fire({
+                icon: 'success',
+                title: 'ตรวจคำตอบใหม่อัตโนมัติสำเร็จ!',
+                html: '<p class="text-xs text-slate-600">อัปเดตคะแนนให้ผู้แข่งขันเรียบร้อยแล้ว <strong>' + count + '</strong> รายการ</p>',
+                confirmButtonColor: '#7c3aed'
+              });
+            })
+            .withFailureHandler(function(err) {
+              hideLoading();
+              Swal.fire({
+                icon: 'success',
+                title: 'ปรับปรุงผลลัพธ์ในระบบแล้ว',
+                html: '<p class="text-xs text-slate-600">อัปเดตคะแนนในหน้าจอและ Firebase แล้ว <strong>' + updatedCount + '</strong> รายการ</p>',
+                confirmButtonColor: '#7c3aed'
+              });
+            })
+            .apiRegradeAutoSubmissions(token);
+        } else {
+          var apiEndpoint = getLiveApiUrl();
+          if (apiEndpoint) {
+            fetch(apiEndpoint, {
+              method: 'POST',
+              body: JSON.stringify({
+                action: 'regradeAutoSubmissions',
+                sessionToken: token
+              })
+            }).then(function(r) { return r.json(); }).then(function(backendRes) {
+              hideLoading();
+              var count = (backendRes && backendRes.updatedCount !== undefined) ? backendRes.updatedCount : updatedCount;
+              Swal.fire({
+                icon: 'success',
+                title: 'ตรวจคำตอบใหม่อัตโนมัติสำเร็จ!',
+                html: '<p class="text-xs text-slate-600">อัปเดตคะแนนให้ผู้แข่งขันเรียบร้อยแล้ว <strong>' + count + '</strong> รายการ</p>',
+                confirmButtonColor: '#7c3aed'
+              });
+            }).catch(function(err) {
+              hideLoading();
+              Swal.fire({
+                icon: 'success',
+                title: 'ปรับปรุงผลลัพธ์ในระบบแล้ว',
+                html: '<p class="text-xs text-slate-600">อัปเดตคะแนนในหน้าจอและ Firebase แล้ว <strong>' + updatedCount + '</strong> รายการ</p>',
+                confirmButtonColor: '#7c3aed'
+              });
+            });
+          } else {
+            hideLoading();
+            Swal.fire('ตรวจคำตอบใหม่อัตโนมัติสำเร็จ!', 'อัปเดตคะแนนให้ผู้แข่งขันแล้ว ' + updatedCount + ' รายการ', 'success');
+          }
+        }
+      });
+    }
+    window.regradeAutoSubmissions = regradeAutoSubmissions;
+
     function processSubmissionData(actId, answerText, fileObj) {
       var act = (activitiesData || []).find(function(a) { return a && a.id === actId; });
       if (!act) return;
@@ -5078,6 +5296,7 @@
 
       if (act.scoringType === 'AUTO') {
         var userAnsClean = (answerText || '').trim().toLowerCase();
+        var userAnsNorm = normalizeAnswerText(answerText);
         var isCorrect = false;
         var earnedPoints = 0;
 
@@ -5086,11 +5305,12 @@
           for (var r = 0; r < rules.length; r++) {
             var rule = rules[r];
             var rAns = (rule.answer || '').trim().toLowerCase();
+            var rAnsNorm = normalizeAnswerText(rule.answer);
             var rCol = (rule.color || 'Default').trim().toLowerCase();
             var uCol = (currentUser.carColor || 'Default').trim().toLowerCase();
             var matchColor = (rCol === uCol || rCol === 'default' || rCol === 'all' || getCarColorThaiName(rCol) === getCarColorThaiName(uCol));
 
-            if (userAnsClean === rAns && matchColor) {
+            if ((userAnsClean === rAns || userAnsNorm === rAnsNorm) && matchColor) {
               isCorrect = true;
               earnedPoints = Number(rule.points) !== undefined ? Number(rule.points) : act.maxPoints;
               break;
@@ -5100,7 +5320,9 @@
           var uColThai = getCarColorThaiName(currentUser.carColor);
           var colorRule = rules[currentUser.carColor] || rules[uColThai] || rules['default'] || rules['Default'];
           if (colorRule && colorRule.answer) {
-            if (userAnsClean === (colorRule.answer || '').trim().toLowerCase()) {
+            var targetAns = (colorRule.answer || '').trim().toLowerCase();
+            var targetAnsNorm = normalizeAnswerText(colorRule.answer);
+            if (userAnsClean === targetAns || userAnsNorm === targetAnsNorm) {
               isCorrect = true;
               earnedPoints = Number(colorRule.points) !== undefined ? Number(colorRule.points) : act.maxPoints;
             }
@@ -5118,6 +5340,7 @@
         }
       } else if (act.scoringType === 'AUTO_KEYWORDS') {
         var userAnsClean = (answerText || '').trim().toLowerCase();
+        var userAnsNorm = normalizeAnswerText(answerText);
         var earnedPoints = 0;
         var matchedKeywords = [];
         var seenKw = {};
@@ -5128,15 +5351,17 @@
             var rule = rules[r];
             var rawAns = (rule.answer || '').trim();
             var rAns = rawAns.toLowerCase();
+            var rAnsNorm = normalizeAnswerText(rawAns);
             if (!rAns) continue;
 
             var rCol = (rule.color || 'Default').trim().toLowerCase();
             var uCol = (currentUser.carColor || 'Default').trim().toLowerCase();
             var matchColor = (rCol === uCol || rCol === 'default' || rCol === 'all' || getCarColorThaiName(rCol) === getCarColorThaiName(uCol));
 
-            if (matchColor && userAnsClean.includes(rAns)) {
-              if (!seenKw[rAns]) {
+            if (matchColor && (userAnsClean.includes(rAns) || (rAnsNorm && userAnsNorm.includes(rAnsNorm)))) {
+              if (!seenKw[rAns] && !seenKw[rAnsNorm]) {
                 seenKw[rAns] = true;
+                seenKw[rAnsNorm] = true;
                 var pts = rule.points !== undefined ? Number(rule.points) : act.maxPoints;
                 earnedPoints += pts;
                 matchedKeywords.push(rawAns + ' (' + (pts >= 0 ? '+' : '') + pts + ')');
