@@ -124,7 +124,7 @@ function handleApiRequest(action, payload) {
       result = apiSubmitAnswer(payload.username, payload.activityId, payload.answerText, payload.imageFileObj, token);
       break;
     case 'gradeSubmission':
-      result = apiGradeSubmission(payload.submissionId, payload.score, payload.judgeNotes, payload.judgeUsername, payload.username, payload.activityId, token);
+      result = apiGradeSubmission(payload.submissionId, payload.score, payload.judgeNotes, payload.judgeUsername, payload.username, payload.activityId, token, payload.status);
       break;
     case 'updateBonusPoints':
       result = apiUpdateBonusPoints(payload.carUsername, payload.bonusPoints, token);
@@ -274,13 +274,14 @@ function setCachedSharedData(data) {
   syncToFirebase(data);
 }
 
-function updateCachedSubmissionGrade(submissionId, username, activityId, score, judgeNotes, judgeUsername) {
+function updateCachedSubmissionGrade(submissionId, username, activityId, score, judgeNotes, judgeUsername, status) {
   try {
     const shared = getCachedSharedData();
     if (!shared || !shared.submissions) return;
     const uNorm = String(username || '').trim().toLowerCase();
     const aNorm = String(activityId || '').trim();
     const subIdNorm = String(submissionId || '').trim();
+    const finalStatus = status || 'passed';
     let found = false;
     for (let i = 0; i < shared.submissions.length; i++) {
       const s = shared.submissions[i];
@@ -288,7 +289,7 @@ function updateCachedSubmissionGrade(submissionId, username, activityId, score, 
       const sANorm = String(s.activityId || '').trim();
       const sIdNorm = String(s.id || '').trim();
       if ((subIdNorm && sIdNorm === subIdNorm) || (uNorm && aNorm && sUNorm === uNorm && sANorm === aNorm)) {
-        s.status = 'passed';
+        s.status = finalStatus;
         s.score = Number(score) || 0;
         s.judgeNotes = judgeNotes || 'ให้คะแนนเรียบร้อย';
         s.judgeUsername = judgeUsername || 'Judge';
@@ -307,7 +308,7 @@ function updateCachedSubmissionGrade(submissionId, username, activityId, score, 
         answerText: '[ประเมินโดยกรรมการ]',
         imageUrl: '',
         fileId: '',
-        status: 'passed',
+        status: finalStatus,
         score: Number(score) || 0,
         judgeNotes: judgeNotes || 'ให้คะแนนเรียบร้อย',
         judgeUsername: judgeUsername || 'Judge'
@@ -1440,20 +1441,21 @@ function apiSubmitAnswer(username, activityId, answerText, imageFileObj, session
 /**
  * API: Grade Submission (Admin / Sub-Admin)
  */
-function apiGradeSubmission(submissionId, score, judgeNotes, judgeUsername, username, activityId, sessionToken) {
+function apiGradeSubmission(submissionId, score, judgeNotes, judgeUsername, username, activityId, sessionToken, status) {
   const auth = verifyAuth(sessionToken, ['Admin', 'Sub-Admin']);
   if (!auth.success) return auth;
 
   const uNorm = String(username || '').trim().toLowerCase();
   const aNorm = String(activityId || '').trim();
   const subIdNorm = String(submissionId || '').trim();
+  const targetStatus = status || 'passed';
 
   // Generous 35-second lock timeout for simultaneous submissions from multiple station judges
   const result = withLock(function() {
     const ss = getSpreadsheet();
     const subSheet = getOrCreateSheet(ss, SHEET_NAMES.SUBMISSIONS);
     const subData = subSheet.getDataRange().getValues();
-    const gradeValues = [['passed', Number(score) || 0, judgeNotes || 'ให้คะแนนเรียบร้อย', judgeUsername || 'Judge']];
+    const gradeValues = [[targetStatus, Number(score) || 0, judgeNotes || 'ให้คะแนนเรียบร้อย', judgeUsername || 'Judge']];
 
     // 1. Search for existing submission matching submissionId OR (username && activityId)
     let matchedRowIndex = -1;
@@ -1469,7 +1471,7 @@ function apiGradeSubmission(submissionId, score, judgeNotes, judgeUsername, user
     }
 
     if (matchedRowIndex !== -1) {
-      // Existing row found: update columns 10 to 13 (passed, score, notes, judge)
+      // Existing row found: update columns 10 to 13 (passed/status, score, notes, judge)
       subSheet.getRange(matchedRowIndex, 10, 1, 4).setValues(gradeValues);
       // Immediately flush to disk so concurrent queued requests will see this update
       SpreadsheetApp.flush();
@@ -1505,7 +1507,7 @@ function apiGradeSubmission(submissionId, score, judgeNotes, judgeUsername, user
         '[ประเมินโดยกรรมการ]',
         '',
         '',
-        'passed',
+        targetStatus,
         Number(score) || 0,
         judgeNotes || 'ให้คะแนนเรียบร้อย',
         judgeUsername || 'Judge'
@@ -1520,7 +1522,7 @@ function apiGradeSubmission(submissionId, score, judgeNotes, judgeUsername, user
   }, 35000);
 
   if (result && result.success) {
-    updateCachedSubmissionGrade(submissionId, username, activityId, score, judgeNotes, judgeUsername);
+    updateCachedSubmissionGrade(submissionId, username, activityId, score, judgeNotes, judgeUsername, targetStatus);
   }
   return result;
 }

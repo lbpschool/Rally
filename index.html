@@ -1529,6 +1529,118 @@
     </div>
   </div>
 
+  <!-- ================= MODAL: QUICK GRADE SUBMISSION (ADMIN DIRECT GRADING) ================= -->
+  <div id="modalQuickGrade" style="display: none;" class="fixed inset-0 z-50 items-center justify-center bg-slate-950/70 backdrop-blur-sm p-3 sm:p-4 animate-fade-in" onclick="if(event.target === this) closeQuickGradeModal()">
+    <div class="bg-white max-w-lg w-full rounded-3xl p-5 sm:p-6 relative shadow-2xl border-2 border-purple-200 overflow-hidden text-left max-h-[92vh] flex flex-col">
+      <button onclick="closeQuickGradeModal()" class="absolute top-4 right-4 w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 flex items-center justify-center text-sm transition-colors cursor-pointer z-10" title="ปิด">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+
+      <!-- Header -->
+      <div class="flex items-center gap-3 pb-3 border-b border-purple-100 shrink-0 pr-8">
+        <div class="w-11 h-11 rounded-2xl bg-purple-100 text-purple-600 flex items-center justify-center text-xl shadow-sm border border-purple-200 shrink-0">
+          <i class="fa-solid fa-clipboard-check"></i>
+        </div>
+        <div>
+          <h3 class="text-base font-black text-slate-800">ตรวจคำตอบและให้คะแนน</h3>
+          <p id="quickGradeSubtitle" class="text-xs text-purple-700 font-semibold">ตรวจคำตอบของผู้แข่งขันและบันทึกคะแนนเข้าระบบทันที</p>
+        </div>
+      </div>
+
+      <!-- Hidden Fields -->
+      <input type="hidden" id="quickGradeSubId">
+      <input type="hidden" id="quickGradeUsername">
+      <input type="hidden" id="quickGradeActId">
+
+      <!-- Scrollable Body -->
+      <div class="overflow-y-auto modal-body-scroll py-3.5 space-y-4 flex-1">
+        <!-- Competitor & Mission Details Card -->
+        <div class="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-2">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <span id="quickGradeTeamBadge" class="font-bold text-sm text-slate-800">-</span>
+              <span id="quickGradeCarCodeBadge" class="text-xs text-purple-600 font-mono font-bold">-</span>
+              <span id="quickGradeCarColorBadge" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-200 text-slate-700">-</span>
+            </div>
+            <span id="quickGradeCategoryBadge" class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-purple-100 text-purple-700">-</span>
+          </div>
+          <div class="text-xs text-slate-600 font-medium">
+            <span>ภารกิจ: </span><strong id="quickGradeActTitle" class="text-slate-800 font-bold">-</strong>
+            <span class="ml-2 text-slate-400">| คะแนนเต็ม: <strong id="quickGradeMaxPoints" class="text-purple-600 font-extrabold">-</strong></span>
+          </div>
+          <div id="quickGradeTime" class="text-[11px] text-slate-400 font-mono">ส่งเมื่อ: -</div>
+        </div>
+
+        <!-- Submitted Answer Section -->
+        <div class="space-y-1.5">
+          <label class="text-xs font-black text-slate-700 flex items-center gap-1.5">
+            <i class="fa-solid fa-file-lines text-purple-600"></i> คำตอบที่ส่งมา:
+          </label>
+          <div id="quickGradeAnswerBox" class="p-3 rounded-2xl bg-white border border-slate-200 text-xs text-slate-800 shadow-xs whitespace-pre-wrap break-words">
+            <!-- Text or Image Preview -->
+          </div>
+          <div id="quickGradeNotesBox" class="hidden p-2.5 rounded-xl bg-purple-50 border border-purple-200 text-xs text-purple-800 font-medium">
+            <!-- Judge / Keyword Notes -->
+          </div>
+        </div>
+
+        <!-- Grading Inputs -->
+        <div class="p-4 rounded-2xl bg-gradient-to-br from-purple-50/60 to-indigo-50/40 border border-purple-200 space-y-3">
+          <div class="flex items-center justify-between">
+            <label class="text-xs font-black text-slate-800 flex items-center gap-1.5">
+              <i class="fa-solid fa-star text-amber-500"></i> ให้คะแนน:
+            </label>
+            <span class="text-[11px] text-slate-500 font-medium" id="quickGradePointsHint">กรอกคะแนนที่ได้</span>
+          </div>
+
+          <!-- Score Input & Quick Buttons -->
+          <div class="flex items-center gap-2">
+            <input type="number" id="quickGradeScoreInput" class="w-32 px-3 py-2.5 rounded-xl bg-white border-2 border-purple-300 focus:border-purple-600 text-lg font-black text-slate-800 text-center shadow-xs" placeholder="0">
+            <button type="button" onclick="setQuickGradePreset('max')" class="px-3 py-2 rounded-xl bg-purple-100 hover:bg-purple-200 text-purple-800 font-bold text-xs transition-colors cursor-pointer">
+              คะแนนเต็ม
+            </button>
+            <button type="button" onclick="setQuickGradePreset('zero')" class="px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition-colors cursor-pointer">
+              0 คะแนน
+            </button>
+          </div>
+
+          <!-- Status Selection -->
+          <div class="space-y-1">
+            <label class="text-[11px] font-bold text-slate-700">ผลการตรวจ (สถานะ):</label>
+            <div class="grid grid-cols-3 gap-2 text-xs">
+              <button type="button" id="btnStatusPassed" onclick="selectQuickGradeStatus('passed')" class="py-2 px-2 rounded-xl border font-bold flex items-center justify-center gap-1 transition-all cursor-pointer">
+                <i class="fa-solid fa-circle-check text-emerald-600"></i> ถูกต้อง
+              </button>
+              <button type="button" id="btnStatusFailed" onclick="selectQuickGradeStatus('failed')" class="py-2 px-2 rounded-xl border font-bold flex items-center justify-center gap-1 transition-all cursor-pointer">
+                <i class="fa-solid fa-circle-xmark text-rose-600"></i> ไม่ถูกต้อง
+              </button>
+              <button type="button" id="btnStatusPending" onclick="selectQuickGradeStatus('pending')" class="py-2 px-2 rounded-xl border font-bold flex items-center justify-center gap-1 transition-all cursor-pointer">
+                <i class="fa-solid fa-spinner text-blue-600"></i> รอตรวจ
+              </button>
+            </div>
+            <input type="hidden" id="quickGradeStatusVal" value="passed">
+          </div>
+
+          <!-- Notes Input -->
+          <div class="space-y-1">
+            <label class="text-[11px] font-bold text-slate-700">หมายเหตุของกรรมการ (ถ้ามี):</label>
+            <input type="text" id="quickGradeJudgeNotesInput" placeholder="พิมพ์ข้อคิดเห็นหรือเหตุผลการให้คะแนน..." class="w-full px-3 py-2 rounded-xl glass-input text-xs font-semibold">
+          </div>
+        </div>
+      </div>
+
+      <!-- Footer Buttons -->
+      <div class="flex items-center justify-end gap-2 pt-3 border-t border-slate-100 shrink-0">
+        <button type="button" onclick="closeQuickGradeModal()" class="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold text-xs cursor-pointer transition-colors">
+          ยกเลิก
+        </button>
+        <button type="button" id="btnSubmitQuickGrade" onclick="submitQuickGradeModal()" class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-black text-xs shadow-md shadow-purple-500/25 flex items-center gap-1.5 cursor-pointer active:scale-95 transition-all">
+          <i class="fa-solid fa-check"></i> บันทึกผลการตรวจ
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- ================= MODAL: ADD/EDIT ACTIVITY (Requirement 2: Fixed Header & Scrollable Form - ZERO OVERLAP) ================= -->
   <div id="modalActivity" style="display: none;" class="fixed inset-0 z-50 items-center justify-center bg-slate-900/50 backdrop-blur-md p-4">
     <div class="glass-modal max-w-2xl w-full rounded-3xl p-6 relative max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
@@ -4874,7 +4986,7 @@
         '<th class="py-3 px-3.5 font-bold whitespace-nowrap">ชื่อกิจกรรม/จุด</th>' +
         '<th class="py-3 px-3.5 font-bold whitespace-nowrap">ประเภท</th>' +
         '<th class="py-3 px-3.5 font-bold whitespace-nowrap">คำตอบที่คุณส่ง</th>' +
-        '<th class="py-3 px-3.5 font-bold whitespace-nowrap">ผลลัพธ์</th>' +
+        '<th class="py-3 px-3.5 font-bold whitespace-nowrap">' + (isAdmin ? 'ผลลัพธ์ (กดตรวจ)' : 'ผลลัพธ์') + '</th>' +
         '<th class="py-3 px-3.5 text-right font-bold whitespace-nowrap">คะแนน</th>' +
         '</tr>';
 
@@ -4901,9 +5013,23 @@
           resultTag = '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-blue-50 text-blue-600 border border-blue-200 whitespace-nowrap"><i class="fa-solid fa-circle-check mr-1"></i>ส่งคำตอบแล้ว</span>';
           scoreTag = '<span class="px-2 py-0.5 rounded-lg bg-amber-100 text-amber-800 font-bold text-xs border border-amber-200 whitespace-nowrap"><i class="fa-solid fa-lock text-[10px] mr-1"></i>ซ่อน</span>';
         } else {
-          if (s.status === 'passed') resultTag = '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-600 border border-emerald-200 whitespace-nowrap">ถูกต้อง</span>';
-          else if (s.status === 'failed') resultTag = '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-rose-50 text-rose-600 border border-rose-200 whitespace-nowrap">ไม่ถูกต้อง</span>';
-          else resultTag = '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-blue-50 text-blue-600 border border-blue-200 whitespace-nowrap"><i class="fa-solid fa-spinner animate-spin mr-1"></i>รอตรวจ</span>';
+          if (isAdmin) {
+            var subIdArg = escapeHTML(s.id || '');
+            var uArg = escapeHTML(s.username || '');
+            var aArg = escapeHTML(s.activityId || '');
+            var clickCode = 'openQuickGradeModal(\'' + subIdArg + '\',\'' + uArg + '\',\'' + aArg + '\')';
+            if (s.status === 'passed') {
+              resultTag = '<button type="button" onclick="' + clickCode + '" title="คลิกเพื่อตรวจหรือแก้ไขคะแนน (เฉพาะ Admin)" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-300 hover:border-emerald-400 shadow-xs hover:shadow transition-all cursor-pointer group active:scale-95 whitespace-nowrap"><i class="fa-solid fa-circle-check text-emerald-600"></i><span>ถูกต้อง</span><i class="fa-solid fa-pen-to-square text-[10px] opacity-60 group-hover:opacity-100 text-emerald-700 ml-0.5"></i></button>';
+            } else if (s.status === 'failed') {
+              resultTag = '<button type="button" onclick="' + clickCode + '" title="คลิกเพื่อตรวจหรือแก้ไขคะแนน (เฉพาะ Admin)" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-300 hover:border-rose-400 shadow-xs hover:shadow transition-all cursor-pointer group active:scale-95 whitespace-nowrap"><i class="fa-solid fa-circle-xmark text-rose-600"></i><span>ไม่ถูกต้อง</span><i class="fa-solid fa-pen-to-square text-[10px] opacity-60 group-hover:opacity-100 text-rose-700 ml-0.5"></i></button>';
+            } else {
+              resultTag = '<button type="button" onclick="' + clickCode + '" title="คลิกเพื่อตรวจและให้คะแนน (เฉพาะ Admin)" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-300 hover:border-blue-400 shadow-xs hover:shadow transition-all cursor-pointer group active:scale-95 whitespace-nowrap"><i class="fa-solid fa-spinner animate-spin text-blue-600"></i><span>รอตรวจ</span><i class="fa-solid fa-pen-to-square text-[10px] opacity-60 group-hover:opacity-100 text-blue-700 ml-0.5"></i></button>';
+            }
+          } else {
+            if (s.status === 'passed') resultTag = '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-600 border border-emerald-200 whitespace-nowrap">ถูกต้อง</span>';
+            else if (s.status === 'failed') resultTag = '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-rose-50 text-rose-600 border border-rose-200 whitespace-nowrap">ไม่ถูกต้อง</span>';
+            else resultTag = '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-blue-50 text-blue-600 border border-blue-200 whitespace-nowrap"><i class="fa-solid fa-spinner animate-spin mr-1"></i>รอตรวจ</span>';
+          }
           
           scoreTag = (s.status === 'passed' ? s.score : '-');
         }
@@ -5882,6 +6008,303 @@
             }
           })
           .apiGradeSubmission(realSubId, score, notes, currentUser.username, username, actId, sessionToken);
+      }
+    }
+
+    // =========================================================================
+    // QUICK GRADE MODAL (ADMIN DIRECT GRADING FROM HISTORY TABLE)
+    // =========================================================================
+    function openQuickGradeModal(subId, username, actId) {
+      if (!ensureAuthenticated()) return;
+      if (!currentUser || currentUser.role !== 'Admin') {
+        Swal.fire('ไม่มีสิทธิ์', 'เฉพาะผู้ดูแลระบบ (Admin) เท่านั้นที่สามารถตรวจคะแนนจากตารางนี้ได้', 'warning');
+        return;
+      }
+
+      var uNorm = String(username || '').trim().toLowerCase();
+      var aNorm = String(actId || '').trim();
+      var subIdNorm = String(subId || '').trim();
+
+      var sub = (submissionsData || []).find(function(s) {
+        if (!s) return false;
+        if (subIdNorm && String(s.id || '').trim() === subIdNorm) return true;
+        if (uNorm && aNorm && String(s.username || '').trim().toLowerCase() === uNorm && String(s.activityId || '').trim() === aNorm) return true;
+        return false;
+      });
+
+      if (!sub) {
+        Swal.fire('ข้อผิดพลาด', 'ไม่พบข้อมูลการส่งคำตอบของรายการนี้', 'error');
+        return;
+      }
+
+      var act = (activitiesData || []).find(function(a) { return a && String(a.id || '').trim() === String(sub.activityId || '').trim(); }) || {};
+      var userObj = (usersData || []).find(function(u) { return u && String(u.username || '').trim().toLowerCase() === String(sub.username || '').trim().toLowerCase(); }) || {};
+
+      document.getElementById('quickGradeSubId').value = sub.id || '';
+      document.getElementById('quickGradeUsername').value = sub.username || '';
+      document.getElementById('quickGradeActId').value = sub.activityId || '';
+
+      var teamNameEl = document.getElementById('quickGradeTeamBadge');
+      if (teamNameEl) teamNameEl.innerText = userObj.name || sub.username || 'ผู้แข่งขัน';
+
+      var carCodeEl = document.getElementById('quickGradeCarCodeBadge');
+      if (carCodeEl) carCodeEl.innerText = userObj.carCode ? ('(' + userObj.carCode + ')') : '';
+
+      var carCol = userObj.carColor || sub.carColor || '';
+      var colBadge = document.getElementById('quickGradeCarColorBadge');
+      if (colBadge) {
+        colBadge.innerText = getCarColorThaiName(carCol) || 'ไม่ระบุสี';
+        colBadge.className = 'px-2 py-0.5 rounded-full text-[10px] font-bold ' + getCarColorStyle(carCol);
+      }
+
+      var catBadge = document.getElementById('quickGradeCategoryBadge');
+      if (catBadge) {
+        var catName = act.category || sub.category || 'RC';
+        if (catName === 'Base') catName = 'กิจกรรมฐาน';
+        else if (catName === 'Quiz') catName = 'เกมส์คำถาม';
+        catBadge.innerText = catName;
+      }
+
+      var titleEl = document.getElementById('quickGradeActTitle');
+      if (titleEl) titleEl.innerText = act.title || sub.activityId || '-';
+
+      var maxPts = act.maxPoints !== undefined ? Number(act.maxPoints) : 500;
+      var maxPtsEl = document.getElementById('quickGradeMaxPoints');
+      if (maxPtsEl) maxPtsEl.innerText = maxPts + ' คะแนน';
+
+      var timeEl = document.getElementById('quickGradeTime');
+      if (timeEl) timeEl.innerText = 'ส่งเมื่อ: ' + (sub.timestamp ? new Date(sub.timestamp).toLocaleString('th-TH') : '-');
+
+      // Answer preview
+      var answerBox = document.getElementById('quickGradeAnswerBox');
+      if (answerBox) {
+        if (sub.imageUrl) {
+          answerBox.innerHTML = '<div class="space-y-2">' +
+            '<div class="relative group cursor-pointer overflow-hidden rounded-xl border border-slate-200" onclick="openImageModal(\'' + escapeHTML(sub.imageUrl) + '\', \'รูปคำตอบ ' + escapeHTML(userObj.name || sub.username) + '\')">' +
+            '<img src="' + escapeHTML(sub.imageUrl) + '" class="w-full max-h-48 object-cover group-hover:scale-105 transition-transform" alt="Submission Image">' +
+            '<div class="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white font-semibold text-xs gap-1">' +
+            '<i class="fa-solid fa-magnifying-glass-plus"></i> คลิกดูรูปเต็ม</div></div>' +
+            (sub.answerText && sub.answerText !== '[ประเมินโดยกรรมการ]' ? '<div class="p-2 bg-slate-50 rounded-lg text-slate-700 text-xs"><strong>ข้อความเพิ่มเติม:</strong> ' + escapeHTML(sub.answerText) + '</div>' : '') +
+            '</div>';
+        } else if (sub.answerText) {
+          answerBox.innerHTML = '<div class="p-2.5 bg-slate-50 rounded-xl font-medium text-slate-800 whitespace-pre-wrap">' + escapeHTML(sub.answerText) + '</div>';
+        } else {
+          answerBox.innerHTML = '<p class="text-slate-400 italic">ไม่มีไฟล์หรือข้อความแนบมา</p>';
+        }
+      }
+
+      // Judge / Keyword notes
+      var notesBox = document.getElementById('quickGradeNotesBox');
+      if (notesBox) {
+        if (sub.judgeNotes) {
+          notesBox.classList.remove('hidden');
+          notesBox.innerHTML = '<i class="fa-solid fa-calculator mr-1 text-purple-600"></i> ' + escapeHTML(sub.judgeNotes);
+        } else {
+          notesBox.classList.add('hidden');
+          notesBox.innerHTML = '';
+        }
+      }
+
+      // Score input
+      var scoreInput = document.getElementById('quickGradeScoreInput');
+      if (scoreInput) {
+        scoreInput.value = (sub.score !== undefined ? sub.score : 0);
+        if (act.scoringType === 'AUTO_KEYWORDS') {
+          scoreInput.removeAttribute('min');
+        } else {
+          scoreInput.setAttribute('min', '0');
+        }
+        scoreInput.setAttribute('max', String(maxPts));
+      }
+
+      var pointsHint = document.getElementById('quickGradePointsHint');
+      if (pointsHint) {
+        pointsHint.innerText = 'เต็ม ' + maxPts + ' คะแนน' + (act.scoringType === 'AUTO_KEYWORDS' ? ' (คะแนนบวกลบได้)' : '');
+      }
+
+      // Judge notes input
+      var judgeNotesInput = document.getElementById('quickGradeJudgeNotesInput');
+      if (judgeNotesInput) {
+        judgeNotesInput.value = sub.judgeNotes || '';
+      }
+
+      // Initial status selection
+      selectQuickGradeStatus(sub.status || 'passed');
+
+      var modal = document.getElementById('modalQuickGrade');
+      if (modal) modal.style.display = 'flex';
+    }
+
+    function closeQuickGradeModal() {
+      var modal = document.getElementById('modalQuickGrade');
+      if (modal) modal.style.display = 'none';
+    }
+
+    function setQuickGradePreset(type) {
+      var actId = document.getElementById('quickGradeActId').value;
+      var act = (activitiesData || []).find(function(a) { return a && String(a.id || '').trim() === String(actId || '').trim(); }) || {};
+      var maxPts = act.maxPoints !== undefined ? Number(act.maxPoints) : 500;
+      var scoreInput = document.getElementById('quickGradeScoreInput');
+      if (scoreInput) {
+        if (type === 'max') {
+          scoreInput.value = maxPts;
+          selectQuickGradeStatus('passed');
+        } else if (type === 'zero') {
+          scoreInput.value = 0;
+          selectQuickGradeStatus('failed');
+        }
+      }
+    }
+
+    function selectQuickGradeStatus(st) {
+      var statusInput = document.getElementById('quickGradeStatusVal');
+      if (statusInput) statusInput.value = st;
+
+      var btnPassed = document.getElementById('btnStatusPassed');
+      var btnFailed = document.getElementById('btnStatusFailed');
+      var btnPending = document.getElementById('btnStatusPending');
+
+      if (btnPassed) {
+        btnPassed.className = st === 'passed' 
+          ? 'py-2 px-2 rounded-xl border-2 border-emerald-500 bg-emerald-50 text-emerald-800 font-extrabold flex items-center justify-center gap-1 shadow-xs transition-all cursor-pointer'
+          : 'py-2 px-2 rounded-xl border border-slate-200 bg-white text-slate-600 font-medium flex items-center justify-center gap-1 transition-all cursor-pointer';
+      }
+      if (btnFailed) {
+        btnFailed.className = st === 'failed' 
+          ? 'py-2 px-2 rounded-xl border-2 border-rose-500 bg-rose-50 text-rose-800 font-extrabold flex items-center justify-center gap-1 shadow-xs transition-all cursor-pointer'
+          : 'py-2 px-2 rounded-xl border border-slate-200 bg-white text-slate-600 font-medium flex items-center justify-center gap-1 transition-all cursor-pointer';
+      }
+      if (btnPending) {
+        btnPending.className = st === 'pending' 
+          ? 'py-2 px-2 rounded-xl border-2 border-blue-500 bg-blue-50 text-blue-800 font-extrabold flex items-center justify-center gap-1 shadow-xs transition-all cursor-pointer'
+          : 'py-2 px-2 rounded-xl border border-slate-200 bg-white text-slate-600 font-medium flex items-center justify-center gap-1 transition-all cursor-pointer';
+      }
+    }
+
+    function submitQuickGradeModal() {
+      if (!ensureAuthenticated()) return;
+      if (!currentUser || currentUser.role !== 'Admin') {
+        Swal.fire('ไม่มีสิทธิ์', 'เฉพาะผู้ดูแลระบบ (Admin) เท่านั้นที่สามารถตรวจคะแนนได้', 'error');
+        return;
+      }
+
+      var subId = document.getElementById('quickGradeSubId').value;
+      var username = document.getElementById('quickGradeUsername').value;
+      var actId = document.getElementById('quickGradeActId').value;
+      var score = Number(document.getElementById('quickGradeScoreInput').value) || 0;
+      var status = document.getElementById('quickGradeStatusVal').value || 'passed';
+      var judgeNotes = document.getElementById('quickGradeJudgeNotesInput').value.trim();
+
+      var uNorm = String(username || '').trim().toLowerCase();
+      var aNorm = String(actId || '').trim();
+      var subIdNorm = String(subId || '').trim();
+
+      var targetSub = (submissionsData || []).find(function(s) {
+        if (!s) return false;
+        if (subIdNorm && String(s.id || '').trim() === subIdNorm) return true;
+        if (uNorm && aNorm && String(s.username || '').trim().toLowerCase() === uNorm && String(s.activityId || '').trim() === aNorm) return true;
+        return false;
+      });
+
+      var realSubId = subIdNorm || (targetSub ? targetSub.id : ('SUB-' + Date.now()));
+
+      if (targetSub) {
+        targetSub.status = status;
+        targetSub.score = score;
+        if (judgeNotes) {
+          targetSub.judgeNotes = judgeNotes;
+        } else if (!targetSub.judgeNotes) {
+          targetSub.judgeNotes = 'ตรวจและให้คะแนนโดยผู้ดูแลระบบ';
+        }
+        targetSub.judgeUsername = currentUser.username;
+      } else {
+        var act = (activitiesData || []).find(function(a) { return a && String(a.id || '').trim() === aNorm; }) || {};
+        targetSub = {
+          id: realSubId,
+          timestamp: new Date().toISOString(),
+          username: username,
+          activityId: actId,
+          category: act.category || 'Base',
+          carColor: '',
+          answerText: '[ประเมินโดยกรรมการ]',
+          imageUrl: '',
+          fileId: '',
+          status: status,
+          score: score,
+          judgeNotes: judgeNotes || 'ตรวจและให้คะแนนโดยผู้ดูแลระบบ',
+          judgeUsername: currentUser.username
+        };
+        submissionsData.push(targetSub);
+      }
+
+      // Deduplicate and clean data
+      setSubmissionsDataClean(submissionsData);
+
+      // Close modal
+      closeQuickGradeModal();
+
+      // Instant Optimistic UI Update across screens
+      renderUserHistoryTable(submissionsData);
+      renderGradingList();
+      renderUserDashboard();
+      renderLeaderboard();
+
+      // Instant Non-blocking Toast confirmation
+      Swal.fire({
+        toast: true,
+        position: 'top-end',
+        icon: 'success',
+        title: 'บันทึกคะแนนแล้ว (' + score + ' คะแนน)',
+        showConfirmButton: false,
+        timer: 1800
+      });
+
+      // INSTANT BROADCAST TO FIREBASE REALTIME DATABASE (< 0.1s update on all other devices)
+      try {
+        if (typeof firebase !== 'undefined' && firebase.apps && firebase.apps.length) {
+          firebase.database().ref('live_rally_data/submissions').set(submissionsData);
+          firebase.database().ref('live_rally_data/timestamp').set(Date.now());
+          console.log('[Firebase Realtime] Instant quick grade pushed to RTDB successfully!');
+        }
+      } catch (fbErr) {
+        console.warn('[Firebase Realtime] Quick grade push notice:', fbErr);
+      }
+
+      // Background persistent sync to Google Apps Script & Google Sheets
+      if (isMockMode) return;
+
+      var token = currentUser.sessionToken;
+      if (typeof google !== 'undefined' && google.script && google.script.run) {
+        google.script.run
+          .withSuccessHandler(function(res) {
+            console.log('[GAS] Quick grade saved to Google Sheets:', res);
+          })
+          .withFailureHandler(function(err) {
+            console.warn('[GAS] Background Sheets sync notice:', err);
+          })
+          .apiGradeSubmission(realSubId, score, targetSub.judgeNotes, currentUser.username, username, actId, token, status);
+      } else {
+        var apiEndpoint = getLiveApiUrl();
+        if (apiEndpoint) {
+          fetch(apiEndpoint, {
+            method: 'POST',
+            body: JSON.stringify({
+              action: 'gradeSubmission',
+              sessionToken: token,
+              submissionId: realSubId,
+              username: username,
+              activityId: actId,
+              score: score,
+              status: status,
+              judgeNotes: targetSub.judgeNotes,
+              judgeUsername: currentUser.username
+            })
+          }).then(function(r) { return r.json(); }).then(function(res) {
+            console.log('[REST] Quick grade saved to backend:', res);
+          }).catch(function(err) {
+            console.error('[REST] Quick grade error:', err);
+          });
+        }
       }
     }
 
@@ -8192,6 +8615,11 @@
     window.renderGradingSelectOptions = renderGradingSelectOptions;
     window.renderGradingList = renderGradingList;
     window.saveGradeScore = saveGradeScore;
+    window.openQuickGradeModal = openQuickGradeModal;
+    window.closeQuickGradeModal = closeQuickGradeModal;
+    window.setQuickGradePreset = setQuickGradePreset;
+    window.selectQuickGradeStatus = selectQuickGradeStatus;
+    window.submitQuickGradeModal = submitQuickGradeModal;
     window.renderAdminActivitiesTable = renderAdminActivitiesTable;
     window.filterAdminActivities = filterAdminActivities;
     window.toggleAutoAnswersConfig = toggleAutoAnswersConfig;
