@@ -664,7 +664,7 @@ function setupDatabase() {
     usersSheet.appendRow(['admin', 'admin123', 'ผู้ดูแลระบบสูงสุด', 'Admin', 'ADM-00', 'Red', 'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&w=400&q=80', 0]);
     usersSheet.appendRow(['ref1', '123', 'กรรมการประจำฐาน 1', 'Sub-Admin', 'SUB-01', 'Blue', 'https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=400&q=80', 0]);
     usersSheet.appendRow(['car01', 'pass123', 'ทีมสายฟ้าสีแดง', 'User', 'C1', 'Red', 'https://images.unsplash.com/photo-1544829099-b9a0c07fad1a?auto=format&fit=crop&w=400&q=80', 5]);
-    usersSheet.appendRow(['car02', 'pass123', 'ทีมมังกรสีน้ำเงิน', 'User', 'B-02', 'Blue', 'https://images.unsplash.com/photo-1552519507-da3b142c6e3d?auto=format&fit=crop&w=400&q=80', 0]);
+    usersSheet.appendRow(['car02', 'pass123', 'ทีมมังกรสีฟ้า', 'User', 'B-02', 'Blue', 'https://images.unsplash.com/photo-1552519507-da3b142c6e3d?auto=format&fit=crop&w=400&q=80', 0]);
     usersSheet.appendRow(['car03', 'pass123', 'ทีมสิงห์สีเหลือง', 'User', 'Y-03', 'Yellow', 'https://images.unsplash.com/photo-1580273916550-e323be2ae537?auto=format&fit=crop&w=400&q=80', 10]);
   }
   
@@ -1264,7 +1264,7 @@ function apiSubmitAnswer(username, activityId, answerText, imageFileObj, session
       if (!c) return 'default';
       const s = c.toString().trim().toLowerCase();
       if (s === 'red' || s === 'แดง') return 'red';
-      if (s === 'blue' || s === 'น้ำเงิน') return 'blue';
+      if (s === 'blue' || s === 'น้ำเงิน' || s === 'ฟ้า' || s === 'สีฟ้า' || s === 'sky' || s === 'cyan') return 'blue';
       if (s === 'yellow' || s === 'เหลือง') return 'yellow';
       if (s === 'green' || s === 'เขียว') return 'green';
       if (s === 'orange' || s === 'ส้ม') return 'orange';

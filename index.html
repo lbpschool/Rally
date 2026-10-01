@@ -1701,7 +1701,7 @@
               <label class="block text-slate-700 mb-1"><span id="userFormCarColorLabel">สีRCที่หา</span></label>
               <select id="userFormCarColor" class="w-full px-3 py-2.5 rounded-xl glass-input">
                 <option value="Red">สีแดง (Red)</option>
-                <option value="Blue">สีน้ำเงิน (Blue)</option>
+                <option value="Blue">สีฟ้า (Blue)</option>
                 <option value="Yellow">สีเหลือง (Yellow)</option>
                 <option value="Green">สีเขียว (Green)</option>
                 <option value="Orange">สีส้ม (Orange)</option>
@@ -3111,7 +3111,7 @@
       if (!colorStr) return 'ทั่วไป';
       var c = colorStr.trim().toLowerCase();
       if (c === 'red' || c === 'แดง') return 'แดง';
-      if (c === 'blue' || c === 'น้ำเงิน') return 'น้ำเงิน';
+      if (c === 'blue' || c === 'น้ำเงิน' || c === 'ฟ้า' || c === 'สีฟ้า' || c === 'sky' || c === 'cyan') return 'ฟ้า';
       if (c === 'yellow' || c === 'เหลือง') return 'เหลือง';
       if (c === 'green' || c === 'เขียว') return 'เขียว';
       if (c === 'purple' || c === 'ม่วง') return 'ม่วง';
@@ -3125,7 +3125,7 @@
     function getCarColorStyle(colorStr) {
       var c = (colorStr || '').toLowerCase();
       if (c === 'red' || c === 'แดง') return 'bg-red-100 text-red-700 border border-red-200';
-      if (c === 'blue' || c === 'น้ำเงิน') return 'bg-blue-100 text-blue-700 border border-blue-200';
+      if (c === 'blue' || c === 'น้ำเงิน' || c === 'ฟ้า' || c === 'สีฟ้า' || c === 'sky' || c === 'cyan') return 'bg-sky-100 text-sky-700 border border-sky-200';
       if (c === 'yellow' || c === 'เหลือง') return 'bg-amber-100 text-amber-800 border border-amber-200';
       if (c === 'green' || c === 'เขียว') return 'bg-emerald-100 text-emerald-700 border border-emerald-200';
       if (c === 'purple' || c === 'ม่วง') return 'bg-purple-100 text-purple-700 border border-purple-200';
@@ -3144,12 +3144,12 @@
           badgeClass: 'bg-red-50 text-red-700 border border-red-200'
         };
       }
-      if (c === 'blue' || c === 'น้ำเงิน') {
+      if (c === 'blue' || c === 'น้ำเงิน' || c === 'ฟ้า' || c === 'สีฟ้า' || c === 'sky' || c === 'cyan') {
         return {
-          borderLeftClass: 'border-l-blue-500',
-          iconBoxClass: 'bg-blue-100 text-blue-600',
-          textColorClass: 'text-blue-600',
-          badgeClass: 'bg-blue-50 text-blue-700 border border-blue-200'
+          borderLeftClass: 'border-l-sky-500',
+          iconBoxClass: 'bg-sky-100 text-sky-600',
+          textColorClass: 'text-sky-600',
+          badgeClass: 'bg-sky-50 text-sky-700 border border-sky-200'
         };
       }
       if (c === 'yellow' || c === 'เหลือง') {
@@ -6189,7 +6189,7 @@
           '<input type="text" value="' + escapeHTML(row.answer || '') + '" onchange="updateAutoAnswerRow(' + idx + ', \'answer\', this.value)" placeholder="พิมพ์คำตอบที่ถูกต้อง..." class="flex-1 px-3 py-2 rounded-xl glass-input text-xs font-semibold">' +
           '<select onchange="updateAutoAnswerRow(' + idx + ', \'color\', this.value)" class="w-32 sm:w-36 px-2.5 py-2 rounded-xl glass-input text-xs font-semibold">' +
             '<option value="Red" ' + (row.color === 'Red' ? 'selected' : '') + '>🔴 แดง</option>' +
-            '<option value="Blue" ' + (row.color === 'Blue' ? 'selected' : '') + '>🔵 น้ำเงิน</option>' +
+            '<option value="Blue" ' + (row.color === 'Blue' || row.color === 'ฟ้า' || row.color === 'สีฟ้า' || row.color === 'น้ำเงิน' || row.color === 'Sky' ? 'selected' : '') + '>🔵 ฟ้า</option>' +
             '<option value="Yellow" ' + (row.color === 'Yellow' ? 'selected' : '') + '>🟡 เหลือง</option>' +
             '<option value="Green" ' + (row.color === 'Green' ? 'selected' : '') + '>🟢 เขียว</option>' +
             '<option value="Orange" ' + (row.color === 'Orange' ? 'selected' : '') + '>🟠 ส้ม</option>' +
@@ -6360,7 +6360,8 @@
         } else if (autoAns && typeof autoAns === 'object') {
           currentAutoAnswerRows = [];
           if (autoAns.Red && autoAns.Red.answer) currentAutoAnswerRows.push({ answer: autoAns.Red.answer, color: 'Red', points: Number(autoAns.Red.points) || act.maxPoints });
-          if (autoAns.Blue && autoAns.Blue.answer) currentAutoAnswerRows.push({ answer: autoAns.Blue.answer, color: 'Blue', points: Number(autoAns.Blue.points) || act.maxPoints });
+          var blueAns = autoAns.Blue || autoAns.Sky || autoAns['ฟ้า'] || autoAns['น้ำเงิน'];
+          if (blueAns && blueAns.answer) currentAutoAnswerRows.push({ answer: blueAns.answer, color: 'Blue', points: Number(blueAns.points) || act.maxPoints });
           if (autoAns.Yellow && autoAns.Yellow.answer) currentAutoAnswerRows.push({ answer: autoAns.Yellow.answer, color: 'Yellow', points: Number(autoAns.Yellow.points) || act.maxPoints });
           if (autoAns.Green && autoAns.Green.answer) currentAutoAnswerRows.push({ answer: autoAns.Green.answer, color: 'Green', points: Number(autoAns.Green.points) || act.maxPoints });
           if (autoAns.Orange && autoAns.Orange.answer) currentAutoAnswerRows.push({ answer: autoAns.Orange.answer, color: 'Orange', points: Number(autoAns.Orange.points) || act.maxPoints });
@@ -6762,7 +6763,9 @@
         document.getElementById('userFormPassword').required = false;
         document.getElementById('userFormName').value = u.name;
         document.getElementById('userFormRole').value = u.role;
-        document.getElementById('userFormCarColor').value = u.carColor || 'Red';
+        var userCol = u.carColor || 'Red';
+        if (userCol === 'น้ำเงิน' || userCol === 'ฟ้า' || userCol === 'สีฟ้า' || userCol === 'Sky') userCol = 'Blue';
+        document.getElementById('userFormCarColor').value = userCol;
         document.getElementById('userFormCarCode').value = u.carCode || '';
         
         var members = [];
@@ -7844,11 +7847,11 @@
       }
 
       var colors = ['Red', 'Blue', 'Yellow', 'Green', 'Orange', 'Purple', 'Pink'];
-      var colorLabels = ['แดง', 'น้ำเงิน', 'เหลือง', 'เขียว', 'ส้ม', 'ม่วง', 'ชมพู'];
+      var colorLabels = ['แดง', 'ฟ้า', 'เหลือง', 'เขียว', 'ส้ม', 'ม่วง', 'ชมพู'];
       var colorAvgs = colors.map(function(col, i) {
         var teamInColor = competitors.filter(function(u) {
           var c = (u.carColor || '').toLowerCase();
-          return c === col.toLowerCase() || c === colorLabels[i];
+          return c === col.toLowerCase() || c === colorLabels[i] || (col === 'Blue' && (c === 'น้ำเงิน' || c === 'ฟ้า' || c === 'สีฟ้า' || c === 'sky' || c === 'cyan'));
         });
         if (teamInColor.length === 0) return 0;
         var sum = teamInColor.reduce(function(acc, compObj) {
@@ -7864,11 +7867,11 @@
         chartColorAvgInstance = new Chart(ctxColorAvg.getContext('2d'), {
           type: 'bar',
           data: {
-            labels: ['สีแดง 🔴', 'สีน้ำเงิน 🔵', 'สีเหลือง 🟡', 'สีเขียว 🟢', 'สีส้ม 🟠', 'สีม่วง 🟣', 'สีชมพู 🩷'],
+            labels: ['สีแดง 🔴', 'สีฟ้า 🔵', 'สีเหลือง 🟡', 'สีเขียว 🟢', 'สีส้ม 🟠', 'สีม่วง 🟣', 'สีชมพู 🩷'],
             datasets: [{
               label: 'คะแนนเฉลี่ย',
               data: colorAvgs,
-              backgroundColor: ['#ef4444', '#3b82f6', '#eab308', '#10b981', '#f97316', '#a855f7', '#ec4899'],
+              backgroundColor: ['#ef4444', '#0ea5e9', '#eab308', '#10b981', '#f97316', '#a855f7', '#ec4899'],
               borderRadius: 8
             }]
           },
