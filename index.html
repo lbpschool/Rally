@@ -168,6 +168,26 @@
       }
     }
 
+    /* Mobile Typography Enhancements for better readability */
+    @media screen and (max-width: 640px) {
+      .text-\[10px\] {
+        font-size: 12px !important;
+        line-height: 1.25rem !important;
+      }
+      .text-\[11px\] {
+        font-size: 13px !important;
+        line-height: 1.25rem !important;
+      }
+      #userMissionsGrid h4 {
+        font-size: 1.2rem !important;
+        line-height: 1.65rem !important;
+      }
+      #userMissionsGrid p {
+        font-size: 0.95rem !important;
+        line-height: 1.55rem !important;
+      }
+    }
+
     .metric-card {
       transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
       background: linear-gradient(145deg, rgba(255,255,255,0.6) 0%, rgba(255,255,255,0.3) 100%);
@@ -381,7 +401,7 @@
               <i class="fa-solid fa-flag-checkered"></i>
             </div>
           </div>
-          <span class="font-black text-lg tracking-wide uppercase bg-gradient-to-r from-purple-600 via-pink-500 to-rose-500 bg-clip-text text-transparent">
+          <span class="font-black text-lg sm:text-xl tracking-wide uppercase bg-gradient-to-r from-purple-600 via-pink-500 to-rose-500 bg-clip-text text-transparent">
             RALLY SCORING
           </span>
         </div>
@@ -390,9 +410,9 @@
       <!-- User Profile Header Right -->
       <div class="flex items-center gap-2 sm:gap-3">
         <!-- Refresh Button before Profile Avatar (Glassmorphism Pill Button) -->
-        <button id="btnHeaderRefreshApp" onclick="refreshWholeApp()" title="รีเฟรชข้อมูลคะแนนและหน้าจอ (ไม่ต้องเข้าสู่ระบบใหม่)" class="px-3.5 py-1.5 rounded-full bg-gradient-to-r from-purple-600/90 via-indigo-600/90 to-pink-600/90 hover:from-purple-600 hover:to-pink-600 text-white font-extrabold text-xs flex items-center gap-1.5 shadow-lg shadow-purple-500/25 border border-white/40 hover:border-white/80 backdrop-blur-md transition-all cursor-pointer active:scale-95">
-          <i id="headerRefreshIcon" class="fa-solid fa-arrows-rotate text-xs"></i>
-          <span class="whitespace-nowrap tracking-wide">รีเฟรชหน้า</span>
+        <button id="btnHeaderRefreshApp" onclick="refreshWholeApp()" title="รีเฟรชข้อมูลคะแนนและหน้าจอ (ไม่ต้องเข้าสู่ระบบใหม่)" class="px-3.5 py-1.5 rounded-full bg-gradient-to-r from-purple-600/90 via-indigo-600/90 to-pink-600/90 hover:from-purple-600 hover:to-pink-600 text-white font-black text-xs sm:text-sm flex items-center gap-1.5 shadow-lg shadow-purple-500/25 border border-white/40 hover:border-white/80 backdrop-blur-md transition-all cursor-pointer active:scale-95">
+          <i id="headerRefreshIcon" class="fa-solid fa-arrows-rotate text-xs sm:text-sm"></i>
+          <span class="whitespace-nowrap tracking-wide text-xs sm:text-sm">รีเฟรชหน้า</span>
         </button>
 
         <div class="flex items-center gap-2 pl-2 sm:pl-3 border-l border-slate-200/80">
@@ -709,26 +729,26 @@
 
         <!-- ================= USER MISSIONS VIEW ================= -->
         <div id="viewUserMissions" style="display: none;" class="space-y-6">
-          <div class="glass-card p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div class="glass-card p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-              <h2 id="userMissionsHeaderTitle" class="text-xl font-bold text-slate-800 flex items-center gap-3">
+              <h2 id="userMissionsHeaderTitle" class="text-xl sm:text-2xl font-black text-slate-800 flex items-center gap-3">
                 <i class="fa-solid fa-list-check text-purple-600"></i> รายการภารกิจและกิจกรรม
               </h2>
-              <p class="text-xs text-slate-400 mt-1">เลือกภารกิจเพื่อส่งคำตอบ ตรวจข้อความ หรืออัปโหลดรูปภาพ</p>
+              <p class="text-xs sm:text-sm text-slate-500 mt-1 font-medium">เลือกภารกิจเพื่อส่งคำตอบ ตรวจข้อความ หรืออัปโหลดรูปภาพ</p>
             </div>
 
             <div class="flex items-center gap-2 flex-wrap">
-              <div class="flex items-center gap-1 glass-card p-1 rounded-xl text-xs font-medium">
-                <button onclick="filterUserCategory('ALL')" id="tabUserALL" class="px-3 py-1 rounded-lg text-white bg-purple-600 transition-all">ทั้งหมด</button>
-                <button onclick="filterUserCategory('RC')" id="tabUserRC" class="px-3 py-1 rounded-lg text-slate-600 hover:text-purple-600 transition-all">จุด RC</button>
-                <button onclick="filterUserCategory('Base')" id="tabUserBase" class="px-3 py-1 rounded-lg text-slate-600 hover:text-purple-600 transition-all">กิจกรรมฐาน</button>
-                <button onclick="filterUserCategory('Quiz')" id="tabUserQuiz" class="px-3 py-1 rounded-lg text-slate-600 hover:text-purple-600 transition-all">เกมส์คำถาม</button>
+              <div class="flex items-center gap-1.5 glass-card p-1.5 rounded-2xl text-xs sm:text-sm font-bold flex-wrap">
+                <button onclick="filterUserCategory('ALL')" id="tabUserALL" class="px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-xl text-white bg-purple-600 font-black transition-all shadow-sm">ทั้งหมด</button>
+                <button onclick="filterUserCategory('RC')" id="tabUserRC" class="px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-xl text-slate-600 hover:text-purple-600 transition-all font-bold">จุด RC</button>
+                <button onclick="filterUserCategory('Base')" id="tabUserBase" class="px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-xl text-slate-600 hover:text-purple-600 transition-all font-bold">กิจกรรมฐาน</button>
+                <button onclick="filterUserCategory('Quiz')" id="tabUserQuiz" class="px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-xl text-slate-600 hover:text-purple-600 transition-all font-bold">เกมส์คำถาม</button>
               </div>
 
               <!-- Admin Reset All Activities Button -->
               <div id="userMissionsAdminResetContainer" style="display: none;">
-                <button type="button" onclick="resetAllActivities()" title="ลบภารกิจทั้งหมดและล้างคะแนนเพื่อเริ่มจัดกิจกรรมใหม่ (เฉพาะ Admin)" class="px-3.5 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold shadow-md transition-all flex items-center gap-1.5 cursor-pointer active:scale-95 whitespace-nowrap">
-                  <i class="fa-solid fa-trash-can text-xs"></i> รีเซ็ตภารกิจทั้งหมด
+                <button type="button" onclick="resetAllActivities()" title="ลบภารกิจทั้งหมดและล้างคะแนนเพื่อเริ่มจัดกิจกรรมใหม่ (เฉพาะ Admin)" class="px-4 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs sm:text-sm font-bold shadow-md transition-all flex items-center gap-1.5 cursor-pointer active:scale-95 whitespace-nowrap">
+                  <i class="fa-solid fa-trash-can text-sm"></i> รีเซ็ตภารกิจทั้งหมด
                 </button>
               </div>
             </div>
@@ -4752,8 +4772,8 @@
       ['ALL', 'RC', 'Base', 'Quiz'].forEach(function(c) {
         var btn = document.getElementById('tabUser' + c);
         if (btn) {
-          if (c === cat) btn.className = 'px-3.5 py-1.5 rounded-xl text-white bg-purple-600 font-bold transition-all shadow-sm';
-          else btn.className = 'px-3.5 py-1.5 rounded-xl text-slate-600 hover:text-purple-600 transition-all font-semibold';
+          if (c === cat) btn.className = 'px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-xl text-white bg-purple-600 font-black text-xs sm:text-sm transition-all shadow-sm';
+          else btn.className = 'px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-xl text-slate-600 hover:text-purple-600 transition-all font-bold text-xs sm:text-sm';
         }
       });
       renderUserMissionsGrid();
@@ -4777,20 +4797,20 @@
         if (!activitiesData) {
           container.innerHTML = '<div class="col-span-full text-center py-12 text-slate-500 rounded-3xl bg-white border border-slate-200 flex flex-col items-center justify-center gap-3 shadow-sm">' +
             '<i class="fa-solid fa-arrows-rotate fa-spin text-3xl text-purple-600"></i>' +
-            '<p class="text-sm font-bold text-slate-700">กำลังเชื่อมต่อและโหลดข้อมูลภารกิจจากฐานข้อมูล...</p>' +
-            '<button onclick="loadAppData()" class="mt-1 px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs transition-all shadow-md cursor-pointer flex items-center gap-1.5"><i class="fa-solid fa-arrows-rotate"></i> โหลดข้อมูลใหม่</button>' +
+            '<p class="text-sm sm:text-base font-bold text-slate-700">กำลังเชื่อมต่อและโหลดข้อมูลภารกิจจากฐานข้อมูล...</p>' +
+            '<button onclick="loadAppData()" class="mt-1 px-4 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs sm:text-sm transition-all shadow-md cursor-pointer flex items-center gap-1.5"><i class="fa-solid fa-arrows-rotate"></i> โหลดข้อมูลใหม่</button>' +
             '</div>';
         } else if (activitiesData.length === 0) {
           container.innerHTML = '<div class="col-span-full text-center py-12 text-slate-500 rounded-3xl bg-white border border-slate-200 flex flex-col items-center justify-center gap-3 shadow-sm">' +
             '<div class="w-14 h-14 rounded-2xl bg-purple-50 text-purple-600 flex items-center justify-center text-2xl mb-1 shadow-xs">' +
             '<i class="fa-solid fa-flag-checkered"></i>' +
             '</div>' +
-            '<p class="text-sm font-bold text-slate-700">ยังไม่มีรายการภารกิจในระบบ</p>' +
-            '<p class="text-xs text-slate-400 max-w-sm">ผู้ดูแลระบบสามารถกดปุ่ม "เพิ่มภารกิจใหม่" ในหน้าจัดการภารกิจเพื่อเริ่มสร้างจุด RC และฐานกิจกรรมได้ทันที</p>' +
-            ((currentUser && currentUser.role === 'Admin') ? '<button onclick="switchView(\'AdminActivities\'); openActivityModal();" class="mt-2 px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs transition-all shadow-md cursor-pointer flex items-center gap-1.5"><i class="fa-solid fa-plus"></i> เพิ่มภารกิจใหม่ตอนนี้</button>' : '') +
+            '<p class="text-base font-bold text-slate-700">ยังไม่มีรายการภารกิจในระบบ</p>' +
+            '<p class="text-xs sm:text-sm text-slate-500 max-w-sm">ผู้ดูแลระบบสามารถกดปุ่ม "เพิ่มภารกิจใหม่" ในหน้าจัดการภารกิจเพื่อเริ่มสร้างจุด RC และฐานกิจกรรมได้ทันที</p>' +
+            ((currentUser && currentUser.role === 'Admin') ? '<button onclick="switchView(\'AdminActivities\'); openActivityModal();" class="mt-2 px-4 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs sm:text-sm transition-all shadow-md cursor-pointer flex items-center gap-1.5"><i class="fa-solid fa-plus"></i> เพิ่มภารกิจใหม่ตอนนี้</button>' : '') +
             '</div>';
         } else {
-          container.innerHTML = '<div class="col-span-full text-center py-8 text-slate-400 rounded-3xl bg-white border border-slate-200">ไม่พบรายการภารกิจในหมวดหมู่นี้</div>';
+          container.innerHTML = '<div class="col-span-full text-center py-8 text-slate-500 font-bold text-sm sm:text-base rounded-3xl bg-white border border-slate-200">ไม่พบรายการภารกิจในหมวดหมู่นี้</div>';
         }
         return;
       }
@@ -4801,22 +4821,22 @@
         
         var statusBadge = '';
         if (!currentUser || currentUser.role !== 'Admin') {
-          statusBadge = '<span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-500 border border-slate-200">ยังไม่ส่งงาน</span>';
+          statusBadge = '<span class="px-3 py-1 rounded-full text-xs sm:text-sm font-bold bg-slate-100 text-slate-600 border border-slate-200">ยังไม่ส่งงาน</span>';
           if (sub) {
             if (sub.status === 'passed') {
               if (currentUser && currentUser.role === 'User') {
                 statusBadge = '';
               } else {
-                statusBadge = '<span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-700 border border-emerald-200"><i class="fa-solid fa-check mr-1"></i>ผ่าน</span>';
+                statusBadge = '<span class="px-3 py-1 rounded-full text-xs sm:text-sm font-bold bg-emerald-100 text-emerald-700 border border-emerald-200"><i class="fa-solid fa-check mr-1"></i>ผ่าน</span>';
               }
             } else if (sub.status === 'failed') {
               if (currentUser && currentUser.role === 'User') {
                 statusBadge = '';
               } else {
-                statusBadge = '<span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-700 border border-rose-200"><i class="fa-solid fa-xmark mr-1"></i>ไม่ผ่าน</span>';
+                statusBadge = '<span class="px-3 py-1 rounded-full text-xs sm:text-sm font-bold bg-rose-100 text-rose-700 border border-rose-200"><i class="fa-solid fa-xmark mr-1"></i>ไม่ผ่าน</span>';
               }
             } else {
-              statusBadge = '<span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-200"><i class="fa-solid fa-hourglass-half mr-1"></i>รอตรวจคะแนน</span>';
+              statusBadge = '<span class="px-3 py-1 rounded-full text-xs sm:text-sm font-bold bg-amber-100 text-amber-800 border border-amber-200"><i class="fa-solid fa-hourglass-half mr-1"></i>รอตรวจคะแนน</span>';
             }
           }
         }
@@ -4825,18 +4845,18 @@
 
         var scoreInfoHTML = '';
         if (shouldHide) {
-          scoreInfoHTML = '<span class="px-2 py-0.5 rounded-md text-[11px] font-bold bg-amber-100 text-amber-800 border border-amber-200 inline-flex items-center gap-1"><i class="fa-solid fa-lock text-[10px]"></i> ซ่อนคะแนน</span>';
+          scoreInfoHTML = '<span class="px-3 py-1 rounded-xl text-xs sm:text-sm font-bold bg-amber-100 text-amber-800 border border-amber-200 inline-flex items-center gap-1.5"><i class="fa-solid fa-lock text-xs"></i> ซ่อนคะแนน</span>';
         } else if (currentUser && currentUser.role === 'Admin') {
-          scoreInfoHTML = '<span class="font-extrabold text-amber-600">' + act.maxPoints + ' คะแนนเต็ม</span>';
+          scoreInfoHTML = '<span class="font-extrabold text-sm sm:text-base text-amber-600">' + act.maxPoints + ' คะแนนเต็ม</span>';
         } else {
           if (sub && sub.status === 'passed') {
-            scoreInfoHTML = '<span class="px-2 py-0.5 rounded-md text-[11px] font-extrabold bg-emerald-100 text-emerald-700 border border-emerald-200 inline-flex items-center gap-1"><i class="fa-solid fa-star text-amber-500"></i> ได้รับ ' + sub.score + ' / ' + act.maxPoints + ' คะแนน</span>';
+            scoreInfoHTML = '<span class="px-3 py-1 rounded-xl text-xs sm:text-sm font-black bg-emerald-100 text-emerald-700 border border-emerald-200 inline-flex items-center gap-1.5"><i class="fa-solid fa-star text-amber-500"></i> ได้รับ ' + sub.score + ' / ' + act.maxPoints + ' คะแนน</span>';
           } else if (sub && sub.status === 'failed') {
-            scoreInfoHTML = '<span class="px-2 py-0.5 rounded-md text-[11px] font-extrabold bg-rose-50 text-rose-600 border border-rose-200">ได้รับ 0 / ' + act.maxPoints + ' คะแนน</span>';
+            scoreInfoHTML = '<span class="px-3 py-1 rounded-xl text-xs sm:text-sm font-black bg-rose-50 text-rose-600 border border-rose-200">ได้รับ 0 / ' + act.maxPoints + ' คะแนน</span>';
           } else if (sub && sub.status === 'pending') {
-            scoreInfoHTML = '<span class="px-2 py-0.5 rounded-md text-[11px] font-bold bg-amber-50 text-amber-700 border border-amber-200 inline-flex items-center gap-1"><i class="fa-solid fa-hourglass-half"></i> รอตรวจคะแนน</span>';
+            scoreInfoHTML = '<span class="px-3 py-1 rounded-xl text-xs sm:text-sm font-bold bg-amber-50 text-amber-700 border border-amber-200 inline-flex items-center gap-1.5"><i class="fa-solid fa-hourglass-half text-amber-600"></i> รอตรวจคะแนน</span>';
           } else {
-            scoreInfoHTML = '<span class="font-extrabold text-amber-600">' + act.maxPoints + ' คะแนนเต็ม</span>';
+            scoreInfoHTML = '<span class="font-extrabold text-sm sm:text-base text-amber-600">' + act.maxPoints + ' คะแนนเต็ม</span>';
           }
         }
 
@@ -4850,12 +4870,12 @@
 
           var competitorImagesBtn = '';
           if (subCount > 0) {
-            competitorImagesBtn = '<button type="button" onclick="openMissionSubmissionsGallery(\'' + act.id + '\')" class="w-full py-2.5 px-3 rounded-2xl bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-700 hover:from-indigo-700 hover:to-purple-700 text-white font-black text-xs shadow-md shadow-indigo-500/25 flex items-center justify-center gap-1.5 transition-all active:scale-95 cursor-pointer">' +
-              '<i class="fa-solid fa-camera-retro"></i> ดูรูปภาพที่ผู้แข่งขันส่งมา (' + subCount + ' ภาพ)' +
+            competitorImagesBtn = '<button type="button" onclick="openMissionSubmissionsGallery(\'' + act.id + '\')" class="w-full py-3 px-3.5 rounded-2xl bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-700 hover:from-indigo-700 hover:to-purple-700 text-white font-black text-xs sm:text-sm shadow-md shadow-indigo-500/25 flex items-center justify-center gap-2 transition-all active:scale-95 cursor-pointer">' +
+              '<i class="fa-solid fa-camera-retro text-sm"></i> ดูรูปภาพที่ผู้แข่งขันส่งมา (' + subCount + ' ภาพ)' +
               '</button>';
           } else {
-            competitorImagesBtn = '<button type="button" onclick="openMissionSubmissionsGallery(\'' + act.id + '\')" class="w-full py-2 px-3 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-500 font-bold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer">' +
-              '<i class="fa-solid fa-camera text-slate-400"></i> ยังไม่มีรูปภาพที่ส่งมา (0 ภาพ)' +
+            competitorImagesBtn = '<button type="button" onclick="openMissionSubmissionsGallery(\'' + act.id + '\')" class="w-full py-2.5 px-3 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all cursor-pointer">' +
+              '<i class="fa-solid fa-camera text-slate-400 text-sm"></i> ยังไม่มีรูปภาพที่ส่งมา (0 ภาพ)' +
               '</button>';
           }
 
@@ -4864,18 +4884,18 @@
             var badgeCount = sImages.length > 1 ? ' (' + sImages.length + ' ภาพ)' : '';
             adminSolutionHTML = '<div class="mt-3 pt-3 border-t border-slate-200/80 flex flex-col gap-2">' +
               competitorImagesBtn +
-              '<button type="button" onclick="openSolutionGalleryModal(\'' + act.id + '\', 0)" class="w-full py-2.5 px-3 rounded-2xl bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 hover:from-amber-600 hover:to-orange-600 text-white font-black text-xs shadow-md shadow-amber-500/25 flex items-center justify-center gap-1.5 transition-all active:scale-95 cursor-pointer">' +
-              '<i class="fa-solid fa-key"></i> แสดงภาพเฉลย' + badgeCount + ' (เฉพาะ Admin)' +
+              '<button type="button" onclick="openSolutionGalleryModal(\'' + act.id + '\', 0)" class="w-full py-3 px-3.5 rounded-2xl bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 hover:from-amber-600 hover:to-orange-600 text-white font-black text-xs sm:text-sm shadow-md shadow-amber-500/25 flex items-center justify-center gap-2 transition-all active:scale-95 cursor-pointer">' +
+              '<i class="fa-solid fa-key text-sm"></i> แสดงภาพเฉลย' + badgeCount + ' (เฉพาะ Admin)' +
               '</button>' +
-              '<button type="button" onclick="openQuickSolutionModal(\'' + act.id + '\')" class="text-[11px] text-amber-700 hover:text-amber-900 font-bold flex items-center justify-center gap-1 cursor-pointer py-0.5">' +
+              '<button type="button" onclick="openQuickSolutionModal(\'' + act.id + '\')" class="text-xs sm:text-sm text-amber-700 hover:text-amber-900 font-bold flex items-center justify-center gap-1.5 cursor-pointer py-1">' +
               '<i class="fa-solid fa-images"></i> จัดการภาพเฉลย (' + sImages.length + ' ภาพ)' +
               '</button>' +
               '</div>';
           } else {
             adminSolutionHTML = '<div class="mt-3 pt-3 border-t border-slate-200/80 flex flex-col gap-2">' +
               competitorImagesBtn +
-              '<button type="button" onclick="openQuickSolutionModal(\'' + act.id + '\')" class="w-full py-2 px-3 rounded-2xl bg-amber-50/90 hover:bg-amber-100 text-amber-800 border border-dashed border-amber-300 font-bold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer active:scale-95">' +
-              '<i class="fa-solid fa-cloud-arrow-up text-amber-600"></i> + เพิ่มภาพเฉลย (Admin)' +
+              '<button type="button" onclick="openQuickSolutionModal(\'' + act.id + '\')" class="w-full py-2.5 px-3 rounded-2xl bg-amber-50/90 hover:bg-amber-100 text-amber-800 border border-dashed border-amber-300 font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 transition-all cursor-pointer active:scale-95">' +
+              '<i class="fa-solid fa-cloud-arrow-up text-amber-600 text-sm"></i> + เพิ่มภาพเฉลย (Admin)' +
               '</button>' +
               '</div>';
           }
@@ -4888,14 +4908,14 @@
         } else {
           // ตรวจสอบว่าผู้เล่นส่งคำตอบกิจกรรมนี้แล้วหรือไม่ (ล็อคส่งได้เพียง 1 ครั้ง & ไม่แสดงการเฉลยคำตอบ)
           if (sub) {
-            cardFooterHTML = '<div class="mt-3 p-3.5 rounded-2xl border border-emerald-200 bg-emerald-50 text-xs text-emerald-800 shadow-xs">' +
+            cardFooterHTML = '<div class="mt-3.5 p-4 rounded-2xl border-2 border-emerald-300/80 bg-emerald-50/90 text-emerald-950 shadow-xs space-y-2">' +
               '<div class="flex items-center justify-between gap-1.5 flex-wrap">' +
-                '<span class="font-extrabold flex items-center gap-1.5"><i class="fa-solid fa-circle-check text-emerald-600 text-sm"></i> ส่งคำตอบเรียบร้อยแล้ว</span>' +
+                '<span class="font-black text-sm sm:text-base text-emerald-800 flex items-center gap-2"><i class="fa-solid fa-circle-check text-emerald-600 text-base"></i> ส่งคำตอบเรียบร้อยแล้ว</span>' +
               '</div>' +
-              (sub.answerText ? '<p class="mt-1 text-slate-700 font-bold">คำตอบที่ส่ง: "' + escapeHTML(sub.answerText) + '"</p>' : '') +
-              (sub.imageUrl ? '<button type="button" onclick="openImageModal(\'' + escapeHTML(sub.imageUrl) + '\', \'' + escapeHTML(act.title) + '\')" class="mt-1.5 text-purple-700 underline font-bold hover:text-purple-900 flex items-center gap-1 text-[11px] cursor-pointer"><i class="fa-solid fa-image"></i> เปิดดูรูปผลงานที่ส่งแล้ว</button>' : '') +
-              '<div class="mt-2 pt-1.5 border-t border-slate-200/60 flex items-center gap-1.5 text-[10px] text-slate-500 font-bold">' +
-                '<i class="fa-solid fa-lock text-slate-400"></i>' +
+              (sub.answerText ? '<p class="text-slate-900 font-extrabold text-sm sm:text-base leading-snug break-words">คำตอบที่ส่ง: "' + escapeHTML(sub.answerText) + '"</p>' : '') +
+              (sub.imageUrl ? '<button type="button" onclick="openImageModal(\'' + escapeHTML(sub.imageUrl) + '\', \'' + escapeHTML(act.title) + '\')" class="text-purple-700 underline font-bold hover:text-purple-900 flex items-center gap-1.5 text-xs sm:text-sm cursor-pointer py-1"><i class="fa-solid fa-image text-sm"></i> เปิดดูรูปผลงานที่ส่งแล้ว</button>' : '') +
+              '<div class="pt-2 border-t border-emerald-200/80 flex items-center gap-1.5 text-xs sm:text-sm text-slate-600 font-semibold">' +
+                '<i class="fa-solid fa-lock text-slate-400 text-xs"></i>' +
                 '<span>บันทึกคำตอบแล้ว (ส่งได้เพียง 1 ครั้ง ไม่สามารถแก้ไขได้)</span>' +
               '</div>' +
               '</div>';
@@ -4908,27 +4928,27 @@
                 : (act.scoringType === 'AUTO_KEYWORDS' ? 'พิมพ์ข้อความคำตอบที่นี่...' : 'พิมพ์คำตอบคำใบ้ที่นี่...');
               var helperBadge = '';
               if (act.scoringType === 'MANUAL_TEXT') {
-                helperBadge = '<p class="text-[10px] text-amber-700 font-semibold mb-1"><i class="fa-solid fa-user-pen mr-1"></i>ส่งข้อความคำตอบเพื่อให้กรรมการตรวจให้คะแนน</p>';
+                helperBadge = '<p class="text-xs sm:text-sm text-amber-800 font-bold mb-1.5"><i class="fa-solid fa-user-pen mr-1.5"></i>ส่งข้อความคำตอบเพื่อให้กรรมการตรวจให้คะแนน</p>';
               } else if (act.scoringType === 'AUTO_KEYWORDS') {
-                helperBadge = '<p class="text-[10px] text-purple-700 font-semibold mb-1"><i class="fa-solid fa-wand-magic-sparkles mr-1"></i>ระบบตรวจจับคำสำคัญและรวมคะแนนบวกลบอัตโนมัติ</p>';
+                helperBadge = '<p class="text-xs sm:text-sm text-purple-800 font-bold mb-1.5"><i class="fa-solid fa-wand-magic-sparkles mr-1.5"></i>ระบบตรวจจับคำสำคัญและรวมคะแนนบวกลบอัตโนมัติ</p>';
               }
-              formHTML = '<form onsubmit="handleUserSubmit(event, \'' + act.id + '\')" class="mt-2.5 space-y-2">' +
+              formHTML = '<form onsubmit="handleUserSubmit(event, \'' + act.id + '\')" class="mt-3 space-y-2.5">' +
                 helperBadge +
-                '<input type="text" id="inputAns_' + act.id + '" required placeholder="' + placeholderText + '" class="w-full px-3.5 py-2.5 rounded-xl border-2 border-purple-300 focus:border-purple-600 bg-white text-slate-800 text-xs font-semibold shadow-sm focus:ring-2 focus:ring-purple-200 outline-none transition-all">' +
-                '<button type="submit" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 hover:opacity-95 text-white font-bold text-xs transition-all shadow-md flex items-center justify-center gap-1.5 cursor-pointer active:scale-98">' +
-                '<i class="fa-solid fa-paper-plane"></i> ส่งคำตอบ' +
+                '<input type="text" id="inputAns_' + act.id + '" required placeholder="' + placeholderText + '" class="w-full px-4 py-3 rounded-2xl border-2 border-purple-300 focus:border-purple-600 bg-white text-slate-800 text-sm sm:text-base font-semibold shadow-sm focus:ring-2 focus:ring-purple-200 outline-none transition-all">' +
+                '<button type="submit" class="w-full py-3 px-4 rounded-2xl bg-gradient-to-r from-purple-600 to-pink-600 hover:opacity-95 text-white font-black text-sm sm:text-base transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer active:scale-98">' +
+                '<i class="fa-solid fa-paper-plane text-sm"></i> ส่งคำตอบ' +
                 '</button></form>';
             } else if (act.scoringType === 'MANUAL') {
-              formHTML = '<div class="mt-2 p-3 rounded-2xl bg-purple-50 border border-purple-200 text-purple-700 text-xs flex items-center gap-2 font-bold">' +
-                '<i class="fa-solid fa-gavel text-purple-600 text-sm"></i>' +
+              formHTML = '<div class="mt-3 p-3.5 rounded-2xl bg-purple-50 border border-purple-200 text-purple-800 text-xs sm:text-sm flex items-center gap-2 font-bold">' +
+                '<i class="fa-solid fa-gavel text-purple-600 text-base"></i>' +
                 '<span>ประเมินและให้คะแนนโดยกรรมการประจำฐาน</span>' +
                 '</div>';
             } else if (act.scoringType === 'IMAGE') {
-              formHTML = '<form onsubmit="handleUserSubmit(event, \'' + act.id + '\')" class="mt-2.5 space-y-2">' +
-                '<div class="space-y-1"><label class="block text-[11px] font-semibold text-slate-600">เลือกรูปถ่ายผลงาน:</label>' +
-                '<input type="file" id="inputFile_' + act.id + '" accept="image/*" required class="w-full px-3 py-2 rounded-xl border-2 border-purple-300 focus:border-purple-600 bg-white text-xs text-slate-600 shadow-sm outline-none transition-all"></div>' +
-                '<button type="submit" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 hover:opacity-95 text-white font-bold text-xs transition-all shadow-md flex items-center justify-center gap-1.5 cursor-pointer active:scale-98">' +
-                '<i class="fa-solid fa-cloud-arrow-up"></i> อัปโหลดภาพส่งเข้าระบบ</button></form>';
+              formHTML = '<form onsubmit="handleUserSubmit(event, \'' + act.id + '\')" class="mt-3 space-y-2.5">' +
+                '<div class="space-y-1.5"><label class="block text-xs sm:text-sm font-bold text-slate-700">เลือกรูปถ่ายผลงาน:</label>' +
+                '<input type="file" id="inputFile_' + act.id + '" accept="image/*" required class="w-full px-3.5 py-2.5 rounded-xl border-2 border-purple-300 focus:border-purple-600 bg-white text-xs sm:text-sm text-slate-700 shadow-sm outline-none transition-all"></div>' +
+                '<button type="submit" class="w-full py-3 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 hover:opacity-95 text-white font-black text-sm sm:text-base transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer active:scale-98">' +
+                '<i class="fa-solid fa-cloud-arrow-up text-sm"></i> อัปโหลดภาพส่งเข้าระบบ</button></form>';
             }
             cardFooterHTML = formHTML;
           }
@@ -4938,14 +4958,14 @@
         if (act.category === 'Base') catBgColor = 'from-purple-500 to-indigo-600';
         else if (act.category === 'Quiz') catBgColor = 'from-emerald-400 to-teal-500';
 
-        return '<div class="rounded-3xl bg-white border border-slate-200/90 shadow-md shadow-slate-200/40 p-5 flex flex-col justify-between relative overflow-hidden transition-all hover:shadow-xl group">' +
+        return '<div class="rounded-3xl bg-white border border-slate-200/90 shadow-md shadow-slate-200/40 p-5 sm:p-6 flex flex-col justify-between relative overflow-hidden transition-all hover:shadow-xl group">' +
           '<div class="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r ' + catBgColor + '"></div>' +
           '<div>' +
-          (act.imageUrl ? '<div class="relative group cursor-pointer mb-3 rounded-2xl overflow-hidden h-40 border border-slate-100 shadow-sm" onclick="openImageModal(\'' + escapeHTML(act.imageUrl) + '\', \'' + escapeHTML(act.title) + '\')"><img src="' + escapeHTML(act.imageUrl) + '" class="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-300" alt="Activity"><div class="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"><i class="fa-solid fa-magnifying-glass-plus text-white text-xl"></i></div></div>' : '') +
-          '<div class="flex items-center justify-between gap-2 mt-1"><span class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-slate-100 text-slate-700 border border-slate-200 uppercase tracking-wider">' + escapeHTML(act.category) + '</span>' + statusBadge + '</div>' +
-          '<h4 class="text-base font-extrabold text-slate-800 mt-2.5 leading-snug">' + escapeHTML(act.title) + '</h4>' +
-          '<p class="text-xs text-slate-500 mt-1 line-clamp-2 leading-relaxed">' + escapeHTML(act.description || '') + '</p>' +
-          '<div class="mt-3 flex items-center justify-between text-xs text-slate-500 pt-2 border-t border-slate-100"><span>' + scoreInfoHTML + '</span></div>' +
+          (act.imageUrl ? '<div class="relative group cursor-pointer mb-3 rounded-2xl overflow-hidden h-44 sm:h-48 border border-slate-100 shadow-sm" onclick="openImageModal(\'' + escapeHTML(act.imageUrl) + '\', \'' + escapeHTML(act.title) + '\')"><img src="' + escapeHTML(act.imageUrl) + '" class="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-300" alt="Activity"><div class="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"><i class="fa-solid fa-magnifying-glass-plus text-white text-2xl"></i></div></div>' : '') +
+          '<div class="flex items-center justify-between gap-2 mt-1"><span class="px-3 py-1 rounded-full text-xs sm:text-sm font-black bg-slate-100 text-slate-800 border border-slate-200 uppercase tracking-wider">' + escapeHTML(act.category) + '</span>' + statusBadge + '</div>' +
+          '<h4 class="text-lg sm:text-xl font-black text-slate-900 mt-2.5 leading-snug tracking-tight">' + escapeHTML(act.title) + '</h4>' +
+          '<p class="text-sm sm:text-base text-slate-700 font-medium mt-1.5 leading-relaxed break-words">' + escapeHTML(act.description || '') + '</p>' +
+          '<div class="mt-3.5 flex items-center justify-between text-sm text-slate-600 pt-2.5 border-t border-slate-100"><span>' + scoreInfoHTML + '</span></div>' +
           '</div>' + cardFooterHTML + '</div>';
       }).join('');
     }
