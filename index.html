@@ -232,7 +232,7 @@
 <body class="relative min-h-screen bg-[#f4f6fb]">
 
   <!-- ================= Image Lightbox Fullscreen Modal ================= -->
-  <div id="imageModal" style="display: none;" class="fixed inset-0 z-50 items-center justify-center bg-slate-950/85 backdrop-blur-md p-3 sm:p-4 overflow-y-auto" onclick="closeImageModal()">
+  <div id="imageModal" style="display: none;" class="fixed inset-0 z-[70] items-center justify-center bg-slate-950/85 backdrop-blur-md p-3 sm:p-4 overflow-y-auto" onclick="closeImageModal()">
     <div class="relative max-w-4xl w-full max-h-[94vh] flex flex-col items-center my-auto py-2 sm:py-3 overflow-y-auto modal-body-scroll" onclick="event.stopPropagation()">
       <!-- Header Toolbar: Zoom Controls (อยู่ก่อนหน้าปุ่มปิด) & Close Button -->
       <div class="self-end mb-2 flex items-center gap-2 sticky top-0 z-20">
@@ -1584,6 +1584,19 @@
           </div>
         </div>
 
+        <!-- Solution Image Section (Admin Solution Preview) -->
+        <div id="quickGradeSolutionSection" class="space-y-1.5 hidden">
+          <div class="flex items-center justify-between">
+            <label class="text-xs font-black text-amber-800 flex items-center gap-1.5">
+              <i class="fa-solid fa-lightbulb text-amber-500"></i> รูปภาพเฉลยของภารกิจ:
+            </label>
+            <span id="quickGradeSolutionCount" class="text-[10px] font-bold text-amber-700 bg-amber-100/80 px-2.5 py-0.5 rounded-full border border-amber-200"></span>
+          </div>
+          <div id="quickGradeSolutionBox" class="p-2.5 rounded-2xl bg-amber-50/50 border border-amber-200">
+            <!-- Populated via JavaScript -->
+          </div>
+        </div>
+
         <!-- Grading Inputs -->
         <div class="p-4 rounded-2xl bg-gradient-to-br from-purple-50/60 to-indigo-50/40 border border-purple-200 space-y-3">
           <div class="flex items-center justify-between">
@@ -1604,22 +1617,7 @@
             </button>
           </div>
 
-          <!-- Status Selection -->
-          <div class="space-y-1">
-            <label class="text-[11px] font-bold text-slate-700">ผลการตรวจ (สถานะ):</label>
-            <div class="grid grid-cols-3 gap-2 text-xs">
-              <button type="button" id="btnStatusPassed" onclick="selectQuickGradeStatus('passed')" class="py-2 px-2 rounded-xl border font-bold flex items-center justify-center gap-1 transition-all cursor-pointer">
-                <i class="fa-solid fa-circle-check text-emerald-600"></i> ถูกต้อง
-              </button>
-              <button type="button" id="btnStatusFailed" onclick="selectQuickGradeStatus('failed')" class="py-2 px-2 rounded-xl border font-bold flex items-center justify-center gap-1 transition-all cursor-pointer">
-                <i class="fa-solid fa-circle-xmark text-rose-600"></i> ไม่ถูกต้อง
-              </button>
-              <button type="button" id="btnStatusPending" onclick="selectQuickGradeStatus('pending')" class="py-2 px-2 rounded-xl border font-bold flex items-center justify-center gap-1 transition-all cursor-pointer">
-                <i class="fa-solid fa-spinner text-blue-600"></i> รอตรวจ
-              </button>
-            </div>
-            <input type="hidden" id="quickGradeStatusVal" value="passed">
-          </div>
+          <input type="hidden" id="quickGradeStatusVal" value="passed">
 
           <!-- Notes Input -->
           <div class="space-y-1">
@@ -5018,20 +5016,22 @@
             var uArg = escapeHTML(s.username || '');
             var aArg = escapeHTML(s.activityId || '');
             var clickCode = 'openQuickGradeModal(\'' + subIdArg + '\',\'' + uArg + '\',\'' + aArg + '\')';
-            if (s.status === 'passed') {
-              resultTag = '<button type="button" onclick="' + clickCode + '" title="คลิกเพื่อตรวจหรือแก้ไขคะแนน (เฉพาะ Admin)" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-300 hover:border-emerald-400 shadow-xs hover:shadow transition-all cursor-pointer group active:scale-95 whitespace-nowrap"><i class="fa-solid fa-circle-check text-emerald-600"></i><span>ถูกต้อง</span><i class="fa-solid fa-pen-to-square text-[10px] opacity-60 group-hover:opacity-100 text-emerald-700 ml-0.5"></i></button>';
-            } else if (s.status === 'failed') {
-              resultTag = '<button type="button" onclick="' + clickCode + '" title="คลิกเพื่อตรวจหรือแก้ไขคะแนน (เฉพาะ Admin)" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-300 hover:border-rose-400 shadow-xs hover:shadow transition-all cursor-pointer group active:scale-95 whitespace-nowrap"><i class="fa-solid fa-circle-xmark text-rose-600"></i><span>ไม่ถูกต้อง</span><i class="fa-solid fa-pen-to-square text-[10px] opacity-60 group-hover:opacity-100 text-rose-700 ml-0.5"></i></button>';
-            } else {
+            var isPending = (!s.status || s.status === 'pending');
+            if (isPending) {
               resultTag = '<button type="button" onclick="' + clickCode + '" title="คลิกเพื่อตรวจและให้คะแนน (เฉพาะ Admin)" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-300 hover:border-blue-400 shadow-xs hover:shadow transition-all cursor-pointer group active:scale-95 whitespace-nowrap"><i class="fa-solid fa-spinner animate-spin text-blue-600"></i><span>รอตรวจ</span><i class="fa-solid fa-pen-to-square text-[10px] opacity-60 group-hover:opacity-100 text-blue-700 ml-0.5"></i></button>';
+            } else {
+              resultTag = '<button type="button" onclick="' + clickCode + '" title="ตรวจแล้ว (คลิกเพื่อดูหรือแก้ไขคะแนน)" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-300 hover:border-emerald-400 shadow-xs hover:shadow transition-all cursor-pointer group active:scale-95 whitespace-nowrap"><i class="fa-solid fa-circle-check text-emerald-600"></i><span>ตรวจแล้ว</span><i class="fa-solid fa-pen-to-square text-[10px] opacity-60 group-hover:opacity-100 text-emerald-700 ml-0.5"></i></button>';
             }
           } else {
-            if (s.status === 'passed') resultTag = '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-600 border border-emerald-200 whitespace-nowrap">ถูกต้อง</span>';
-            else if (s.status === 'failed') resultTag = '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-rose-50 text-rose-600 border border-rose-200 whitespace-nowrap">ไม่ถูกต้อง</span>';
-            else resultTag = '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-blue-50 text-blue-600 border border-blue-200 whitespace-nowrap"><i class="fa-solid fa-spinner animate-spin mr-1"></i>รอตรวจ</span>';
+            var isPending = (!s.status || s.status === 'pending');
+            if (isPending) {
+              resultTag = '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-blue-50 text-blue-600 border border-blue-200 whitespace-nowrap"><i class="fa-solid fa-spinner animate-spin mr-1"></i>รอตรวจ</span>';
+            } else {
+              resultTag = '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-600 border border-emerald-200 whitespace-nowrap"><i class="fa-solid fa-circle-check mr-1 text-emerald-500"></i>ตรวจแล้ว</span>';
+            }
           }
           
-          scoreTag = (s.status === 'passed' ? s.score : '-');
+          scoreTag = (s.status !== 'pending' ? (s.score !== undefined ? s.score : 0) : '-');
         }
 
         var catBadge = '<span class="px-2 py-0.5 rounded-md text-[10px] font-semibold bg-purple-50 text-purple-600 border border-purple-100 whitespace-nowrap">' + escapeHTML(s.category || 'RC') + '</span>';
@@ -6105,6 +6105,37 @@
         }
       }
 
+      // Solution Images preview (Requirement 1: Show solution image in Quick Grade modal)
+      var solSec = document.getElementById('quickGradeSolutionSection');
+      var solBox = document.getElementById('quickGradeSolutionBox');
+      var solCountEl = document.getElementById('quickGradeSolutionCount');
+      var solImages = (typeof getActivitySolutionImages === 'function') ? getActivitySolutionImages(act) : [];
+      quickGradeCurrentSolImages = Array.isArray(solImages) ? solImages : [];
+
+      if (solSec && solBox) {
+        if (quickGradeCurrentSolImages.length > 0) {
+          solSec.classList.remove('hidden');
+          if (solCountEl) solCountEl.innerText = quickGradeCurrentSolImages.length + ' ภาพ';
+
+          var solHtml = '<div class="grid grid-cols-2 sm:grid-cols-3 gap-2">';
+          quickGradeCurrentSolImages.forEach(function(imgUrl, idx) {
+            solHtml += '<div class="relative group cursor-pointer overflow-hidden rounded-xl border-2 border-amber-300 bg-white aspect-video shadow-xs hover:border-amber-500 transition-all" ' +
+              'onclick="openQuickGradeSolutionImage(' + idx + ')">' +
+              '<img src="' + escapeHTML(imgUrl) + '" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200" alt="Solution Image">' +
+              '<div class="absolute inset-0 bg-amber-950/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white font-bold text-xs gap-1">' +
+              '<i class="fa-solid fa-magnifying-glass-plus"></i> ขยายดูรูป</div>' +
+              '<span class="absolute bottom-1 right-1 bg-amber-950/75 text-amber-200 text-[9px] px-1.5 py-0.5 rounded font-mono font-bold">' + (idx + 1) + '/' + quickGradeCurrentSolImages.length + '</span>' +
+              '</div>';
+          });
+          solHtml += '</div>';
+          solBox.innerHTML = solHtml;
+        } else {
+          solSec.classList.add('hidden');
+          solBox.innerHTML = '';
+          if (solCountEl) solCountEl.innerText = '';
+        }
+      }
+
       // Score input
       var scoreInput = document.getElementById('quickGradeScoreInput');
       if (scoreInput) {
@@ -6128,12 +6159,24 @@
         judgeNotesInput.value = sub.judgeNotes || '';
       }
 
-      // Initial status selection
-      selectQuickGradeStatus(sub.status || 'passed');
+      // Default status is passed (ตรวจแล้ว)
+      var statusInput = document.getElementById('quickGradeStatusVal');
+      if (statusInput) statusInput.value = 'passed';
 
       var modal = document.getElementById('modalQuickGrade');
       if (modal) modal.style.display = 'flex';
     }
+
+    var quickGradeCurrentSolImages = [];
+    function openQuickGradeSolutionImage(idx) {
+      var actId = document.getElementById('quickGradeActId').value;
+      var act = (activitiesData || []).find(function(a) { return a && String(a.id || '').trim() === String(actId || '').trim(); }) || {};
+      var title = 'รูปภาพเฉลย: ' + (act.title || 'ภารกิจ');
+      if (quickGradeCurrentSolImages && quickGradeCurrentSolImages[idx]) {
+        openImageModal(quickGradeCurrentSolImages[idx], title, null, quickGradeCurrentSolImages, idx);
+      }
+    }
+    window.openQuickGradeSolutionImage = openQuickGradeSolutionImage;
 
     function closeQuickGradeModal() {
       var modal = document.getElementById('modalQuickGrade');
@@ -6148,37 +6191,17 @@
       if (scoreInput) {
         if (type === 'max') {
           scoreInput.value = maxPts;
-          selectQuickGradeStatus('passed');
         } else if (type === 'zero') {
           scoreInput.value = 0;
-          selectQuickGradeStatus('failed');
         }
       }
+      var statusInput = document.getElementById('quickGradeStatusVal');
+      if (statusInput) statusInput.value = 'passed';
     }
 
     function selectQuickGradeStatus(st) {
       var statusInput = document.getElementById('quickGradeStatusVal');
-      if (statusInput) statusInput.value = st;
-
-      var btnPassed = document.getElementById('btnStatusPassed');
-      var btnFailed = document.getElementById('btnStatusFailed');
-      var btnPending = document.getElementById('btnStatusPending');
-
-      if (btnPassed) {
-        btnPassed.className = st === 'passed' 
-          ? 'py-2 px-2 rounded-xl border-2 border-emerald-500 bg-emerald-50 text-emerald-800 font-extrabold flex items-center justify-center gap-1 shadow-xs transition-all cursor-pointer'
-          : 'py-2 px-2 rounded-xl border border-slate-200 bg-white text-slate-600 font-medium flex items-center justify-center gap-1 transition-all cursor-pointer';
-      }
-      if (btnFailed) {
-        btnFailed.className = st === 'failed' 
-          ? 'py-2 px-2 rounded-xl border-2 border-rose-500 bg-rose-50 text-rose-800 font-extrabold flex items-center justify-center gap-1 shadow-xs transition-all cursor-pointer'
-          : 'py-2 px-2 rounded-xl border border-slate-200 bg-white text-slate-600 font-medium flex items-center justify-center gap-1 transition-all cursor-pointer';
-      }
-      if (btnPending) {
-        btnPending.className = st === 'pending' 
-          ? 'py-2 px-2 rounded-xl border-2 border-blue-500 bg-blue-50 text-blue-800 font-extrabold flex items-center justify-center gap-1 shadow-xs transition-all cursor-pointer'
-          : 'py-2 px-2 rounded-xl border border-slate-200 bg-white text-slate-600 font-medium flex items-center justify-center gap-1 transition-all cursor-pointer';
-      }
+      if (statusInput) statusInput.value = st || 'passed';
     }
 
     function submitQuickGradeModal() {
