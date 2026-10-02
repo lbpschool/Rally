@@ -1781,29 +1781,46 @@
           </div>
 
           <!-- Solution Image Section (รูปภาพเฉลย - เฉพาะ Admin สำหรับจุด RC และเกมส์คำถาม) -->
-          <div id="actSolutionImageSection" class="p-4 rounded-2xl bg-gradient-to-r from-amber-50 to-orange-50 border-2 border-amber-200/80 space-y-2.5">
-            <div class="flex items-center justify-between">
+          <div id="actSolutionImageSection" class="p-4 rounded-2xl bg-gradient-to-r from-amber-50 to-orange-50 border-2 border-amber-200/80 space-y-3">
+            <div class="flex items-center justify-between flex-wrap gap-1.5">
               <label class="block text-amber-900 font-extrabold text-xs flex items-center gap-1.5">
                 <i class="fa-solid fa-key text-amber-600"></i> รูปภาพเฉลย (Solution Image)
+                <span id="actFormSolutionCountBadge" class="ml-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-200/90 text-amber-900 border border-amber-300">0 ภาพ</span>
               </label>
               <span class="text-[10px] text-amber-800 bg-amber-200/80 px-2.5 py-0.5 rounded-full font-black uppercase tracking-wider">เฉพาะ Admin</span>
             </div>
-            <p class="text-[11px] text-slate-500 leading-relaxed">อัปโหลดภาพเฉลยสำหรับใช้ตรวจสอบความถูกต้อง หรือเปิดเฉลยบนเวที (ผู้แข่งขันทั่วไปจะไม่เห็นปุ่มและภาพเฉลยนี้)</p>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 items-center pt-1">
-              <div>
-                <input type="file" id="actFormSolutionFile" accept="image/*" class="w-full px-3 py-2 rounded-xl glass-input text-xs text-slate-600 bg-white">
-                <input type="hidden" id="actFormSolutionImageUrl">
-              </div>
-              <div id="actFormSolutionPreviewContainer" class="hidden flex items-center gap-2 flex-wrap">
-                <span class="text-[11px] text-slate-500">ภาพเฉลยปัจจุบัน:</span>
-                <button type="button" onclick="openImageModal(document.getElementById('actFormSolutionImageUrl').value, 'ภาพเฉลย: ' + (document.getElementById('actFormTitle').value || 'ภารกิจ'))" class="text-amber-700 hover:text-amber-900 underline font-bold text-xs flex items-center gap-1">
-                  <i class="fa-solid fa-eye text-amber-600"></i> ดูภาพเฉลย
+            
+            <p class="text-[11px] text-slate-500 leading-relaxed">อัปโหลดภาพเฉลยสำหรับใช้ตรวจสอบความถูกต้อง หรือเปิดเฉลยบนเวที (สามารถเพิ่มกี่รูปก็ได้ ผู้แข่งขันทั่วไปจะไม่เห็นปุ่มและภาพเฉลยนี้)</p>
+            
+            <!-- Action Toolbar: Add Images Button & Clear All Button -->
+            <div class="flex items-center justify-between flex-wrap gap-2 pt-1">
+              <div class="flex items-center gap-2">
+                <!-- Hidden multiple file input -->
+                <input type="file" id="actFormSolutionFilesInput" accept="image/*" multiple class="hidden" onchange="handleActFormSolutionFilesSelected(event)">
+                <button type="button" onclick="triggerActFormAddSolutionFiles()" class="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 hover:from-amber-600 hover:to-orange-600 text-white font-black text-xs shadow-sm shadow-amber-500/30 flex items-center gap-1.5 cursor-pointer active:scale-95 transition-all">
+                  <i class="fa-solid fa-plus text-xs"></i>
+                  <span>เพิ่มรูปเฉลย</span>
                 </button>
-                <button type="button" onclick="clearSolutionImageForm()" class="text-rose-600 hover:text-rose-800 font-bold text-xs ml-2 flex items-center gap-1">
-                  <i class="fa-solid fa-trash-can text-[10px]"></i> ลบ
-                </button>
+                <span class="text-[10px] text-amber-800/80 font-medium hidden sm:inline">(เลือกพร้อมกันหลายรูป หรือกดเพิ่มทีละรูปก็ได้)</span>
               </div>
+              <button type="button" id="btnActFormClearAllSolutions" onclick="clearAllActFormSolutionImages()" class="hidden text-[11px] font-bold text-rose-600 hover:text-rose-800 flex items-center gap-1 cursor-pointer px-2 py-1 rounded-lg hover:bg-rose-50 transition-colors">
+                <i class="fa-solid fa-trash-can text-[10px]"></i> ลบภาพเฉลยทั้งหมด
+              </button>
             </div>
+
+            <!-- Empty State when 0 images -->
+            <div id="actFormSolutionEmptyBox" class="p-3.5 rounded-xl border-2 border-dashed border-amber-200 bg-white/70 text-center text-xs text-amber-700/80">
+              <i class="fa-regular fa-images text-xl mb-1 text-amber-400 block"></i>
+              ยังไม่มีรูปภาพเฉลย — กดปุ่ม <b>"เพิ่มรูปเฉลย"</b> ด้านบนเพื่อเลือกรูปภาพ (เพิ่มกี่รูปก็ได้)
+            </div>
+
+            <!-- Grid Container for Existing and New Solution Images -->
+            <div id="actFormSolutionGrid" class="hidden grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5 max-h-56 overflow-y-auto modal-body-scroll p-1">
+              <!-- Rendered via JavaScript -->
+            </div>
+
+            <!-- Fallback hidden input for compatibility -->
+            <input type="hidden" id="actFormSolutionImageUrl">
           </div>
 
           <!-- Dynamic Auto Answers Rule Builder -->
@@ -6775,13 +6792,163 @@
     // =========================================================================
     // SOLUTION IMAGE HELPERS (ADMIN ONLY - RC & QUIZ)
     // =========================================================================
-    function clearSolutionImageForm() {
+    // State for Activity Modal Solution Images
+    var actFormExistingSolutionUrls = [];
+    var actFormNewSolutionFiles = []; // Array of { file: File, dataUrl: string, fileName: string }
+
+    function triggerActFormAddSolutionFiles() {
+      var input = document.getElementById('actFormSolutionFilesInput');
+      if (input) input.click();
+    }
+    window.triggerActFormAddSolutionFiles = triggerActFormAddSolutionFiles;
+
+    function handleActFormSolutionFilesSelected(e) {
+      var input = e.target;
+      if (!input || !input.files || input.files.length === 0) return;
+      var files = Array.from(input.files);
+      var loadedCount = 0;
+
+      files.forEach(function(f) {
+        var reader = new FileReader();
+        reader.onload = function(ev) {
+          actFormNewSolutionFiles.push({
+            file: f,
+            dataUrl: ev.target.result,
+            fileName: f.name
+          });
+          loadedCount++;
+          if (loadedCount === files.length) {
+            renderActFormSolutionGrid();
+          }
+        };
+        reader.readAsDataURL(f);
+      });
+
+      input.value = '';
+    }
+    window.handleActFormSolutionFilesSelected = handleActFormSolutionFilesSelected;
+
+    function removeActFormExistingSolutionImage(idx) {
+      if (idx >= 0 && idx < actFormExistingSolutionUrls.length) {
+        actFormExistingSolutionUrls.splice(idx, 1);
+        renderActFormSolutionGrid();
+      }
+    }
+    window.removeActFormExistingSolutionImage = removeActFormExistingSolutionImage;
+
+    function removeActFormNewSolutionImage(idx) {
+      if (idx >= 0 && idx < actFormNewSolutionFiles.length) {
+        actFormNewSolutionFiles.splice(idx, 1);
+        renderActFormSolutionGrid();
+      }
+    }
+    window.removeActFormNewSolutionImage = removeActFormNewSolutionImage;
+
+    function clearAllActFormSolutionImages() {
+      Swal.fire({
+        title: 'ยืนยันลบภาพเฉลยทั้งหมด?',
+        text: 'ภาพเฉลยทั้งหมดในรายการนี้จะถูกลบออกเมื่อกดบันทึกภารกิจ',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#e11d48',
+        cancelButtonColor: '#64748b',
+        confirmButtonText: 'ใช่, ลบทั้งหมด',
+        cancelButtonText: 'ยกเลิก'
+      }).then(function(result) {
+        if (result.isConfirmed) {
+          actFormExistingSolutionUrls = [];
+          actFormNewSolutionFiles = [];
+          renderActFormSolutionGrid();
+        }
+      });
+    }
+    window.clearAllActFormSolutionImages = clearAllActFormSolutionImages;
+
+    function renderActFormSolutionGrid() {
+      var grid = document.getElementById('actFormSolutionGrid');
+      var emptyBox = document.getElementById('actFormSolutionEmptyBox');
+      var countBadge = document.getElementById('actFormSolutionCountBadge');
+      var clearAllBtn = document.getElementById('btnActFormClearAllSolutions');
+
+      var totalCount = actFormExistingSolutionUrls.length + actFormNewSolutionFiles.length;
+      if (countBadge) countBadge.innerText = totalCount + ' ภาพ';
+
+      if (totalCount === 0) {
+        if (grid) { grid.innerHTML = ''; grid.classList.add('hidden'); }
+        if (emptyBox) emptyBox.classList.remove('hidden');
+        if (clearAllBtn) clearAllBtn.classList.add('hidden');
+        var solUrlInput = document.getElementById('actFormSolutionImageUrl');
+        if (solUrlInput) solUrlInput.value = '';
+        return;
+      }
+
+      if (emptyBox) emptyBox.classList.add('hidden');
+      if (grid) grid.classList.remove('hidden');
+      if (clearAllBtn) clearAllBtn.classList.remove('hidden');
+
+      var html = '';
+      var itemIndex = 1;
+
+      // 1. Render existing solution images
+      actFormExistingSolutionUrls.forEach(function(url, idx) {
+        html += '<div class="relative group rounded-xl overflow-hidden border border-amber-300 bg-white shadow-xs flex flex-col">' +
+          '<div class="relative h-24 w-full overflow-hidden bg-slate-900/10 cursor-pointer" onclick="openImageModal(\'' + escapeHTML(url) + '\', \'ภาพเฉลยที่ ' + itemIndex + '\')">' +
+            '<img src="' + escapeHTML(url) + '" class="w-full h-full object-cover group-hover:scale-105 transition-transform" alt="ภาพเฉลย">' +
+            '<span class="absolute top-1 left-1 px-1.5 py-0.5 rounded bg-slate-900/80 text-white text-[9px] font-bold shadow-xs">ภาพที่ ' + itemIndex + '</span>' +
+            '<div class="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-xs font-bold gap-1">' +
+              '<i class="fa-solid fa-magnifying-glass-plus"></i> ดูรูปเต็ม' +
+            '</div>' +
+          '</div>' +
+          '<div class="p-1 bg-slate-50 flex items-center justify-between border-t border-slate-100">' +
+            '<button type="button" onclick="openImageModal(\'' + escapeHTML(url) + '\', \'ภาพเฉลยที่ ' + itemIndex + '\')" class="text-[10px] font-bold text-amber-700 hover:text-amber-900 flex items-center gap-0.5 cursor-pointer px-1 py-0.5 rounded hover:bg-amber-100/60">' +
+              '<i class="fa-solid fa-eye text-amber-600"></i> ดูเต็ม' +
+            '</button>' +
+            '<button type="button" onclick="removeActFormExistingSolutionImage(' + idx + ')" class="text-[10px] font-bold text-rose-600 hover:text-rose-800 flex items-center gap-0.5 cursor-pointer px-1 py-0.5 rounded hover:bg-rose-100/60" title="ลบภาพนี้">' +
+              '<i class="fa-solid fa-trash-can text-[9px]"></i> ลบ' +
+            '</button>' +
+          '</div>' +
+        '</div>';
+        itemIndex++;
+      });
+
+      // 2. Render new solution files selected
+      actFormNewSolutionFiles.forEach(function(item, idx) {
+        html += '<div class="relative group rounded-xl overflow-hidden border-2 border-dashed border-emerald-400 bg-white shadow-xs flex flex-col">' +
+          '<div class="relative h-24 w-full overflow-hidden bg-slate-900/10 cursor-pointer" onclick="openImageModal(\'' + escapeHTML(item.dataUrl) + '\', \'ภาพใหม่: ' + itemIndex + '\')">' +
+            '<img src="' + escapeHTML(item.dataUrl) + '" class="w-full h-full object-cover group-hover:scale-105 transition-transform" alt="ภาพใหม่">' +
+            '<span class="absolute top-1 left-1 px-1.5 py-0.5 rounded bg-emerald-700 text-white text-[9px] font-bold shadow-xs">ภาพที่ ' + itemIndex + ' (ใหม่)</span>' +
+            '<div class="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-xs font-bold gap-1">' +
+              '<i class="fa-solid fa-magnifying-glass-plus"></i> ดูรูปเต็ม' +
+            '</div>' +
+          '</div>' +
+          '<div class="p-1 bg-emerald-50/50 flex items-center justify-between border-t border-emerald-100">' +
+            '<button type="button" onclick="openImageModal(\'' + escapeHTML(item.dataUrl) + '\', \'ภาพใหม่: ' + itemIndex + '\')" class="text-[10px] font-bold text-emerald-700 hover:text-emerald-900 flex items-center gap-0.5 cursor-pointer px-1 py-0.5 rounded hover:bg-emerald-100/60">' +
+              '<i class="fa-solid fa-eye text-emerald-600"></i> ดูเต็ม' +
+            '</button>' +
+            '<button type="button" onclick="removeActFormNewSolutionImage(' + idx + ')" class="text-[10px] font-bold text-rose-600 hover:text-rose-800 flex items-center gap-0.5 cursor-pointer px-1 py-0.5 rounded hover:bg-rose-100/60" title="ลบภาพนี้">' +
+              '<i class="fa-solid fa-trash-can text-[9px]"></i> ลบ' +
+            '</button>' +
+          '</div>' +
+        '</div>';
+        itemIndex++;
+      });
+
+      if (grid) grid.innerHTML = html;
+
+      // Update hidden fallback input
       var solUrlInput = document.getElementById('actFormSolutionImageUrl');
-      if (solUrlInput) solUrlInput.value = '';
-      var solFileInput = document.getElementById('actFormSolutionFile');
-      if (solFileInput) solFileInput.value = '';
-      var prev = document.getElementById('actFormSolutionPreviewContainer');
-      if (prev) prev.classList.add('hidden');
+      if (solUrlInput) {
+        solUrlInput.value = actFormExistingSolutionUrls[0] || '';
+      }
+    }
+    window.renderActFormSolutionGrid = renderActFormSolutionGrid;
+
+    function clearSolutionImageForm() {
+      actFormExistingSolutionUrls = [];
+      actFormNewSolutionFiles = [];
+      var fileInput = document.getElementById('actFormSolutionFilesInput');
+      if (fileInput) fileInput.value = '';
+      renderActFormSolutionGrid();
     }
     window.clearSolutionImageForm = clearSolutionImageForm;
 
@@ -7307,13 +7474,10 @@
         if (act.imageUrl) prevContainer.classList.remove('hidden');
         else prevContainer.classList.add('hidden');
 
-        var solPrevContainer = document.getElementById('actFormSolutionPreviewContainer');
-        if (solPrevContainer) {
-          if (act.solutionImageUrl) solPrevContainer.classList.remove('hidden');
-          else solPrevContainer.classList.add('hidden');
-        }
-        var solFileInput = document.getElementById('actFormSolutionFile');
-        if (solFileInput) solFileInput.value = '';
+        // Populate multiple solution images
+        actFormExistingSolutionUrls = getActivitySolutionImages(act).slice();
+        actFormNewSolutionFiles = [];
+        renderActFormSolutionGrid();
 
         var autoAns = act.autoAnswers;
         if (Array.isArray(autoAns)) {
@@ -7345,10 +7509,10 @@
         document.getElementById('actFormImageUrl').value = '';
         document.getElementById('actFormSolutionImageUrl').value = '';
         prevContainer.classList.add('hidden');
-        var solPrevContainer = document.getElementById('actFormSolutionPreviewContainer');
-        if (solPrevContainer) solPrevContainer.classList.add('hidden');
-        var solFileInput = document.getElementById('actFormSolutionFile');
-        if (solFileInput) solFileInput.value = '';
+        // Reset multiple solution images
+        actFormExistingSolutionUrls = [];
+        actFormNewSolutionFiles = [];
+        renderActFormSolutionGrid();
 
         // Auto-load color template from RC 1 or saved RC template
         currentAutoAnswerRows = getRcColorTemplate();
@@ -7363,6 +7527,10 @@
     function closeActivityModal() {
       var m = document.getElementById('modalActivity');
       m.style.display = 'none';
+      actFormExistingSolutionUrls = [];
+      actFormNewSolutionFiles = [];
+      var sInput = document.getElementById('actFormSolutionFilesInput');
+      if (sInput) sInput.value = '';
     }
 
     function processActivitySave(actData) {
@@ -7370,7 +7538,8 @@
 
       var hasImageUpload = !!(
         (actData.imageFileObj && actData.imageFileObj.base64) ||
-        (actData.solutionImageFileObj && actData.solutionImageFileObj.base64)
+        (actData.solutionImageFileObj && actData.solutionImageFileObj.base64) ||
+        (Array.isArray(actData.solutionImageFiles) && actData.solutionImageFiles.length > 0)
       );
       if (hasImageUpload) {
         showLoading('กำลังอัปโหลดรูปภาพภารกิจ...');
@@ -7380,6 +7549,12 @@
       var idx = activitiesData.findIndex(function(a) { return a && a.id === actData.id; });
       var imgUrl = actData.imageFileObj ? 'https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?auto=format&fit=crop&w=600&q=80' : actData.imageUrl;
 
+      var currentSolImgs = Array.isArray(actData.solutionImages) ? actData.solutionImages.slice() : (actData.solutionImageUrl ? [actData.solutionImageUrl] : []);
+      if (isMockMode && Array.isArray(actData.solutionImageFiles)) {
+        actData.solutionImageFiles.forEach(function(sf, sIdx) {
+          currentSolImgs.push('https://images.unsplash.com/photo-1544829099-b9a0c07fad1a?auto=format&fit=crop&w=600&q=80&sig=' + Date.now() + sIdx);
+        });
+      }
       var newAct = {
         id: actData.id,
         category: actData.category,
@@ -7388,7 +7563,8 @@
         description: actData.description,
         maxPoints: actData.maxPoints,
         imageUrl: imgUrl,
-        solutionImageUrl: actData.solutionImageUrl || '',
+        solutionImageUrl: currentSolImgs[0] || '',
+        solutionImages: currentSolImgs,
         autoAnswers: actData.autoAnswers
       };
 
@@ -7435,6 +7611,13 @@
               if (res && res.success) {
                 if (hasImageUpload) {
                   Swal.fire({ icon: 'success', title: res.message || 'บันทึกภารกิจสำเร็จ', timer: 1500, showConfirmButton: false });
+                }
+                var act = (activitiesData || []).find(function(a) { return a && a.id === actData.id; });
+                if (act && res && res.solutionImages) {
+                  act.solutionImages = res.solutionImages;
+                  act.solutionImageUrl = res.solutionImageUrl || (res.solutionImages[0] || '');
+                  renderAdminActivitiesTable();
+                  renderUserMissionsGrid();
                 }
                 console.log('[RallyApp] Activity persisted to Google Sheets:', res.message);
                 loadAppData(true);
@@ -7488,13 +7671,49 @@
         safeSetStorage('rally_rc_auto_answers_template', JSON.stringify(tplToSave));
       }
 
-      var existingSolUrl = document.getElementById('actFormSolutionImageUrl') ? document.getElementById('actFormSolutionImageUrl').value.trim() : '';
-      actDataPayload.solutionImageUrl = existingSolUrl;
+      // Prepare solution images payload
+      actDataPayload.solutionImages = (actFormExistingSolutionUrls || []).slice();
+      actDataPayload.solutionImageUrl = (actFormExistingSolutionUrls && actFormExistingSolutionUrls[0]) || '';
 
       var fileInput = document.getElementById('actFormFile');
-      var solFileInput = document.getElementById('actFormSolutionFile');
+      var hasBannerUpload = !!(fileInput && fileInput.files && fileInput.files.length > 0);
+      var hasNewSolutionUpload = !!(actFormNewSolutionFiles && actFormNewSolutionFiles.length > 0);
 
-      if (fileInput && fileInput.files.length > 0) {
+      function processSolutionFilesAndSave() {
+        if (!hasNewSolutionUpload) {
+          processActivitySave(actDataPayload);
+          return;
+        }
+
+        showLoading('กำลังประมวลผลรูปภาพเฉลย ' + actFormNewSolutionFiles.length + ' ภาพ...');
+        var solutionFilesPayload = [];
+        var curIdx = 0;
+
+        function convertNextSolutionFile() {
+          if (curIdx >= actFormNewSolutionFiles.length) {
+            actDataPayload.solutionImageFiles = solutionFilesPayload;
+            processActivitySave(actDataPayload);
+            return;
+          }
+
+          var item = actFormNewSolutionFiles[curIdx];
+          readFileAsBase64(item.file, function(b64) {
+            if (b64) {
+              solutionFilesPayload.push({
+                base64: b64,
+                fileName: 'sol_' + actDataPayload.id + '_' + Date.now() + '_' + curIdx + '.jpg',
+                mimeType: (item.file && item.file.type) || 'image/jpeg'
+              });
+            }
+            curIdx++;
+            convertNextSolutionFile();
+          });
+        }
+
+        convertNextSolutionFile();
+      }
+
+      if (hasBannerUpload) {
         showLoading('กำลังประมวลผลและอัปโหลดรูปภาพขึ้น Google Drive...');
         var f = fileInput.files[0];
         readFileAsBase64(f, function(b64) {
@@ -7503,34 +7722,13 @@
             fileName: 'act_' + actDataPayload.id + '_' + Date.now() + '.jpg',
             mimeType: f.type
           };
-          if (solFileInput && solFileInput.files.length > 0) {
-            var sf = solFileInput.files[0];
-            readFileAsBase64(sf, function(sb64) {
-              actDataPayload.solutionImageFileObj = {
-                base64: sb64,
-                fileName: 'sol_' + actDataPayload.id + '_' + Date.now() + '.jpg',
-                mimeType: sf.type
-              };
-              processActivitySave(actDataPayload);
-            });
-          } else {
-            processActivitySave(actDataPayload);
-          }
+          processSolutionFilesAndSave();
         });
         return false;
       }
 
-      if (solFileInput && solFileInput.files.length > 0) {
-        showLoading('กำลังประมวลผลและอัปโหลดรูปภาพเฉลยขึ้น Google Drive...');
-        var sf = solFileInput.files[0];
-        readFileAsBase64(sf, function(sb64) {
-          actDataPayload.solutionImageFileObj = {
-            base64: sb64,
-            fileName: 'sol_' + actDataPayload.id + '_' + Date.now() + '.jpg',
-            mimeType: sf.type
-          };
-          processActivitySave(actDataPayload);
-        });
+      if (hasNewSolutionUpload) {
+        processSolutionFilesAndSave();
         return false;
       }
 

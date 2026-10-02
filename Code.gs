@@ -1608,11 +1608,26 @@ function apiSaveActivity(activityData, sessionToken) {
     }
   }
 
-  // If user uploaded a new solution image file for activity, upload to Drive outside lock
-  if (activityData.solutionImageFileObj && activityData.solutionImageFileObj.base64) {
+  // If user uploaded new solution image files for activity, upload each to Drive outside lock
+  const newSolutionUrls = [];
+  if (Array.isArray(activityData.solutionImageFiles) && activityData.solutionImageFiles.length > 0) {
+    for (let f = 0; f < activityData.solutionImageFiles.length; f++) {
+      const curFile = activityData.solutionImageFiles[f];
+      if (curFile && curFile.base64) {
+        const uploadRes = uploadFileToDrive(
+          curFile.base64,
+          curFile.fileName || ('sol_' + id + '_' + Date.now() + '_' + f + '.jpg'),
+          curFile.mimeType || 'image/jpeg'
+        );
+        if (uploadRes.success && uploadRes.directUrl) {
+          newSolutionUrls.push(uploadRes.directUrl);
+        }
+      }
+    }
+  } else if (activityData.solutionImageFileObj && activityData.solutionImageFileObj.base64) {
     const uploadRes = uploadFileToDrive(activityData.solutionImageFileObj.base64, activityData.solutionImageFileObj.fileName, activityData.solutionImageFileObj.mimeType);
-    if (uploadRes.success) {
-      solutionImageUrl = uploadRes.directUrl;
+    if (uploadRes.success && uploadRes.directUrl) {
+      newSolutionUrls.push(uploadRes.directUrl);
     }
   }
 
@@ -1639,6 +1654,11 @@ function apiSaveActivity(activityData, sessionToken) {
     if (!solutionImages || !Array.isArray(solutionImages)) {
       solutionImages = solutionImageUrl ? [solutionImageUrl] : [];
     }
+    if (newSolutionUrls.length > 0) {
+      solutionImages = solutionImages.concat(newSolutionUrls);
+    }
+    // Filter unique, non-empty URLs
+    solutionImages = Array.from(new Set(solutionImages.filter(Boolean)));
     const solutionImagesVal = (solutionImages.length === 0) ? '' : (solutionImages.length === 1 ? solutionImages[0] : JSON.stringify(solutionImages));
 
     const rowContent = [
