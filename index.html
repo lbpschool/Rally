@@ -802,6 +802,27 @@
             </div>
           </div>
 
+          <!-- RC Color Assigned to Player's Car Banner in Missions View -->
+          <div id="missionsRcColorBanner" style="display: none;" class="p-3 sm:p-4 rounded-2xl bg-white border border-slate-200/80 text-slate-700 text-xs font-bold flex items-center justify-between shadow-sm border-l-4 border-l-purple-500 transition-all">
+            <div class="flex items-center gap-2.5 sm:gap-3.5 min-w-0">
+              <div id="missionsRcColorBannerIconBox" class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-purple-100 text-purple-600 flex items-center justify-center shrink-0 text-base sm:text-lg shadow-xs">
+                <i class="fa-solid fa-palette"></i>
+              </div>
+              <div class="min-w-0">
+                <p class="text-xs sm:text-sm font-extrabold text-slate-800 flex items-center gap-1.5 flex-wrap leading-snug">
+                  <span>สี RC ที่ต้องหา :</span>
+                  <span id="missionsRcColorBannerColorText" class="font-black text-sm sm:text-base text-purple-600">สีแดง</span>
+                </p>
+                <p id="missionsRcColorBannerSubText" class="text-[11px] text-slate-500 font-medium mt-0.5 truncate">
+                  รถหมายเลข <span id="missionsRcColorBannerCarCode" class="font-bold text-slate-700">C1</span> ค้นหาและทำภารกิจ RC เฉพาะสีนี้เท่านั้น
+                </p>
+              </div>
+            </div>
+            <div id="missionsRcColorBannerBadge" class="px-3 py-1 rounded-full text-xs font-black shadow-xs shrink-0 whitespace-nowrap ml-2 bg-purple-100 text-purple-700 border border-purple-200">
+              <span id="missionsRcColorBannerBadgeText">สีแดง</span>
+            </div>
+          </div>
+
           <div id="userMissionsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           </div>
         </div>
@@ -4888,6 +4909,46 @@
       var adminResetBtn = document.getElementById('userMissionsAdminResetContainer');
       if (adminResetBtn) {
         adminResetBtn.style.display = (currentUser && currentUser.role === 'Admin') ? 'block' : 'none';
+      }
+
+      // Update RC Color Banner in Missions View (แสดงเฉพาะเมื่อดูแท็บ ALL หรือ RC และเป็น User)
+      var missionsRcBanner = document.getElementById('missionsRcColorBanner');
+      if (missionsRcBanner) {
+        if (currentUser && currentUser.role === 'User' && (userCategoryFilter === 'ALL' || userCategoryFilter === 'RC')) {
+          var thaiColor = getCarColorThaiName(currentUser.carColor || '');
+          var colorTheme = getCarColorThemeDetails(currentUser.carColor || '');
+
+          missionsRcBanner.style.display = 'flex';
+          missionsRcBanner.className = 'p-3 sm:p-4 rounded-2xl bg-white border border-slate-200/80 text-slate-700 text-xs font-bold flex items-center justify-between shadow-sm border-l-4 transition-all ' + colorTheme.borderLeftClass;
+
+          var iconBox = document.getElementById('missionsRcColorBannerIconBox');
+          if (iconBox) {
+            iconBox.className = 'w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center shrink-0 text-base sm:text-lg shadow-xs ' + colorTheme.iconBoxClass;
+          }
+
+          var colorText = document.getElementById('missionsRcColorBannerColorText');
+          if (colorText) {
+            colorText.innerText = 'สี' + thaiColor;
+            colorText.className = 'font-black text-sm sm:text-base ' + colorTheme.textColorClass;
+          }
+
+          var carCode = document.getElementById('missionsRcColorBannerCarCode');
+          if (carCode) {
+            carCode.innerText = currentUser.carCode || currentUser.username;
+          }
+
+          var badge = document.getElementById('missionsRcColorBannerBadge');
+          if (badge) {
+            badge.className = 'px-3 py-1 rounded-full text-xs font-black shadow-xs shrink-0 whitespace-nowrap ml-2 ' + colorTheme.badgeClass;
+          }
+
+          var badgeText = document.getElementById('missionsRcColorBannerBadgeText');
+          if (badgeText) {
+            badgeText.innerText = 'สี' + thaiColor;
+          }
+        } else {
+          missionsRcBanner.style.display = 'none';
+        }
       }
 
       var filtered = (activitiesData || []).filter(function(a) { return a && a.id; });
