@@ -322,6 +322,12 @@
           1 / 1
         </div>
 
+        <!-- Image Loading Spinner -->
+        <div id="imageModalSpinner" style="display: none;" class="absolute inset-0 flex flex-col items-center justify-center text-white z-20 pointer-events-none bg-slate-950/40 backdrop-blur-xs">
+          <i class="fa-solid fa-circle-notch fa-spin text-4xl text-purple-400 mb-2"></i>
+          <span class="text-xs text-slate-200 font-semibold tracking-wide">กำลังโหลดรูปภาพ...</span>
+        </div>
+
         <img id="imageModalSrc" src="" alt="Zoom Image" class="max-w-full max-h-[78vh] object-contain cursor-grab active:cursor-grabbing will-change-transform" style="transform-origin: center center;">
 
         <!-- Hint Badge (auto fades out) -->
@@ -3134,7 +3140,23 @@
         if (nextBtn) nextBtn.style.display = 'none';
       }
 
-      if (imgEl) imgEl.src = activeSrc;
+      var spinner = document.getElementById('imageModalSpinner');
+      if (imgEl) {
+        if (spinner) {
+          if (imgEl.complete && imgEl.naturalWidth > 0 && imgEl.src === activeSrc) {
+            spinner.style.display = 'none';
+          } else {
+            spinner.style.display = 'flex';
+          }
+        }
+        imgEl.onload = function() {
+          if (spinner) spinner.style.display = 'none';
+        };
+        imgEl.onerror = function() {
+          if (spinner) spinner.style.display = 'none';
+        };
+        imgEl.src = activeSrc;
+      }
 
       renderImageModalDetails(userOrMembers);
 
@@ -3149,7 +3171,17 @@
       var newSrc = currentGalleryImages[currentGalleryIndex];
 
       var imgEl = document.getElementById('imageModalSrc');
-      if (imgEl) imgEl.src = newSrc;
+      var spinner = document.getElementById('imageModalSpinner');
+      if (imgEl) {
+        if (spinner) spinner.style.display = 'flex';
+        imgEl.onload = function() {
+          if (spinner) spinner.style.display = 'none';
+        };
+        imgEl.onerror = function() {
+          if (spinner) spinner.style.display = 'none';
+        };
+        imgEl.src = newSrc;
+      }
       resetImageModalZoom(false);
 
       renderImageModalDetails();
@@ -8724,21 +8756,20 @@
 
       closeSwapCarModal();
 
-      // Optimistic in-memory update
+      // Optimistic in-memory update (คงสีเดิมของเบอร์รถไว้ ไม่สลับสีรถ)
       var tempProfile = userA.profileUrl;
-      var tempColor = userA.carColor;
       var tempBonus = userA.bonusPoints;
       var tempMembers = userA.members ? JSON.parse(JSON.stringify(userA.members)) : [];
 
       userA.name = newNameForA;
       userA.profileUrl = userB.profileUrl;
-      userA.carColor = userB.carColor;
+      // userA.carColor คงค่าเดิมไว้ ไม่ตามทีมไป
       userA.bonusPoints = userB.bonusPoints;
       userA.members = userB.members ? JSON.parse(JSON.stringify(userB.members)) : [];
 
       userB.name = newNameForB;
       userB.profileUrl = tempProfile;
-      userB.carColor = tempColor;
+      // userB.carColor คงค่าเดิมไว้ ไม่ตามทีมไป
       userB.bonusPoints = tempBonus;
       userB.members = tempMembers;
 

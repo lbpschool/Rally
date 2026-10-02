@@ -2064,15 +2064,15 @@ function apiSwapCars(usernameA, usernameB, sessionToken) {
       newNameForB = 'ทีม ' + (carCodeB || dataB[0]);
     }
 
-    // Fast in-memory update on usersData
+    // Fast in-memory update on usersData (คงสีประจำรถเดิมไว้ ไม่สลับสีรถ)
     usersData[rowA - 1][2] = newNameForA;
-    usersData[rowA - 1][5] = carColorB || 'Red';
+    // usersData[rowA - 1][5] คงค่า carColorA เดิมไว้
     usersData[rowA - 1][6] = profileB || '';
     usersData[rowA - 1][7] = Number(bonusB) || 0;
     usersData[rowA - 1][8] = membersB || '[]';
 
     usersData[rowB - 1][2] = newNameForB;
-    usersData[rowB - 1][5] = carColorA || 'Red';
+    // usersData[rowB - 1][5] คงค่า carColorB เดิมไว้
     usersData[rowB - 1][6] = profileA || '';
     usersData[rowB - 1][7] = Number(bonusA) || 0;
     usersData[rowB - 1][8] = membersA || '[]';
@@ -2133,9 +2133,9 @@ function apiSwapCars(usernameA, usernameB, sessionToken) {
 
     return {
       success: true,
-      message: 'สลับข้อมูลระหว่าง ' + dataA[0] + ' และ ' + dataB[0] + ' เรียบร้อยแล้ว',
-      carA: { username: dataA[0], name: newNameForA, carColor: carColorB, profileUrl: profileB, bonusPoints: bonusB, members: JSON.parse(membersB || '[]') },
-      carB: { username: dataB[0], name: newNameForB, carColor: carColorA, profileUrl: profileA, bonusPoints: bonusA, members: JSON.parse(membersA || '[]') }
+      message: 'สลับข้อมูลระหว่าง ' + dataA[0] + ' และ ' + dataB[0] + ' เรียบร้อยแล้ว (คงสีประจำรถตามเดิม)',
+      carA: { username: dataA[0], name: newNameForA, carColor: carColorA, profileUrl: profileB, bonusPoints: bonusB, members: JSON.parse(membersB || '[]') },
+      carB: { username: dataB[0], name: newNameForB, carColor: carColorB, profileUrl: profileA, bonusPoints: bonusA, members: JSON.parse(membersA || '[]') }
     };
   });
 }
