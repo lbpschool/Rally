@@ -2131,6 +2131,16 @@ function apiSwapCars(usernameA, usernameB, sessionToken) {
       }
     } catch(voteErr) {}
 
+    // Invalidate cache, reload fresh shared data, and sync to Firebase Realtime Database
+    try {
+      invalidateGlobalCache();
+      const freshShared = fetchSharedDataFromSheets();
+      setCachedSharedData(freshShared);
+      syncToFirebase(freshShared);
+    } catch (syncErr) {
+      Logger.log('Post-swap sync error: ' + syncErr);
+    }
+
     return {
       success: true,
       message: 'สลับข้อมูลระหว่าง ' + dataA[0] + ' และ ' + dataB[0] + ' เรียบร้อยแล้ว (คงสีประจำรถตามเดิม)',

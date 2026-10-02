@@ -4533,7 +4533,9 @@
               if (!isSilent) hideLoading();
               if (refreshIcon) refreshIcon.classList.remove('fa-spin');
               if (res.success) {
-                usersData = res.users;
+                if (res.users && Array.isArray(res.users)) {
+                  usersData = res.users.filter(function(u) { return u && u.username && String(u.username).trim(); });
+                }
                 setActivitiesDataClean(res.activities);
                 setSubmissionsDataClean(res.submissions);
                 if (typeof res.isScoresHidden !== 'undefined') {
@@ -8773,6 +8775,18 @@
       userB.bonusPoints = tempBonus;
       userB.members = tempMembers;
 
+      // Update currentUser session if one of the swapped cars is currently logged in
+      if (currentUser) {
+        var myUpdated = usersData.find(function(u) { return u.username.toLowerCase() === currentUser.username.toLowerCase(); });
+        if (myUpdated) {
+          currentUser.name = myUpdated.name;
+          currentUser.profileUrl = myUpdated.profileUrl;
+          currentUser.bonusPoints = myUpdated.bonusPoints;
+          currentUser.members = myUpdated.members;
+          try { sessionStorage.setItem('rally_session_user', JSON.stringify(currentUser)); } catch(e) {}
+        }
+      }
+
       renderAdminUsersTable();
       renderUserDashboard();
       renderLeaderboard();
@@ -8799,7 +8813,12 @@
           .withSuccessHandler(function(res) {
             if (res && res.success) {
               console.log('[RallyApp] Swap cars persisted to Google Sheets:', res.message);
-              loadAppData(true);
+              // Lock in carColor and member changes to Sheets safely
+              if (userA && userB) {
+                google.script.run.apiSaveUser(userA, sessionToken);
+                google.script.run.apiSaveUser(userB, sessionToken);
+              }
+              // ไม่เรียก loadAppData(true) ซ้ำ เพื่อป้องกันข้อมูลเก่าจากแคชทับหน้าจอ
             } else {
               handleApiResponseError(res);
             }
