@@ -47,7 +47,7 @@ function doGet(e) {
     Logger.log('setupDatabase error: ' + err.toString());
   }
   return HtmlService.createHtmlOutputFromFile('index')
-    .setTitle('ระบบเก็บคะแนนแรลลี่และฐานกิจกรรม (Rally Scoring System)')
+    .setTitle('Rally Scoring System')
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL)
     .addMetaTag('viewport', 'width=device-width, initial-scale=1');
 }
