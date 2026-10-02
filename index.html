@@ -2464,7 +2464,7 @@
               if (typeof failureHandler === 'function') {
                 failureHandler(err);
               } else {
-                var msg = (err && err.message) ? err.message : 'ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้ กรุณาตรวจสอบสัญญาณอินเทอร์เน็ตแล้วลองใหม่อีกครั้ง';
+                var msg = (err && err.message) ? err.message : 'อินเตอร์เน็ตของคุณขาดหาย กรุณาส่งซ้ำอีกครั้ง หรือกดปุ่ม "รีเฟรชข้อมูล"';
                 Swal.fire({
                   icon: (err && err.isTimeout) ? 'info' : 'error',
                   title: (err && err.isTimeout) ? 'บันทึกขึ้นระบบสดแล้ว' : 'การเชื่อมต่อขัดข้อง',
@@ -5577,7 +5577,7 @@
 
       showLoading('กำลังบันทึกข้อมูลการส่งงาน...');
 
-      var imgUrl = fileObj ? 'https://images.unsplash.com/photo-1517048676732-d65bc937f952?auto=format&fit=crop&w=600&q=80' : '';
+      var imgUrl = (fileObj && fileObj.base64) ? fileObj.base64 : (fileObj ? 'https://images.unsplash.com/photo-1517048676732-d65bc937f952?auto=format&fit=crop&w=600&q=80' : '');
       var fileId = fileObj ? 'MOCK_FILE_ID_' + Date.now() : '';
       
       var status = 'pending';
@@ -5722,6 +5722,13 @@
             .withSuccessHandler(function(res) {
               hideLoading();
               if (res.success) {
+                if (res.imageUrl && fileObj) {
+                  var curSub = (submissionsData || []).find(function(s) { return s && s.username === currentUser.username && s.activityId === actId; });
+                  if (curSub) {
+                    curSub.imageUrl = res.imageUrl;
+                    curSub.fileId = res.fileId || curSub.fileId;
+                  }
+                }
                 Swal.fire({
                   icon: 'success',
                   title: 'ส่งคำตอบเรียบร้อยแล้ว',
@@ -5749,7 +5756,15 @@
                   showConfirmButton: false
                 });
               } else {
-                Swal.fire('ข้อผิดพลาดระบบ', err.message, 'error');
+                // หากส่งไม่สำเร็จเนื่องจากเน็ตหลุด ให้ดึงข้อมูลล่าสุดจากเซิร์ฟเวอร์เพื่อคืนค่าฟอร์ม (ผู้เล่นจะได้กดส่งใหม่ได้ทันที)
+                loadAppData(true);
+                var errMsg = (err && err.message) ? err.message : 'อินเตอร์เน็ตของคุณขาดหาย กรุณาส่งซ้ำอีกครั้ง หรือกดปุ่ม "รีเฟรชข้อมูล"';
+                Swal.fire({
+                  icon: 'error',
+                  title: 'ส่งคำตอบไม่สำเร็จ',
+                  text: errMsg,
+                  confirmButtonText: 'ตกลง'
+                });
               }
             })
             .apiSubmitAnswer(currentUser.username, actId, answerText, fileObj, sessionToken);
@@ -7860,10 +7875,10 @@
       var tbody = document.getElementById('adminUsersTableBody');
       if (!tbody) return;
 
-      var filtered = usersData;
+      var filtered = (usersData || []).filter(function(u) { return u && u.username && String(u.username).trim(); });
       if (filterText) {
         var q = filterText.toLowerCase();
-        filtered = usersData.filter(function(u) { return u.name.toLowerCase().includes(q) || u.username.toLowerCase().includes(q) || (u.carCode || '').toLowerCase().includes(q); });
+        filtered = filtered.filter(function(u) { return (u.name || '').toLowerCase().includes(q) || u.username.toLowerCase().includes(q) || (u.carCode || '').toLowerCase().includes(q); });
       }
 
       if (filtered.length === 0) {

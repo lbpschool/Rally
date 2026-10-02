@@ -507,6 +507,8 @@ function fetchSharedDataFromSheets() {
   const usersRaw = usersSheet.getDataRange().getValues();
   const users = [];
   for (let i = 1; i < usersRaw.length; i++) {
+    const rawUsername = String(usersRaw[i][0] || '').trim();
+    if (!rawUsername) continue;
     let membersList = [];
     try {
       membersList = JSON.parse(usersRaw[i][8] || '[]');
@@ -514,7 +516,7 @@ function fetchSharedDataFromSheets() {
       if (usersRaw[i][8]) membersList = String(usersRaw[i][8]).split(',').map(function(s){ return s.trim(); }).filter(Boolean);
     }
     users.push({
-      username: usersRaw[i][0],
+      username: rawUsername,
       name: usersRaw[i][2],
       role: usersRaw[i][3],
       carCode: usersRaw[i][4],
@@ -1433,7 +1435,9 @@ function apiSubmitAnswer(username, activityId, answerText, imageFileObj, session
       success: true,
       message: 'บันทึกการส่งคำตอบเรียบร้อยแล้ว',
       score: score,
-      status: status
+      status: status,
+      imageUrl: uploadedImageUrl,
+      fileId: uploadedFileId
     };
   });
 
