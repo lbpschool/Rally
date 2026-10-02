@@ -513,20 +513,20 @@
 
       <!-- Mobile Sidebar Drawer -->
       <div id="mobileSidebar" style="display: none;" class="fixed inset-0 z-40 bg-slate-900/40 backdrop-blur-sm md:hidden" onclick="toggleMobileSidebar()">
-        <div class="w-64 h-full bg-white p-5 flex flex-col justify-between overflow-hidden" onclick="event.stopPropagation()">
+        <div class="w-72 sm:w-80 max-w-[85vw] h-full bg-white p-4.5 sm:p-5 flex flex-col justify-between overflow-hidden shadow-2xl" onclick="event.stopPropagation()">
           <div class="space-y-4 flex-1 flex flex-col overflow-hidden">
-            <div class="flex items-center justify-between pb-3 border-b border-slate-100 shrink-0">
-              <div class="flex items-center gap-2">
-                <div class="w-12 h-8 rounded-lg overflow-hidden border border-purple-200 shrink-0 bg-slate-100">
-                <img id="mobileAvatar" src="" class="w-full h-full object-cover" alt="Avatar">
-              </div>
+            <div class="flex items-center justify-between pb-3.5 border-b border-slate-100 shrink-0">
+              <div class="flex items-center gap-3">
+                <div class="w-13 h-10 rounded-xl overflow-hidden border border-purple-200 shrink-0 bg-slate-100 shadow-sm">
+                  <img id="mobileAvatar" src="" class="w-full h-full object-cover" alt="Avatar">
+                </div>
                 <div>
-                  <p id="mobileName" class="text-xs font-bold text-slate-800 leading-tight"></p>
-                  <p id="mobileRole" class="text-[10px] text-purple-600 leading-tight"></p>
+                  <p id="mobileName" class="text-sm sm:text-base font-extrabold text-slate-800 leading-tight"></p>
+                  <p id="mobileRole" class="text-xs font-bold text-purple-600 leading-tight mt-0.5"></p>
                 </div>
               </div>
-              <button onclick="toggleMobileSidebar()" class="text-slate-400 text-lg hover:text-slate-600">
-                <i class="fa-solid fa-xmark"></i>
+              <button onclick="toggleMobileSidebar()" class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-400 hover:text-slate-600 flex items-center justify-center transition-colors">
+                <i class="fa-solid fa-xmark text-base"></i>
               </button>
             </div>
 
@@ -534,11 +534,11 @@
             </div>
           </div>
 
-          <button onclick="refreshWholeApp(); closeMobileSidebar();" class="w-full mt-3 py-2.5 rounded-xl bg-indigo-50 text-indigo-600 font-semibold text-xs flex items-center justify-center gap-2 shrink-0 hover:bg-indigo-100 transition-all cursor-pointer">
-            <i class="fa-solid fa-arrows-rotate"></i> รีเฟรชข้อมูลหน้าจอ
+          <button onclick="refreshWholeApp(); closeMobileSidebar();" class="w-full mt-3 py-3 rounded-xl bg-indigo-50 text-indigo-700 font-bold text-sm sm:text-[15px] flex items-center justify-center gap-2.5 shrink-0 hover:bg-indigo-100 transition-all cursor-pointer shadow-sm">
+            <i class="fa-solid fa-arrows-rotate text-base"></i> รีเฟรชข้อมูลหน้าจอ
           </button>
-          <button onclick="logout()" class="w-full mt-2 py-2.5 rounded-xl bg-rose-50 text-rose-600 font-semibold text-xs flex items-center justify-center gap-2 shrink-0 hover:bg-rose-100 transition-all cursor-pointer">
-            <i class="fa-solid fa-arrow-right-from-bracket"></i> ออกจากระบบ
+          <button onclick="logout()" class="w-full mt-2 py-3 rounded-xl bg-rose-50 text-rose-600 font-bold text-sm sm:text-[15px] flex items-center justify-center gap-2.5 shrink-0 hover:bg-rose-100 transition-all cursor-pointer shadow-sm">
+            <i class="fa-solid fa-arrow-right-from-bracket text-base"></i> ออกจากระบบ
           </button>
         </div>
       </div>
@@ -4114,26 +4114,27 @@
 
         linksHTML = '<div class="space-y-4">' +
           '<div>' +
-          '<div class="space-y-1">' +
-          '<button onclick="switchView(\'UserDashboard\'); closeMobileSidebar();" class="w-full text-left py-2 px-3 rounded-xl font-semibold text-xs text-purple-700 bg-purple-50 flex items-center gap-2.5"><i class="fa-solid fa-gauge-high text-sm text-purple-600"></i> Dashboard</button>' +
-          '<button onclick="switchView(\'Leaderboard\'); closeMobileSidebar();" class="w-full text-left py-2 px-3 rounded-xl font-semibold text-xs text-slate-700 hover:bg-purple-50 hover:text-purple-700 flex items-center gap-2.5"><i class="fa-solid fa-trophy text-sm text-amber-500"></i> ดูคะแนนรวม (Leaderboard)</button>' +
-          '<button onclick="switchView(\'Grading\'); closeMobileSidebar();" class="w-full text-left py-2 px-3 rounded-xl font-semibold text-xs text-slate-700 hover:bg-purple-50 hover:text-purple-700 flex items-center gap-2.5"><i class="fa-solid fa-clipboard-check text-sm text-purple-600"></i> ตรวจและให้คะแนน</button>' +
-          '<button onclick="switchViewFilter(\'ALL\'); closeMobileSidebar();" class="w-full text-left py-2 px-3 rounded-xl font-semibold text-xs text-slate-700 hover:bg-purple-50 hover:text-purple-700 flex items-center gap-2.5"><i class="fa-solid fa-list-check text-sm text-purple-600"></i> ภารกิจทั้งหมด</button>' +
-          '<button onclick="switchViewFilter(\'RC\'); closeMobileSidebar();" class="w-full text-left py-2 px-3 rounded-xl font-semibold text-xs text-slate-700 hover:bg-purple-50 hover:text-purple-700 flex items-center gap-2.5"><i class="fa-solid fa-flag text-sm text-blue-500"></i> จุด RC</button>' +
-          '<button onclick="switchViewFilter(\'Base\'); closeMobileSidebar();" class="w-full text-left py-2 px-3 rounded-xl font-semibold text-xs text-slate-700 hover:bg-purple-50 hover:text-purple-700 flex items-center gap-2.5"><i class="fa-solid fa-puzzle-piece text-sm text-purple-500"></i> กิจกรรมฐาน</button>' +
-          '<button onclick="switchViewFilter(\'Quiz\'); closeMobileSidebar();" class="w-full text-left py-2 px-3 rounded-xl font-semibold text-xs text-slate-700 hover:bg-purple-50 hover:text-purple-700 flex items-center gap-2.5"><i class="fa-solid fa-gamepad text-sm text-emerald-500"></i> เกมส์คำถาม</button>' +
-          '<button onclick="switchView(\'UserHistory\'); closeMobileSidebar();" class="w-full text-left py-2 px-3 rounded-xl font-semibold text-xs text-slate-700 hover:bg-purple-50 hover:text-purple-700 flex items-center gap-2.5"><i class="fa-solid fa-clock-rotate-left text-sm text-indigo-500"></i> ประวัติคะแนน</button>' +
+          '<div class="space-y-1.5">' +
+          '<button onclick="switchView(\'UserDashboard\'); closeMobileSidebar();" class="w-full text-left py-2.5 sm:py-3 px-3.5 rounded-xl font-extrabold text-sm sm:text-base text-purple-700 bg-purple-50 active:bg-purple-100 flex items-center gap-3 transition-colors"><i class="fa-solid fa-gauge-high text-base sm:text-lg w-5 text-center text-purple-600"></i> Dashboard</button>' +
+          '<button onclick="switchView(\'Leaderboard\'); closeMobileSidebar();" class="w-full text-left py-2.5 sm:py-3 px-3.5 rounded-xl font-bold text-sm sm:text-base text-slate-700 hover:bg-purple-50 hover:text-purple-700 active:bg-purple-100 flex items-center gap-3 transition-colors"><i class="fa-solid fa-trophy text-base sm:text-lg w-5 text-center text-amber-500"></i> ดูคะแนนรวม (Leaderboard)</button>' +
+          '<button onclick="switchView(\'Grading\'); closeMobileSidebar();" class="w-full text-left py-2.5 sm:py-3 px-3.5 rounded-xl font-bold text-sm sm:text-base text-slate-700 hover:bg-purple-50 hover:text-purple-700 active:bg-purple-100 flex items-center gap-3 transition-colors"><i class="fa-solid fa-clipboard-check text-base sm:text-lg w-5 text-center text-purple-600"></i> ตรวจและให้คะแนน</button>' +
+          '<button onclick="switchViewFilter(\'ALL\'); closeMobileSidebar();" class="w-full text-left py-2.5 sm:py-3 px-3.5 rounded-xl font-bold text-sm sm:text-base text-slate-700 hover:bg-purple-50 hover:text-purple-700 active:bg-purple-100 flex items-center gap-3 transition-colors"><i class="fa-solid fa-list-check text-base sm:text-lg w-5 text-center text-purple-600"></i> ภารกิจทั้งหมด</button>' +
+          '<button onclick="switchViewFilter(\'RC\'); closeMobileSidebar();" class="w-full text-left py-2.5 sm:py-3 px-3.5 rounded-xl font-bold text-sm sm:text-base text-slate-700 hover:bg-purple-50 hover:text-purple-700 active:bg-purple-100 flex items-center gap-3 transition-colors"><i class="fa-solid fa-flag text-base sm:text-lg w-5 text-center text-blue-500"></i> จุด RC</button>' +
+          '<button onclick="switchViewFilter(\'Base\'); closeMobileSidebar();" class="w-full text-left py-2.5 sm:py-3 px-3.5 rounded-xl font-bold text-sm sm:text-base text-slate-700 hover:bg-purple-50 hover:text-purple-700 active:bg-purple-100 flex items-center gap-3 transition-colors"><i class="fa-solid fa-puzzle-piece text-base sm:text-lg w-5 text-center text-purple-500"></i> กิจกรรมฐาน</button>' +
+          '<button onclick="switchViewFilter(\'Quiz\'); closeMobileSidebar();" class="w-full text-left py-2.5 sm:py-3 px-3.5 rounded-xl font-bold text-sm sm:text-base text-slate-700 hover:bg-purple-50 hover:text-purple-700 active:bg-purple-100 flex items-center gap-3 transition-colors"><i class="fa-solid fa-gamepad text-base sm:text-lg w-5 text-center text-emerald-500"></i> เกมส์คำถาม</button>' +
+          '<button onclick="switchView(\'UserHistory\'); closeMobileSidebar();" class="w-full text-left py-2.5 sm:py-3 px-3.5 rounded-xl font-bold text-sm sm:text-base text-slate-700 hover:bg-purple-50 hover:text-purple-700 active:bg-purple-100 flex items-center gap-3 transition-colors"><i class="fa-solid fa-clock-rotate-left text-base sm:text-lg w-5 text-center text-indigo-500"></i> ประวัติคะแนน</button>' +
           '</div></div>' +
           
-          '<div>' +
-          '<div class="space-y-1">' +
-          '<button onclick="switchView(\'AdminUsers\'); closeMobileSidebar();" class="w-full text-left py-2 px-3 rounded-xl font-semibold text-xs text-slate-700 hover:bg-purple-50 hover:text-purple-700 flex items-center gap-2.5"><i class="fa-solid fa-users text-sm text-emerald-500"></i> จัดการผู้แข่งขัน (รถ)</button>' +
-          '<button onclick="switchView(\'AdminActivitiesRC\'); closeMobileSidebar();" class="w-full text-left py-2 px-3 rounded-xl font-semibold text-xs text-slate-700 hover:bg-purple-50 hover:text-purple-700 flex items-center gap-2.5"><i class="fa-solid fa-list-check text-sm text-blue-500"></i> จัดการจุด RC</button>' +
-          '<button onclick="switchView(\'AdminActivitiesBase\'); closeMobileSidebar();" class="w-full text-left py-2 px-3 rounded-xl font-semibold text-xs text-slate-700 hover:bg-purple-50 hover:text-purple-700 flex items-center gap-2.5"><i class="fa-solid fa-cubes text-sm text-purple-500"></i> จัดการกิจกรรมฐาน</button>' +
-          '<button onclick="switchView(\'AdminActivitiesQuiz\'); closeMobileSidebar();" class="w-full text-left py-2 px-3 rounded-xl font-semibold text-xs text-slate-700 hover:bg-purple-50 hover:text-purple-700 flex items-center gap-2.5"><i class="fa-solid fa-gamepad text-sm text-emerald-500"></i> จัดการเกมส์คำถาม</button>' +
-          '<button onclick="switchView(\'VoteResults\'); closeMobileSidebar();" class="w-full text-left py-2 px-3 rounded-xl font-semibold text-xs text-slate-700 hover:bg-pink-50 hover:text-pink-700 flex items-center gap-2.5"><i class="fa-solid fa-heart text-sm text-pink-500"></i> คะแนนโหวต (Popular Vote)</button>' +
-          '<button onclick="switchView(\'Ceremony\'); closeMobileSidebar();" class="w-full text-left py-2 px-3 rounded-xl font-semibold text-xs text-slate-700 hover:bg-amber-50 hover:text-amber-700 flex items-center gap-2.5"><i class="fa-solid fa-bullhorn text-sm text-amber-500"></i> 🎉 ประกาศผลรางวัล</button>' +
-          '<button onclick="switchView(\'Analytics\'); closeMobileSidebar();" class="w-full text-left py-2 px-3 rounded-xl font-semibold text-xs text-slate-700 hover:bg-purple-50 hover:text-purple-700 flex items-center gap-2.5"><i class="fa-solid fa-chart-pie text-sm text-pink-500"></i> สถิติวิเคราะห์</button>' +
+          '<div class="pt-2 border-t border-slate-100">' +
+          '<p class="text-xs font-extrabold text-slate-400 uppercase tracking-wider px-3 mb-1.5">จัดการระบบ (Admin)</p>' +
+          '<div class="space-y-1.5">' +
+          '<button onclick="switchView(\'AdminUsers\'); closeMobileSidebar();" class="w-full text-left py-2.5 sm:py-3 px-3.5 rounded-xl font-bold text-sm sm:text-base text-slate-700 hover:bg-purple-50 hover:text-purple-700 active:bg-purple-100 flex items-center gap-3 transition-colors"><i class="fa-solid fa-users text-base sm:text-lg w-5 text-center text-emerald-500"></i> จัดการผู้แข่งขัน (รถ)</button>' +
+          '<button onclick="switchView(\'AdminActivitiesRC\'); closeMobileSidebar();" class="w-full text-left py-2.5 sm:py-3 px-3.5 rounded-xl font-bold text-sm sm:text-base text-slate-700 hover:bg-purple-50 hover:text-purple-700 active:bg-purple-100 flex items-center gap-3 transition-colors"><i class="fa-solid fa-list-check text-base sm:text-lg w-5 text-center text-blue-500"></i> จัดการจุด RC</button>' +
+          '<button onclick="switchView(\'AdminActivitiesBase\'); closeMobileSidebar();" class="w-full text-left py-2.5 sm:py-3 px-3.5 rounded-xl font-bold text-sm sm:text-base text-slate-700 hover:bg-purple-50 hover:text-purple-700 active:bg-purple-100 flex items-center gap-3 transition-colors"><i class="fa-solid fa-cubes text-base sm:text-lg w-5 text-center text-purple-500"></i> จัดการกิจกรรมฐาน</button>' +
+          '<button onclick="switchView(\'AdminActivitiesQuiz\'); closeMobileSidebar();" class="w-full text-left py-2.5 sm:py-3 px-3.5 rounded-xl font-bold text-sm sm:text-base text-slate-700 hover:bg-purple-50 hover:text-purple-700 active:bg-purple-100 flex items-center gap-3 transition-colors"><i class="fa-solid fa-gamepad text-base sm:text-lg w-5 text-center text-emerald-500"></i> จัดการเกมส์คำถาม</button>' +
+          '<button onclick="switchView(\'VoteResults\'); closeMobileSidebar();" class="w-full text-left py-2.5 sm:py-3 px-3.5 rounded-xl font-bold text-sm sm:text-base text-slate-700 hover:bg-pink-50 hover:text-pink-700 active:bg-pink-100 flex items-center gap-3 transition-colors"><i class="fa-solid fa-heart text-base sm:text-lg w-5 text-center text-pink-500"></i> คะแนนโหวต (Popular Vote)</button>' +
+          '<button onclick="switchView(\'Ceremony\'); closeMobileSidebar();" class="w-full text-left py-2.5 sm:py-3 px-3.5 rounded-xl font-bold text-sm sm:text-base text-slate-700 hover:bg-amber-50 hover:text-amber-700 active:bg-amber-100 flex items-center gap-3 transition-colors"><i class="fa-solid fa-bullhorn text-base sm:text-lg w-5 text-center text-amber-500"></i> 🎉 ประกาศผลรางวัล</button>' +
+          '<button onclick="switchView(\'Analytics\'); closeMobileSidebar();" class="w-full text-left py-2.5 sm:py-3 px-3.5 rounded-xl font-bold text-sm sm:text-base text-slate-700 hover:bg-purple-50 hover:text-purple-700 active:bg-purple-100 flex items-center gap-3 transition-colors"><i class="fa-solid fa-chart-pie text-base sm:text-lg w-5 text-center text-pink-500"></i> สถิติวิเคราะห์</button>' +
           '</div></div>' +
           '</div>';
 
@@ -4160,11 +4161,11 @@
 
         linksHTML = '<div class="space-y-4">' +
           '<div>' +
-          '<div class="space-y-1">' +
-          '<button onclick="switchView(\'Grading\'); closeMobileSidebar();" class="w-full text-left py-2 px-3 rounded-xl font-semibold text-xs text-purple-700 bg-purple-50 flex items-center gap-2.5"><i class="fa-solid fa-clipboard-check text-sm text-purple-600"></i> ตรวจและให้คะแนน</button>' +
-          '<button onclick="switchView(\'UserDashboard\'); closeMobileSidebar();" class="w-full text-left py-2 px-3 rounded-xl font-semibold text-xs text-slate-700 hover:bg-purple-50 hover:text-purple-700 flex items-center gap-2.5"><i class="fa-solid fa-gauge-high text-sm text-purple-600"></i> Dashboard</button>' +
-          (showLeaderboardTab ? '<button onclick="switchView(\'Leaderboard\'); closeMobileSidebar();" class="w-full text-left py-2 px-3 rounded-xl font-semibold text-xs text-slate-700 hover:bg-purple-50 hover:text-purple-700 flex items-center gap-2.5"><i class="fa-solid fa-trophy text-sm text-amber-500"></i> ดูคะแนนรวม (Leaderboard)</button>' : '') +
-          '<button onclick="switchView(\'UserHistory\'); closeMobileSidebar();" class="w-full text-left py-2 px-3 rounded-xl font-semibold text-xs text-slate-700 hover:bg-purple-50 hover:text-purple-700 flex items-center gap-2.5"><i class="fa-solid fa-clock-rotate-left text-sm text-indigo-500"></i> ประวัติการให้คะแนน</button>' +
+          '<div class="space-y-1.5">' +
+          '<button onclick="switchView(\'Grading\'); closeMobileSidebar();" class="w-full text-left py-2.5 sm:py-3 px-3.5 rounded-xl font-extrabold text-sm sm:text-base text-purple-700 bg-purple-50 active:bg-purple-100 flex items-center gap-3 transition-colors"><i class="fa-solid fa-clipboard-check text-base sm:text-lg w-5 text-center text-purple-600"></i> ตรวจและให้คะแนน</button>' +
+          '<button onclick="switchView(\'UserDashboard\'); closeMobileSidebar();" class="w-full text-left py-2.5 sm:py-3 px-3.5 rounded-xl font-bold text-sm sm:text-base text-slate-700 hover:bg-purple-50 hover:text-purple-700 active:bg-purple-100 flex items-center gap-3 transition-colors"><i class="fa-solid fa-gauge-high text-base sm:text-lg w-5 text-center text-purple-600"></i> Dashboard</button>' +
+          (showLeaderboardTab ? '<button onclick="switchView(\'Leaderboard\'); closeMobileSidebar();" class="w-full text-left py-2.5 sm:py-3 px-3.5 rounded-xl font-bold text-sm sm:text-base text-slate-700 hover:bg-purple-50 hover:text-purple-700 active:bg-purple-100 flex items-center gap-3 transition-colors"><i class="fa-solid fa-trophy text-base sm:text-lg w-5 text-center text-amber-500"></i> ดูคะแนนรวม (Leaderboard)</button>' : '') +
+          '<button onclick="switchView(\'UserHistory\'); closeMobileSidebar();" class="w-full text-left py-2.5 sm:py-3 px-3.5 rounded-xl font-bold text-sm sm:text-base text-slate-700 hover:bg-purple-50 hover:text-purple-700 active:bg-purple-100 flex items-center gap-3 transition-colors"><i class="fa-solid fa-clock-rotate-left text-base sm:text-lg w-5 text-center text-indigo-500"></i> ประวัติการให้คะแนน</button>' +
           '</div></div>' +
           '</div>';
 
@@ -4190,14 +4191,14 @@
 
         linksHTML = '<div class="space-y-4">' +
           '<div>' +
-          '<div class="space-y-1">' +
-          '<button onclick="switchView(\'UserDashboard\'); closeMobileSidebar();" class="w-full text-left py-2 px-3 rounded-xl font-semibold text-xs text-slate-700 hover:bg-purple-50 hover:text-purple-700 flex items-center gap-2.5"><i class="fa-solid fa-gauge-high text-sm text-purple-600"></i> Dashboard</button>' +
-          (showLeaderboardTab ? '<button onclick="switchView(\'Leaderboard\'); closeMobileSidebar();" class="w-full text-left py-2 px-3 rounded-xl font-semibold text-xs text-slate-700 hover:bg-purple-50 hover:text-purple-700 flex items-center gap-2.5"><i class="fa-solid fa-trophy text-sm text-amber-500"></i> ดูคะแนนรวม (Leaderboard)</button>' : '') +
-          '<button onclick="switchViewFilter(\'ALL\'); closeMobileSidebar();" class="w-full text-left py-2 px-3 rounded-xl font-semibold text-xs text-slate-700 hover:bg-purple-50 hover:text-purple-700 flex items-center gap-2.5"><i class="fa-solid fa-list-check text-sm text-purple-600"></i> ภารกิจทั้งหมด</button>' +
-          '<button onclick="switchViewFilter(\'RC\'); closeMobileSidebar();" class="w-full text-left py-2 px-3 rounded-xl font-semibold text-xs text-slate-700 hover:bg-purple-50 hover:text-purple-700 flex items-center gap-2.5"><i class="fa-solid fa-flag text-sm text-blue-500"></i> จุด RC</button>' +
-          '<button onclick="switchViewFilter(\'Base\'); closeMobileSidebar();" class="w-full text-left py-2 px-3 rounded-xl font-semibold text-xs text-slate-700 hover:bg-purple-50 hover:text-purple-700 flex items-center gap-2.5"><i class="fa-solid fa-puzzle-piece text-sm text-purple-500"></i> กิจกรรมฐาน</button>' +
-          '<button onclick="switchViewFilter(\'Quiz\'); closeMobileSidebar();" class="w-full text-left py-2 px-3 rounded-xl font-semibold text-xs text-slate-700 hover:bg-purple-50 hover:text-purple-700 flex items-center gap-2.5"><i class="fa-solid fa-gamepad text-sm text-emerald-500"></i> เกมส์คำถาม</button>' +
-          '<button onclick="switchView(\'UserHistory\'); closeMobileSidebar();" class="w-full text-left py-2 px-3 rounded-xl font-semibold text-xs text-slate-700 hover:bg-purple-50 hover:text-purple-700 flex items-center gap-2.5"><i class="fa-solid fa-clock-rotate-left text-sm text-indigo-500"></i> ประวัติการส่งคำตอบ</button>' +
+          '<div class="space-y-1.5">' +
+          '<button onclick="switchView(\'UserDashboard\'); closeMobileSidebar();" class="w-full text-left py-2.5 sm:py-3 px-3.5 rounded-xl font-bold text-sm sm:text-base text-slate-700 hover:bg-purple-50 hover:text-purple-700 active:bg-purple-100 flex items-center gap-3 transition-colors"><i class="fa-solid fa-gauge-high text-base sm:text-lg w-5 text-center text-purple-600"></i> Dashboard</button>' +
+          (showLeaderboardTab ? '<button onclick="switchView(\'Leaderboard\'); closeMobileSidebar();" class="w-full text-left py-2.5 sm:py-3 px-3.5 rounded-xl font-bold text-sm sm:text-base text-slate-700 hover:bg-purple-50 hover:text-purple-700 active:bg-purple-100 flex items-center gap-3 transition-colors"><i class="fa-solid fa-trophy text-base sm:text-lg w-5 text-center text-amber-500"></i> ดูคะแนนรวม (Leaderboard)</button>' : '') +
+          '<button onclick="switchViewFilter(\'ALL\'); closeMobileSidebar();" class="w-full text-left py-2.5 sm:py-3 px-3.5 rounded-xl font-bold text-sm sm:text-base text-slate-700 hover:bg-purple-50 hover:text-purple-700 active:bg-purple-100 flex items-center gap-3 transition-colors"><i class="fa-solid fa-list-check text-base sm:text-lg w-5 text-center text-purple-600"></i> ภารกิจทั้งหมด</button>' +
+          '<button onclick="switchViewFilter(\'RC\'); closeMobileSidebar();" class="w-full text-left py-2.5 sm:py-3 px-3.5 rounded-xl font-bold text-sm sm:text-base text-slate-700 hover:bg-purple-50 hover:text-purple-700 active:bg-purple-100 flex items-center gap-3 transition-colors"><i class="fa-solid fa-flag text-base sm:text-lg w-5 text-center text-blue-500"></i> จุด RC</button>' +
+          '<button onclick="switchViewFilter(\'Base\'); closeMobileSidebar();" class="w-full text-left py-2.5 sm:py-3 px-3.5 rounded-xl font-bold text-sm sm:text-base text-slate-700 hover:bg-purple-50 hover:text-purple-700 active:bg-purple-100 flex items-center gap-3 transition-colors"><i class="fa-solid fa-puzzle-piece text-base sm:text-lg w-5 text-center text-purple-500"></i> กิจกรรมฐาน</button>' +
+          '<button onclick="switchViewFilter(\'Quiz\'); closeMobileSidebar();" class="w-full text-left py-2.5 sm:py-3 px-3.5 rounded-xl font-bold text-sm sm:text-base text-slate-700 hover:bg-purple-50 hover:text-purple-700 active:bg-purple-100 flex items-center gap-3 transition-colors"><i class="fa-solid fa-gamepad text-base sm:text-lg w-5 text-center text-emerald-500"></i> เกมส์คำถาม</button>' +
+          '<button onclick="switchView(\'UserHistory\'); closeMobileSidebar();" class="w-full text-left py-2.5 sm:py-3 px-3.5 rounded-xl font-bold text-sm sm:text-base text-slate-700 hover:bg-purple-50 hover:text-purple-700 active:bg-purple-100 flex items-center gap-3 transition-colors"><i class="fa-solid fa-clock-rotate-left text-base sm:text-lg w-5 text-center text-indigo-500"></i> ประวัติการส่งคำตอบ</button>' +
           '</div></div>' +
           '</div>';
       }
