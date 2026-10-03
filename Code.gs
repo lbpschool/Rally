@@ -231,11 +231,45 @@ function getCachedSharedData() {
   try {
     const cache = CacheService.getScriptCache();
     const ver = getGlobalCacheVersion();
-    const key = 'rally_shared_data_' + ver;
-    const cachedStr = cache.get(key);
-    if (cachedStr) {
-      return JSON.parse(cachedStr);
+    
+    // Check single key for backwards compatibility
+    const legacyKey = 'rally_shared_data_' + ver;
+    const legacyStr = cache.get(legacyKey);
+    if (legacyStr) {
+      try { return JSON.parse(legacyStr); } catch(pe) {}
     }
+
+    // Modular cache lookup
+    const uStr = cache.get('rally_users_' + ver);
+    const aStr = cache.get('rally_act_' + ver);
+    const sStr = cache.get('rally_settings_' + ver);
+    const vStr = cache.get('rally_votes_' + ver);
+    const numChunksStr = cache.get('rally_subs_chunks_' + ver);
+    
+    if (!uStr || !aStr || !sStr || !vStr || !numChunksStr) {
+      return null;
+    }
+    
+    const numChunks = parseInt(numChunksStr, 10) || 0;
+    const chunkKeys = [];
+    for (let c = 0; c < numChunks; c++) {
+      chunkKeys.push('rally_subs_' + c + '_' + ver);
+    }
+    const chunks = cache.getAll(chunkKeys);
+    let subStr = '';
+    for (let c = 0; c < numChunks; c++) {
+      const chunkVal = chunks['rally_subs_' + c + '_' + ver];
+      if (!chunkVal) return null; // Incomplete chunk -> treat as cache miss
+      subStr += chunkVal;
+    }
+    
+    return {
+      users: JSON.parse(uStr),
+      activities: JSON.parse(aStr),
+      settings: JSON.parse(sStr),
+      votes: JSON.parse(vStr),
+      submissions: JSON.parse(subStr)
+    };
   } catch (e) {
     Logger.log('getCachedSharedData error: ' + e);
   }
@@ -272,20 +306,38 @@ function syncToFirebase(sharedData) {
   }
 }
 
-function setCachedSharedData(data) {
+function setCachedSharedData(data, shouldSyncFirebase) {
+  if (!data) return;
   try {
     const cache = CacheService.getScriptCache();
     const ver = getGlobalCacheVersion();
-    const key = 'rally_shared_data_' + ver;
-    const str = JSON.stringify(data);
-    if (str.length < 95000) {
-      cache.put(key, str, 600); // 10 minutes TTL
+    const cacheEntries = {};
+    
+    if (data.users) cacheEntries['rally_users_' + ver] = JSON.stringify(data.users);
+    if (data.activities) cacheEntries['rally_act_' + ver] = JSON.stringify(data.activities);
+    if (data.settings) cacheEntries['rally_settings_' + ver] = JSON.stringify(data.settings);
+    if (data.votes) cacheEntries['rally_votes_' + ver] = JSON.stringify(data.votes);
+    
+    if (data.submissions) {
+      const subStr = JSON.stringify(data.submissions);
+      const chunkSize = 80000;
+      const numChunks = Math.ceil(subStr.length / chunkSize) || 1;
+      cacheEntries['rally_subs_chunks_' + ver] = String(numChunks);
+      for (let c = 0; c < numChunks; c++) {
+        cacheEntries['rally_subs_' + c + '_' + ver] = subStr.substring(c * chunkSize, (c + 1) * chunkSize);
+      }
     }
+    
+    cache.putAll(cacheEntries, 1200); // 20 minutes TTL
   } catch (e) {
     Logger.log('setCachedSharedData error: ' + e);
   }
-  // Instant Real-time Broadcast to Firebase
-  syncToFirebase(data);
+
+  // Only sync to Firebase on mutations or when explicitly requested (NOT on routine sheet reads)
+  const doSync = (typeof shouldSyncFirebase === 'boolean') ? shouldSyncFirebase : true;
+  if (doSync) {
+    syncToFirebase(data);
+  }
 }
 
 function updateCachedSubmissionGrade(submissionId, username, activityId, score, judgeNotes, judgeUsername, status) {
@@ -612,7 +664,7 @@ function fetchSharedDataFromSheets() {
     votes: votes
   };
 
-  setCachedSharedData(sharedData);
+  setCachedSharedData(sharedData, false); // Cache in memory, do not send redundant HTTP PUT to Firebase on sheet reads
   return sharedData;
 }
 
@@ -941,7 +993,7 @@ function withLock(callback, timeoutMs) {
 }
 
 /**
- * API: Login Authentication (High-Speed Single Round-Trip with Bundled appData)
+ * API: Login Authentication (Lightweight High-Speed Verification: < 1s)
  */
 function apiLogin(username, password) {
   const ss = getSpreadsheet();
@@ -956,33 +1008,47 @@ function apiLogin(username, password) {
     const rowCarCode = String(row[4] || '').trim().toLowerCase();
     if ((rowUser === uTrim || (rowCarCode && rowCarCode === uTrim)) && String(row[1] || '').trim() === pTrim) {
       const canonicalUsername = String(row[0] || '').trim();
-      const sessionToken = generateSessionToken(canonicalUsername, row[3]);
+      const userRole = String(row[3] || 'User').trim();
+      const sessionToken = generateSessionToken(canonicalUsername, userRole);
       
-      // Load initial app data in the SAME call! (Eliminates second round-trip & re-uses preloaded data)
-      const initialData = apiGetInitialData(canonicalUsername, sessionToken, data);
+      // Fast settings lookup from cache or sheet
+      let settings = null;
+      try {
+        const cache = CacheService.getScriptCache();
+        const ver = getGlobalCacheVersion();
+        const sStr = cache.get('rally_settings_' + ver);
+        if (sStr) settings = JSON.parse(sStr);
+      } catch (e) {}
+      if (!settings) {
+        settings = getSettingsMap(ss);
+      }
+
+      let membersList = [];
+      try {
+        membersList = JSON.parse(row[8] || '[]');
+      } catch(e) {
+        if (row[8]) membersList = String(row[8]).split(',').map(function(s){ return s.trim(); }).filter(Boolean);
+      }
+
+      const currentUser = {
+        username: canonicalUsername,
+        name: row[2] || '',
+        role: userRole,
+        carCode: row[4] || '',
+        carColor: row[5] || '',
+        profileUrl: row[6] || '',
+        bonusPoints: Number(row[7]) || 0,
+        members: Array.isArray(membersList) ? membersList : []
+      };
 
       return {
         success: true,
         sessionToken: sessionToken,
-        user: initialData.currentUser || {
-          username: canonicalUsername,
-          name: row[2],
-          role: row[3],
-          carCode: row[4],
-          carColor: row[5],
-          profileUrl: row[6],
-          bonusPoints: Number(row[7]) || 0,
-          members: (function() {
-            try { return JSON.parse(row[8] || '[]'); } catch(e) {
-              return row[8] ? String(row[8]).split(',').map(function(s){ return s.trim(); }).filter(Boolean) : [];
-            }
-          })()
-        },
-        appData: initialData,
-        isScoresHidden: initialData.isScoresHidden,
-        isVotingOpen: initialData.isVotingOpen,
-        isVotesHidden: initialData.isVotesHidden,
-        boobyRank: initialData.boobyRank || 0
+        user: currentUser,
+        isScoresHidden: settings ? !!settings.isScoresHidden : false,
+        isVotingOpen: settings ? !!settings.isVotingOpen : false,
+        isVotesHidden: settings ? !!settings.isVotesHidden : false,
+        boobyRank: settings ? (Number(settings.boobyRank) || 0) : 0
       };
     }
   }

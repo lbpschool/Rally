@@ -3987,7 +3987,7 @@
       var u = uInput.value.trim();
       var p = pInput.value.trim();
 
-      showLoading('กำลังเชื่อมต่อข้อมูล กรุณารอสักครู่...');
+      showLoading('กำลังเข้าสู่ระบบ...');
 
       if (isMockMode) {
         setTimeout(function() {
@@ -4000,7 +4000,7 @@
           });
           if (found) {
             currentUser = found;
-            onLoginSuccess(false);
+            onLoginSuccess(true);
           } else {
             Swal.fire('ข้อผิดพลาด', 'ชื่อผู้ใช้งานหรือรหัสผ่านไม่ถูกต้อง', 'error');
           }
@@ -4019,8 +4019,9 @@
                 if (typeof res.isScoresHidden !== 'undefined') isScoresHidden = res.isScoresHidden;
                 if (typeof res.isVotesHidden !== 'undefined') isVotesHidden = res.isVotesHidden;
                 if (typeof res.isVotingOpen !== 'undefined') isVotingOpen = res.isVotingOpen;
+                if (typeof res.boobyRank !== 'undefined') boobyRank = Number(res.boobyRank || 0);
 
-                // Direct single-roundtrip login: use bundled appData if available!
+                // Direct single-roundtrip login: use bundled appData if available
                 if (res.appData) {
                   usersData = res.appData.users || [];
                   setActivitiesDataClean(res.appData.activities);
@@ -4030,7 +4031,12 @@
                   if (res.appData.currentUser) currentUser = res.appData.currentUser;
                   onLoginSuccess(true); // Skip 2nd loadAppData round-trip
                 } else {
-                  onLoginSuccess(false);
+                  // Lightweight fast login: session authenticated immediately (~1s)
+                  var hasData = (activitiesData && activitiesData.length > 0) || isFirebaseLiveActive;
+                  onLoginSuccess(true); // Switch view immediately without blocking
+                  if (!hasData) {
+                    loadAppData(true); // Silent background fetch if Firebase has not yet delivered data
+                  }
                 }
               } else {
                 handleApiResponseError(res);
