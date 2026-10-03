@@ -1319,14 +1319,12 @@
             </div>
 
             <div id="voteRankingTableWrapper" class="overflow-x-auto">
-              <table class="w-full text-left text-xs min-w-[650px]">
+              <table class="w-full text-left text-xs">
                 <thead class="text-slate-600 bg-pink-50/60 border-b border-pink-100 uppercase">
                   <tr>
-                    <th class="py-3 px-4 text-center font-bold whitespace-nowrap w-16">อันดับ</th>
-                    <th class="py-3 px-4 font-bold whitespace-nowrap">ทีม / ผู้เข้าแข่งขัน</th>
-                    <th class="py-3 px-4 font-bold whitespace-nowrap">สัดส่วนคะแนนโหวต (Progress)</th>
-                    <th class="py-3 px-4 text-center font-bold whitespace-nowrap">คะแนนที่ได้</th>
-                    <th class="py-3 px-4 text-right font-bold whitespace-nowrap">% โหวต</th>
+                    <th class="py-3 px-2 sm:px-3 text-center font-bold whitespace-nowrap w-12 sm:w-14">อันดับ</th>
+                    <th class="py-3 px-2 sm:px-3 font-bold whitespace-nowrap">ทีม / ผู้เข้าแข่งขัน</th>
+                    <th class="py-3 px-3 text-right font-bold whitespace-nowrap w-36 sm:w-48">คะแนน & สัดส่วนโหวต</th>
                   </tr>
                 </thead>
                 <tbody id="voteRankingTableBody" class="divide-y divide-slate-100">
@@ -10024,7 +10022,7 @@
       var tbodyRank = document.getElementById('voteRankingTableBody');
       if (tbodyRank) {
         if (voteTallies.length === 0) {
-          tbodyRank.innerHTML = '<tr><td colspan="6" class="text-center py-6 text-slate-400">ไม่มีข้อมูลผู้แข่งขัน</td></tr>';
+          tbodyRank.innerHTML = '<tr><td colspan="3" class="text-center py-6 text-slate-400">ไม่มีข้อมูลผู้แข่งขัน</td></tr>';
         } else {
           var maxVotes = voteTallies[0].votesCount || 1;
           tbodyRank.innerHTML = voteTallies.map(function(item, idx) {
@@ -10075,20 +10073,20 @@
             }
 
             return '<tr class="' + rowBgClass + ' transition-colors">' +
-              '<td class="py-3 px-4 text-center ' + firstCellBorderClass + '">' + rankBadge + '</td>' +
-              '<td class="py-3 px-4">' +
-                '<div class="flex items-center gap-3">' +
-                  '<div class="w-14 h-10 rounded-xl overflow-hidden shadow-xs border border-purple-200 shrink-0 relative group cursor-pointer" onclick="openImageModal(\'' + escapeHTML(item.user.profileUrl) + '\', \'' + escapeHTML(item.user.name) + '\')">' +
+              '<td class="py-2.5 px-2 sm:px-3 text-center ' + firstCellBorderClass + '">' + rankBadge + '</td>' +
+              '<td class="py-2.5 px-2 sm:px-3">' +
+                '<div class="flex items-center gap-2.5 sm:gap-3">' +
+                  '<div class="w-12 h-9 sm:w-14 sm:h-10 rounded-xl overflow-hidden shadow-xs border border-purple-200 shrink-0 relative group cursor-pointer" onclick="openImageModal(\'' + escapeHTML(item.user.profileUrl) + '\', \'' + escapeHTML(item.user.name) + '\')">' +
                     '<img src="' + escapeHTML(item.user.profileUrl) + '" class="w-full h-full object-cover object-center group-hover:scale-110 transition-transform duration-300" alt="Car">' +
                     '<div class="absolute inset-0 bg-black/25 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">' +
                       '<i class="fa-solid fa-magnifying-glass text-white text-xs"></i>' +
                     '</div>' +
                   '</div>' +
-                  '<div>' +
+                  '<div class="min-w-0">' +
                     '<div class="flex items-center gap-1.5 flex-wrap">' +
-                      '<span class="font-bold text-slate-800 text-xs">' + escapeHTML(item.user.name) + '</span>' +
+                      '<span class="font-bold text-slate-800 text-xs truncate">' + escapeHTML(item.user.name) + '</span>' +
                       rankAwardPill +
-                      '<span class="px-2 py-0.5 rounded-md text-[10px] font-bold ' + getCarColorStyle(item.user.carColor) + '">' +
+                      '<span class="px-2 py-0.5 rounded-md text-[10px] font-bold whitespace-nowrap ' + getCarColorStyle(item.user.carColor) + '">' +
                         escapeHTML(item.user.carCode || item.user.username) + ' (' + escapeHTML(getCarColorThaiName(item.user.carColor)) + ')' +
                       '</span>' +
                     '</div>' +
@@ -10096,15 +10094,18 @@
                   '</div>' +
                 '</div>' +
               '</td>' +
-              '<td class="py-3 px-4">' +
-                '<div class="w-full bg-slate-100 rounded-full h-3 overflow-hidden border border-slate-200/60 p-0.5">' +
-                  '<div class="bg-gradient-to-r from-pink-500 to-rose-500 h-full rounded-full transition-all duration-500" style="width: ' + barWidth + '%;"></div>' +
+              '<td class="py-2.5 px-3 text-right">' +
+                '<div class="flex flex-col items-end gap-1">' +
+                  '<div class="flex items-baseline gap-1.5">' +
+                    '<span class="font-black text-slate-800 text-sm sm:text-base leading-none">' + item.votesCount + '</span>' +
+                    '<span class="text-[10px] sm:text-[11px] font-bold text-slate-400">โหวต</span>' +
+                    '<span class="text-[10px] sm:text-[11px] font-black text-pink-600 bg-pink-50 px-1.5 py-0.5 rounded-md border border-pink-200/60 leading-none">(' + item.percentage + '%)</span>' +
+                  '</div>' +
+                  '<div class="w-24 sm:w-32 bg-slate-200/80 rounded-full h-2 overflow-hidden border border-slate-200/60 p-[1px]">' +
+                    '<div class="bg-gradient-to-r from-pink-500 to-rose-500 h-full rounded-full transition-all duration-500" style="width: ' + barWidth + '%;"></div>' +
+                  '</div>' +
                 '</div>' +
               '</td>' +
-              '<td class="py-3 px-4 text-center">' +
-                '<span class="font-black text-slate-800 text-sm">' + item.votesCount + '</span>' +
-              '</td>' +
-              '<td class="py-3 px-4 text-right font-bold text-pink-600 text-xs">' + item.percentage + '%</td>' +
               '</tr>';
           }).join('');
         }
