@@ -6056,8 +6056,24 @@
         var quizCell = shouldHide ? '<span class="text-amber-800 font-bold text-xs"><i class="fa-solid fa-lock text-[10px] mr-1"></i>ซ่อน</span>' : ('<span class="inline-flex items-center justify-center min-w-[36px] px-2.5 py-0.5 rounded-full bg-emerald-500 text-white font-black text-xs shadow-sm">' + item.quizScore + '</span>');
         var totalCell = shouldHide ? '<span class="px-2.5 py-1 rounded-xl bg-amber-100 text-amber-800 font-bold text-xs border border-amber-200"><i class="fa-solid fa-lock text-[10px] mr-1"></i>ซ่อนคะแนน</span>' : ('<span class="inline-flex items-center justify-center px-3 py-1 rounded-full bg-gradient-to-r from-amber-400 via-orange-500 to-amber-600 text-white font-black text-sm shadow-md">' + item.totalNetScore + '</span>');
 
-        return '<tr class="' + (isBooby ? 'bg-purple-50/80 border-l-4 border-l-purple-500 hover:bg-purple-100/70' : 'hover:bg-purple-50/40') + ' transition-colors border-b border-slate-100/80">' +
-          '<td class="py-2.5 px-1.5 sm:px-2.5 text-center align-middle">' + rankBadge + '</td>' +
+        var rowBgClass = 'hover:bg-purple-50/40';
+        var firstCellBorderClass = 'border-l-4 border-l-transparent';
+        if (isBooby) {
+          rowBgClass = 'bg-purple-50/80 border-l-4 border-l-purple-500 hover:bg-purple-100/70';
+          firstCellBorderClass = 'border-l-4 border-l-purple-500';
+        } else if (rank === 1) {
+          rowBgClass = 'bg-amber-50/80 border-l-4 border-l-amber-400 hover:bg-amber-100/70';
+          firstCellBorderClass = 'border-l-4 border-l-amber-400';
+        } else if (rank === 2) {
+          rowBgClass = 'bg-slate-100/80 border-l-4 border-l-slate-400 hover:bg-slate-200/70';
+          firstCellBorderClass = 'border-l-4 border-l-slate-400';
+        } else if (rank === 3) {
+          rowBgClass = 'bg-orange-50/80 border-l-4 border-l-orange-400 hover:bg-orange-100/70';
+          firstCellBorderClass = 'border-l-4 border-l-orange-400';
+        }
+
+        return '<tr class="' + rowBgClass + ' transition-colors border-b border-slate-100/80">' +
+          '<td class="py-2.5 px-1.5 sm:px-2.5 text-center align-middle ' + firstCellBorderClass + '">' + rankBadge + '</td>' +
           
           '<!-- Name (USERNAME) Stacked Below Car Photo (Rectangular Landscape) -->' +
           '<td class="py-2.5 px-1.5 sm:px-2.5 align-middle text-center">' +
@@ -10039,8 +10055,27 @@
 
             var barWidth = maxVotes > 0 ? Math.round((item.votesCount / maxVotes) * 100) : 0;
 
-            return '<tr class="hover:bg-pink-50/40 transition-colors">' +
-              '<td class="py-3 px-4 text-center">' + rankBadge + '</td>' +
+            var rowBgClass = 'hover:bg-pink-50/40';
+            var firstCellBorderClass = 'border-l-4 border-l-transparent';
+            if (rank === 1) {
+              rowBgClass = 'bg-amber-50/80 border-l-4 border-l-amber-400 hover:bg-amber-100/70';
+              firstCellBorderClass = 'border-l-4 border-l-amber-400';
+            } else if (rank === 2) {
+              rowBgClass = 'bg-slate-100/80 border-l-4 border-l-slate-400 hover:bg-slate-200/70';
+              firstCellBorderClass = 'border-l-4 border-l-slate-400';
+            } else if (rank === 3) {
+              rowBgClass = 'bg-orange-50/80 border-l-4 border-l-orange-400 hover:bg-orange-100/70';
+              firstCellBorderClass = 'border-l-4 border-l-orange-400';
+            } else if (rank === 4) {
+              rowBgClass = 'bg-cyan-50/70 border-l-4 border-l-cyan-400 hover:bg-cyan-100/60';
+              firstCellBorderClass = 'border-l-4 border-l-cyan-400';
+            } else if (rank === 5) {
+              rowBgClass = 'bg-emerald-50/70 border-l-4 border-l-emerald-400 hover:bg-emerald-100/60';
+              firstCellBorderClass = 'border-l-4 border-l-emerald-400';
+            }
+
+            return '<tr class="' + rowBgClass + ' transition-colors">' +
+              '<td class="py-3 px-4 text-center ' + firstCellBorderClass + '">' + rankBadge + '</td>' +
               '<td class="py-3 px-4">' +
                 '<div class="flex items-center gap-3">' +
                   '<div class="w-14 h-10 rounded-xl overflow-hidden shadow-xs border border-purple-200 shrink-0 relative group cursor-pointer" onclick="openImageModal(\'' + escapeHTML(item.user.profileUrl) + '\', \'' + escapeHTML(item.user.name) + '\')">' +
