@@ -502,6 +502,9 @@
               <div id="sideNavLeaderboard" style="display: none;" onclick="switchView('Leaderboard')" class="sidebar-item">
                 <i class="fa-solid fa-trophy text-base text-amber-500"></i> ดูคะแนนรวม (Leaderboard)
               </div>
+              <div id="sideNavVotes" style="display: none;" onclick="switchView('VoteResults')" class="sidebar-item">
+                <i class="fa-solid fa-heart text-base text-pink-500"></i> คะแนนผลโหวต (Popular Vote)
+              </div>
               <div id="sideNavGrading" style="display: none;" onclick="switchView('Grading')" class="sidebar-item">
                 <i class="fa-solid fa-clipboard-check text-base text-purple-600"></i> ตรวจและให้คะแนน
               </div>
@@ -537,9 +540,6 @@
               </div>
               <div id="sideNavAdminQuiz" style="display: none;" onclick="switchView('AdminActivitiesQuiz')" class="sidebar-item">
                 <i class="fa-solid fa-gamepad text-base text-emerald-500"></i> จัดการเกมส์คำถาม
-              </div>
-              <div id="sideNavVotes" style="display: none;" onclick="switchView('VoteResults')" class="sidebar-item">
-                <i class="fa-solid fa-heart text-base text-pink-500"></i> คะแนนโหวต (Popular Vote)
               </div>
               <div id="sideNavCeremony" style="display: none;" onclick="switchView('Ceremony')" class="sidebar-item">
                 <i class="fa-solid fa-bullhorn text-base text-amber-500"></i> 🎉 ประกาศผลรางวัล
@@ -1191,16 +1191,16 @@
               </div>
               <div class="min-w-0 flex-1">
                 <div class="flex items-center gap-2 flex-wrap mb-1">
-                  <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-white/20 backdrop-blur-md text-white border border-white/30 tracking-wide uppercase whitespace-nowrap">
-                    POPULAR VOTE (ADMIN)
+                  <span id="voteResultsBadge" class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-white/20 backdrop-blur-md text-white border border-white/30 tracking-wide uppercase whitespace-nowrap">
+                    POPULAR VOTE
                   </span>
                   <span id="voteSystemStatusBadge" class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500 text-white shadow-sm flex items-center gap-1 whitespace-nowrap">
                     <i class="fa-solid fa-circle text-[6px] animate-pulse"></i> เปิดรับคะแนนโหวต
                   </span>
                 </div>
                 <h2 class="text-base sm:text-lg lg:text-xl font-black text-white leading-snug tracking-wide">ผลคะแนนโหวตยอดนิยม (Popular Vote)</h2>
-                <p class="text-xs text-pink-100/90 font-medium mt-0.5 leading-relaxed">
-                  <i class="fa-solid fa-check-to-slot text-pink-200 mr-1"></i> ผู้แข่งขันโควตา 4 ครั้ง/ทีม (ห้ามโหวตทีมตัวเอง) • แสดงเฉพาะผู้ดูแลระบบ
+                <p id="voteResultsSubtext" class="text-xs text-pink-100/90 font-medium mt-0.5 leading-relaxed">
+                  <i class="fa-solid fa-check-to-slot text-pink-200 mr-1"></i> ผู้แข่งขันโควตา 4 ครั้ง/ทีม (ห้ามโหวตทีมตัวเอง) • ผลคะแนนความนิยม
                 </p>
               </div>
             </div>
@@ -1216,7 +1216,7 @@
               <button id="btnToggleVoteSystem" onclick="toggleVotingSystem()" class="px-3.5 py-1.5 rounded-xl bg-white text-pink-700 hover:bg-pink-50 font-bold text-xs shadow-md transition-all flex items-center gap-1.5 cursor-pointer whitespace-nowrap active:scale-95">
                 <i class="fa-solid fa-power-off text-xs"></i> <span id="btnToggleVoteSystemText">ปิดระบบโหวต</span>
               </button>
-              <button onclick="resetAllVotes()" class="px-3.5 py-1.5 rounded-xl bg-rose-700/80 hover:bg-rose-700 text-white font-bold text-xs shadow-md border border-white/20 transition-all flex items-center gap-1.5 cursor-pointer whitespace-nowrap active:scale-95">
+              <button id="btnResetAllVotes" onclick="resetAllVotes()" class="px-3.5 py-1.5 rounded-xl bg-rose-700/80 hover:bg-rose-700 text-white font-bold text-xs shadow-md border border-white/20 transition-all flex items-center gap-1.5 cursor-pointer whitespace-nowrap active:scale-95">
                 <i class="fa-solid fa-rotate-left text-xs"></i> รีเซ็ตคะแนนโหวต
               </button>
               </div>
@@ -1328,7 +1328,7 @@
           </div>
 
           <!-- 5. Vote Audit / Transaction Log Table (Who voted for whom) -->
-          <div class="glass-card p-5 sm:p-6 space-y-4">
+          <div id="voteAuditLogSection" class="glass-card p-5 sm:p-6 space-y-4">
             <div class="flex items-center justify-between pb-3 border-b border-slate-100">
               <div>
                 <h3 class="text-sm sm:text-base font-bold text-slate-800 flex items-center gap-2">
@@ -2555,7 +2555,14 @@
     }
     window.getCompetitorPassedSubs = getCompetitorPassedSubs;
     var isVotingOpen = false;
-    var isVotesHidden = false;
+    var isVotesHidden = safeGetStorage("rally_setting_votes_hidden") === "true";
+
+    function setVotesHiddenState(val) {
+      isVotesHidden = !!val;
+      try {
+        safeSetStorage("rally_setting_votes_hidden", isVotesHidden ? "true" : "false");
+      } catch (e) {}
+    }
     var userCategoryFilter = 'ALL';
     var currentActiveViewName = 'UserDashboard';
     var currentActiveFilterCat = '';
@@ -3579,10 +3586,24 @@
 
     
     function toggleVoteVisibility() {
+      if (!currentUser || currentUser.role !== 'Admin') {
+        Swal.fire('ไม่มีสิทธิ์', 'เฉพาะผู้ดูแลระบบ (Admin) เท่านั้นที่สามารถเปลี่ยนโหมดแสดง/ซ่อนผลโหวตได้', 'warning');
+        return;
+      }
       var targetState = !isVotesHidden;
-      isVotesHidden = targetState;
+      setVotesHiddenState(targetState);
+
+      setupNavigation();
       renderVoteResults();
       renderUserDashboard();
+
+      // INSTANT BROADCAST TO FIREBASE REALTIME DATABASE (< 0.1s update)
+      try {
+        if (typeof firebase !== 'undefined' && firebase.apps && firebase.apps.length) {
+          firebase.database().ref('live_rally_data/settings/isVotesHidden').set(targetState);
+          firebase.database().ref('live_rally_data/timestamp').set(Date.now());
+        }
+      } catch (fbErr) {}
 
       Swal.fire({
         toast: true,
@@ -3597,7 +3618,8 @@
         google.script.run
           .withSuccessHandler(function(res) {
             if (res && res.success) {
-              isVotesHidden = res.isVotesHidden;
+              setVotesHiddenState(res.isVotesHidden);
+              setupNavigation();
               renderVoteResults();
               renderUserDashboard();
             }
@@ -4017,7 +4039,7 @@
                   safeSetStorage('rally_session_token', sessionToken);
                 }
                 if (typeof res.isScoresHidden !== 'undefined') setScoresHiddenState(res.isScoresHidden);
-                if (typeof res.isVotesHidden !== 'undefined') isVotesHidden = res.isVotesHidden;
+                if (typeof res.isVotesHidden !== 'undefined') setVotesHiddenState(res.isVotesHidden);
                 if (typeof res.isVotingOpen !== 'undefined') isVotingOpen = res.isVotingOpen;
                 if (typeof res.boobyRank !== 'undefined') boobyRank = Number(res.boobyRank || 0);
 
@@ -4196,11 +4218,13 @@
       }
 
       var showLeaderboardTab = (currentUser.role === 'Admin') || (!isScoresHidden);
+      var showVotesTab = (currentUser.role === 'Admin') || (!isVotesHidden);
 
       if (currentUser.role === 'Admin') {
         // ADMIN ROLE: All Tabs Available
         if (navDashboard) navDashboard.style.display = 'flex';
         if (navLeaderboard) navLeaderboard.style.display = 'flex';
+        if (navVotes) navVotes.style.display = 'flex';
         if (navGrading) navGrading.style.display = 'flex';
         if (navMissionsAll) navMissionsAll.style.display = 'flex';
         if (navRC) navRC.style.display = 'flex';
@@ -4213,7 +4237,6 @@
         if (navAdminRC) navAdminRC.style.display = 'flex';
         if (navAdminBase) navAdminBase.style.display = 'flex';
         if (navAdminQuiz) navAdminQuiz.style.display = 'flex';
-        if (navVotes) navVotes.style.display = 'flex';
         if (navCeremony) navCeremony.style.display = 'flex';
         if (navAnalytics) navAnalytics.style.display = 'flex';
 
@@ -4222,6 +4245,7 @@
           '<div class="space-y-1.5">' +
           '<button onclick="switchView(\'UserDashboard\'); closeMobileSidebar();" class="w-full text-left py-2.5 sm:py-3 px-3.5 rounded-xl font-extrabold text-sm sm:text-base text-purple-700 bg-purple-50 active:bg-purple-100 flex items-center gap-3 transition-colors"><i class="fa-solid fa-gauge-high text-base sm:text-lg w-5 text-center text-purple-600"></i> Dashboard</button>' +
           '<button onclick="switchView(\'Leaderboard\'); closeMobileSidebar();" class="w-full text-left py-2.5 sm:py-3 px-3.5 rounded-xl font-bold text-sm sm:text-base text-slate-700 hover:bg-purple-50 hover:text-purple-700 active:bg-purple-100 flex items-center gap-3 transition-colors"><i class="fa-solid fa-trophy text-base sm:text-lg w-5 text-center text-amber-500"></i> ดูคะแนนรวม (Leaderboard)</button>' +
+          '<button onclick="switchView(\'VoteResults\'); closeMobileSidebar();" class="w-full text-left py-2.5 sm:py-3 px-3.5 rounded-xl font-bold text-sm sm:text-base text-slate-700 hover:bg-pink-50 hover:text-pink-700 active:bg-pink-100 flex items-center gap-3 transition-colors"><i class="fa-solid fa-heart text-base sm:text-lg w-5 text-center text-pink-500"></i> คะแนนผลโหวต (Popular Vote)</button>' +
           '<button onclick="switchView(\'Grading\'); closeMobileSidebar();" class="w-full text-left py-2.5 sm:py-3 px-3.5 rounded-xl font-bold text-sm sm:text-base text-slate-700 hover:bg-purple-50 hover:text-purple-700 active:bg-purple-100 flex items-center gap-3 transition-colors"><i class="fa-solid fa-clipboard-check text-base sm:text-lg w-5 text-center text-purple-600"></i> ตรวจและให้คะแนน</button>' +
           '<button onclick="switchViewFilter(\'ALL\'); closeMobileSidebar();" class="w-full text-left py-2.5 sm:py-3 px-3.5 rounded-xl font-bold text-sm sm:text-base text-slate-700 hover:bg-purple-50 hover:text-purple-700 active:bg-purple-100 flex items-center gap-3 transition-colors"><i class="fa-solid fa-list-check text-base sm:text-lg w-5 text-center text-purple-600"></i> ภารกิจทั้งหมด</button>' +
           '<button onclick="switchViewFilter(\'RC\'); closeMobileSidebar();" class="w-full text-left py-2.5 sm:py-3 px-3.5 rounded-xl font-bold text-sm sm:text-base text-slate-700 hover:bg-purple-50 hover:text-purple-700 active:bg-purple-100 flex items-center gap-3 transition-colors"><i class="fa-solid fa-flag text-base sm:text-lg w-5 text-center text-blue-500"></i> จุด RC</button>' +
@@ -4237,16 +4261,16 @@
           '<button onclick="switchView(\'AdminActivitiesRC\'); closeMobileSidebar();" class="w-full text-left py-2.5 sm:py-3 px-3.5 rounded-xl font-bold text-sm sm:text-base text-slate-700 hover:bg-purple-50 hover:text-purple-700 active:bg-purple-100 flex items-center gap-3 transition-colors"><i class="fa-solid fa-list-check text-base sm:text-lg w-5 text-center text-blue-500"></i> จัดการจุด RC</button>' +
           '<button onclick="switchView(\'AdminActivitiesBase\'); closeMobileSidebar();" class="w-full text-left py-2.5 sm:py-3 px-3.5 rounded-xl font-bold text-sm sm:text-base text-slate-700 hover:bg-purple-50 hover:text-purple-700 active:bg-purple-100 flex items-center gap-3 transition-colors"><i class="fa-solid fa-cubes text-base sm:text-lg w-5 text-center text-purple-500"></i> จัดการกิจกรรมฐาน</button>' +
           '<button onclick="switchView(\'AdminActivitiesQuiz\'); closeMobileSidebar();" class="w-full text-left py-2.5 sm:py-3 px-3.5 rounded-xl font-bold text-sm sm:text-base text-slate-700 hover:bg-purple-50 hover:text-purple-700 active:bg-purple-100 flex items-center gap-3 transition-colors"><i class="fa-solid fa-gamepad text-base sm:text-lg w-5 text-center text-emerald-500"></i> จัดการเกมส์คำถาม</button>' +
-          '<button onclick="switchView(\'VoteResults\'); closeMobileSidebar();" class="w-full text-left py-2.5 sm:py-3 px-3.5 rounded-xl font-bold text-sm sm:text-base text-slate-700 hover:bg-pink-50 hover:text-pink-700 active:bg-pink-100 flex items-center gap-3 transition-colors"><i class="fa-solid fa-heart text-base sm:text-lg w-5 text-center text-pink-500"></i> คะแนนโหวต (Popular Vote)</button>' +
           '<button onclick="switchView(\'Ceremony\'); closeMobileSidebar();" class="w-full text-left py-2.5 sm:py-3 px-3.5 rounded-xl font-bold text-sm sm:text-base text-slate-700 hover:bg-amber-50 hover:text-amber-700 active:bg-amber-100 flex items-center gap-3 transition-colors"><i class="fa-solid fa-bullhorn text-base sm:text-lg w-5 text-center text-amber-500"></i> 🎉 ประกาศผลรางวัล</button>' +
           '<button onclick="switchView(\'Analytics\'); closeMobileSidebar();" class="w-full text-left py-2.5 sm:py-3 px-3.5 rounded-xl font-bold text-sm sm:text-base text-slate-700 hover:bg-purple-50 hover:text-purple-700 active:bg-purple-100 flex items-center gap-3 transition-colors"><i class="fa-solid fa-chart-pie text-base sm:text-lg w-5 text-center text-pink-500"></i> สถิติวิเคราะห์</button>' +
           '</div></div>' +
           '</div>';
 
       } else if (currentUser.role === 'Sub-Admin') {
-        // SUB-ADMIN (JUDGE) ROLE: ONLY Dashboard, Grading, History, Leaderboard (if open)
+        // SUB-ADMIN (JUDGE) ROLE: ONLY Dashboard, Grading, History, Leaderboard (if open), Votes (if open)
         if (navDashboard) navDashboard.style.display = 'flex';
         if (navLeaderboard) navLeaderboard.style.display = showLeaderboardTab ? 'flex' : 'none';
+        if (navVotes) navVotes.style.display = showVotesTab ? 'flex' : 'none';
         if (navGrading) navGrading.style.display = 'flex';
         if (navHistory) navHistory.style.display = 'flex';
 
@@ -4260,7 +4284,6 @@
         if (navAdminRC) navAdminRC.style.display = 'none';
         if (navAdminBase) navAdminBase.style.display = 'none';
         if (navAdminQuiz) navAdminQuiz.style.display = 'none';
-        if (navVotes) navVotes.style.display = 'none';
         if (navCeremony) navCeremony.style.display = 'none';
         if (navAnalytics) navAnalytics.style.display = 'none';
 
@@ -4270,12 +4293,13 @@
           '<button onclick="switchView(\'Grading\'); closeMobileSidebar();" class="w-full text-left py-2.5 sm:py-3 px-3.5 rounded-xl font-extrabold text-sm sm:text-base text-purple-700 bg-purple-50 active:bg-purple-100 flex items-center gap-3 transition-colors"><i class="fa-solid fa-clipboard-check text-base sm:text-lg w-5 text-center text-purple-600"></i> ตรวจและให้คะแนน</button>' +
           '<button onclick="switchView(\'UserDashboard\'); closeMobileSidebar();" class="w-full text-left py-2.5 sm:py-3 px-3.5 rounded-xl font-bold text-sm sm:text-base text-slate-700 hover:bg-purple-50 hover:text-purple-700 active:bg-purple-100 flex items-center gap-3 transition-colors"><i class="fa-solid fa-gauge-high text-base sm:text-lg w-5 text-center text-purple-600"></i> Dashboard</button>' +
           (showLeaderboardTab ? '<button onclick="switchView(\'Leaderboard\'); closeMobileSidebar();" class="w-full text-left py-2.5 sm:py-3 px-3.5 rounded-xl font-bold text-sm sm:text-base text-slate-700 hover:bg-purple-50 hover:text-purple-700 active:bg-purple-100 flex items-center gap-3 transition-colors"><i class="fa-solid fa-trophy text-base sm:text-lg w-5 text-center text-amber-500"></i> ดูคะแนนรวม (Leaderboard)</button>' : '') +
+          (showVotesTab ? '<button onclick="switchView(\'VoteResults\'); closeMobileSidebar();" class="w-full text-left py-2.5 sm:py-3 px-3.5 rounded-xl font-bold text-sm sm:text-base text-slate-700 hover:bg-pink-50 hover:text-pink-700 active:bg-pink-100 flex items-center gap-3 transition-colors"><i class="fa-solid fa-heart text-base sm:text-lg w-5 text-center text-pink-500"></i> คะแนนผลโหวต (Popular Vote)</button>' : '') +
           '<button onclick="switchView(\'UserHistory\'); closeMobileSidebar();" class="w-full text-left py-2.5 sm:py-3 px-3.5 rounded-xl font-bold text-sm sm:text-base text-slate-700 hover:bg-purple-50 hover:text-purple-700 active:bg-purple-100 flex items-center gap-3 transition-colors"><i class="fa-solid fa-clock-rotate-left text-base sm:text-lg w-5 text-center text-indigo-500"></i> ประวัติการให้คะแนน</button>' +
           '</div></div>' +
           '</div>';
 
       } else {
-        // USER (COMPETITOR) ROLE: ONLY Dashboard, RC, Base, Quiz, History, Leaderboard (if open)
+        // USER (COMPETITOR) ROLE: ONLY Dashboard, RC, Base, Quiz, History, Leaderboard (if open), Votes (if open)
         if (navDashboard) navDashboard.style.display = 'flex';
         if (navMissionsAll) navMissionsAll.style.display = 'flex';
         if (navRC) navRC.style.display = 'flex';
@@ -4283,6 +4307,7 @@
         if (navQuiz) navQuiz.style.display = 'flex';
         if (navHistory) navHistory.style.display = 'flex';
         if (navLeaderboard) navLeaderboard.style.display = showLeaderboardTab ? 'flex' : 'none';
+        if (navVotes) navVotes.style.display = showVotesTab ? 'flex' : 'none';
 
         if (navGrading) navGrading.style.display = 'none';
         if (adminSection) adminSection.style.display = 'none';
@@ -4290,7 +4315,6 @@
         if (navAdminRC) navAdminRC.style.display = 'none';
         if (navAdminBase) navAdminBase.style.display = 'none';
         if (navAdminQuiz) navAdminQuiz.style.display = 'none';
-        if (navVotes) navVotes.style.display = 'none';
         if (navCeremony) navCeremony.style.display = 'none';
         if (navAnalytics) navAnalytics.style.display = 'none';
 
@@ -4299,6 +4323,7 @@
           '<div class="space-y-1.5">' +
           '<button onclick="switchView(\'UserDashboard\'); closeMobileSidebar();" class="w-full text-left py-2.5 sm:py-3 px-3.5 rounded-xl font-bold text-sm sm:text-base text-slate-700 hover:bg-purple-50 hover:text-purple-700 active:bg-purple-100 flex items-center gap-3 transition-colors"><i class="fa-solid fa-gauge-high text-base sm:text-lg w-5 text-center text-purple-600"></i> Dashboard</button>' +
           (showLeaderboardTab ? '<button onclick="switchView(\'Leaderboard\'); closeMobileSidebar();" class="w-full text-left py-2.5 sm:py-3 px-3.5 rounded-xl font-bold text-sm sm:text-base text-slate-700 hover:bg-purple-50 hover:text-purple-700 active:bg-purple-100 flex items-center gap-3 transition-colors"><i class="fa-solid fa-trophy text-base sm:text-lg w-5 text-center text-amber-500"></i> ดูคะแนนรวม (Leaderboard)</button>' : '') +
+          (showVotesTab ? '<button onclick="switchView(\'VoteResults\'); closeMobileSidebar();" class="w-full text-left py-2.5 sm:py-3 px-3.5 rounded-xl font-bold text-sm sm:text-base text-slate-700 hover:bg-pink-50 hover:text-pink-700 active:bg-pink-100 flex items-center gap-3 transition-colors"><i class="fa-solid fa-heart text-base sm:text-lg w-5 text-center text-pink-500"></i> คะแนนผลโหวต (Popular Vote)</button>' : '') +
           '<button onclick="switchViewFilter(\'ALL\'); closeMobileSidebar();" class="w-full text-left py-2.5 sm:py-3 px-3.5 rounded-xl font-bold text-sm sm:text-base text-slate-700 hover:bg-purple-50 hover:text-purple-700 active:bg-purple-100 flex items-center gap-3 transition-colors"><i class="fa-solid fa-list-check text-base sm:text-lg w-5 text-center text-purple-600"></i> ภารกิจทั้งหมด</button>' +
           '<button onclick="switchViewFilter(\'RC\'); closeMobileSidebar();" class="w-full text-left py-2.5 sm:py-3 px-3.5 rounded-xl font-bold text-sm sm:text-base text-slate-700 hover:bg-purple-50 hover:text-purple-700 active:bg-purple-100 flex items-center gap-3 transition-colors"><i class="fa-solid fa-flag text-base sm:text-lg w-5 text-center text-blue-500"></i> จุด RC</button>' +
           '<button onclick="switchViewFilter(\'Base\'); closeMobileSidebar();" class="w-full text-left py-2.5 sm:py-3 px-3.5 rounded-xl font-bold text-sm sm:text-base text-slate-700 hover:bg-purple-50 hover:text-purple-700 active:bg-purple-100 flex items-center gap-3 transition-colors"><i class="fa-solid fa-puzzle-piece text-base sm:text-lg w-5 text-center text-purple-500"></i> กิจกรรมฐาน</button>' +
@@ -4360,7 +4385,14 @@
       }
 
       // Strict Role Authorization Guards
-      if ((viewName === 'VoteResults' && (isVotesHidden && (!currentUser || currentUser.role !== 'Admin'))) || viewName === 'AdminUsers' || viewName === 'AdminActivitiesRC' || viewName === 'AdminActivitiesBase' || viewName === 'AdminActivitiesQuiz' || viewName === 'AdminActivities' || viewName === 'Analytics' || viewName === 'Ceremony') {
+      if (viewName === 'VoteResults') {
+        if (isVotesHidden && (!currentUser || currentUser.role !== 'Admin')) {
+          switchView(currentUser && currentUser.role === 'Sub-Admin' ? 'Grading' : 'UserDashboard');
+          return;
+        }
+      }
+
+      if (viewName === 'AdminUsers' || viewName === 'AdminActivitiesRC' || viewName === 'AdminActivitiesBase' || viewName === 'AdminActivitiesQuiz' || viewName === 'AdminActivities' || viewName === 'Analytics' || viewName === 'Ceremony') {
         if (!currentUser || currentUser.role !== 'Admin') {
           switchView(currentUser && currentUser.role === 'Sub-Admin' ? 'Grading' : 'UserDashboard');
           return;
@@ -4527,7 +4559,7 @@
                   boobyRank = Number(res.boobyRank || 0);
                 }
                 if (typeof res.isVotesHidden !== 'undefined') {
-                  isVotesHidden = res.isVotesHidden;
+                  setVotesHiddenState(res.isVotesHidden);
                 }
                 if (typeof res.isVotingOpen !== 'undefined') {
                   isVotingOpen = res.isVotingOpen;
@@ -4537,6 +4569,12 @@
                 }
                 if (res.currentUser) currentUser = res.currentUser;
                 setupNavigation();
+                if (isScoresHidden && (!currentUser || currentUser.role !== 'Admin') && currentActiveViewName === 'Leaderboard') {
+                  switchView(currentUser && currentUser.role === 'Sub-Admin' ? 'Grading' : 'UserDashboard');
+                }
+                if (isVotesHidden && (!currentUser || currentUser.role !== 'Admin') && currentActiveViewName === 'VoteResults') {
+                  switchView(currentUser && currentUser.role === 'Sub-Admin' ? 'Grading' : 'UserDashboard');
+                }
                 if (currentActiveViewName === 'UserMissions') {
                   renderUserMissionsGrid();
                 } else if (currentActiveViewName === 'AdminActivities') {
@@ -9802,6 +9840,7 @@
     function renderVoteResults() {
       var competitors = usersData.filter(function(u) { return u.role === 'User'; });
       var totalVotes = votesData.length;
+      var isAdmin = currentUser && currentUser.role === 'Admin';
 
       // Update Header Controls
       var statusBadge = document.getElementById('voteSystemStatusBadge');
@@ -9810,10 +9849,29 @@
       var btnVoteVis = document.getElementById('btnToggleVoteVisibility');
       var btnVoteVisText = document.getElementById('btnToggleVoteVisibilityText');
       var btnVoteVisIcon = document.getElementById('btnToggleVoteVisibilityIcon');
+      var btnResetVotes = document.getElementById('btnResetAllVotes');
+      var voteResultsBadge = document.getElementById('voteResultsBadge');
+      var voteResultsSubtext = document.getElementById('voteResultsSubtext');
+
+      if (btnVoteVis) btnVoteVis.style.display = isAdmin ? 'inline-flex' : 'none';
+      if (toggleBtn) toggleBtn.style.display = isAdmin ? 'inline-flex' : 'none';
+      if (btnResetVotes) btnResetVotes.style.display = isAdmin ? 'inline-flex' : 'none';
+
+      if (voteResultsBadge) {
+        voteResultsBadge.innerText = isAdmin ? 'POPULAR VOTE (ADMIN)' : 'POPULAR VOTE';
+      }
+
+      if (voteResultsSubtext) {
+        if (isAdmin) {
+          voteResultsSubtext.innerHTML = '<i class="fa-solid fa-check-to-slot text-pink-200 mr-1"></i> ผู้แข่งขันโควตา 4 ครั้ง/ทีม (ห้ามโหวตทีมตัวเอง) • จัดการและประกาศผลคะแนนความนิยม';
+        } else {
+          voteResultsSubtext.innerHTML = '<i class="fa-solid fa-heart text-pink-200 mr-1"></i> คะแนนความนิยมจากเพื่อนร่วมแข่งขัน (Popular Vote) • อัปเดตแบบเรียลไทม์';
+        }
+      }
 
       var voteBanner = document.getElementById('voteHiddenNoticeBanner');
       if (voteBanner) {
-        voteBanner.style.display = isVotesHidden ? 'flex' : 'none';
+        voteBanner.style.display = (isAdmin && isVotesHidden) ? 'flex' : 'none';
       }
 
       if (btnVoteVisText && btnVoteVisIcon) {
@@ -9945,7 +10003,7 @@
 
         function renderVotePodiumCard(t, rank) {
           var idx = rank - 1;
-          var isRevealed = !!revealedPodiumRanks[rank];
+          var isRevealed = (!currentUser || currentUser.role !== 'Admin') || !!revealedPodiumRanks[rank];
 
           if (!isRevealed) {
             return '<div class="glass-card p-5 rounded-3xl border-2 ' + podiumGradients[idx] + ' flex flex-col justify-between relative shadow-lg text-center">' +
@@ -10023,19 +10081,25 @@
       var tableNotice = document.getElementById('voteRankingTableLockedNotice');
 
       if (btnToggleRanking && btnToggleRankingText && btnToggleRankingIcon) {
-        if (isLiveRankingTableVisible) {
-          btnToggleRankingText.innerText = 'ปิดซ่อนตารางสด';
-          btnToggleRankingIcon.className = 'fa-solid fa-eye-slash text-slate-500';
-          btnToggleRanking.className = 'text-xs font-bold px-3.5 py-1.5 rounded-xl border border-slate-300 bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center gap-1.5 cursor-pointer transition-all shadow-sm active:scale-95';
+        if (!isAdmin) {
+          btnToggleRanking.style.display = 'none';
         } else {
-          btnToggleRankingText.innerText = 'เปิดแสดงตารางสด';
-          btnToggleRankingIcon.className = 'fa-solid fa-eye text-emerald-600';
-          btnToggleRanking.className = 'text-xs font-bold px-3.5 py-1.5 rounded-xl border border-emerald-300 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 flex items-center gap-1.5 cursor-pointer transition-all shadow-sm active:scale-95';
+          btnToggleRanking.style.display = 'inline-flex';
+          if (isLiveRankingTableVisible) {
+            btnToggleRankingText.innerText = 'ปิดซ่อนตารางสด';
+            btnToggleRankingIcon.className = 'fa-solid fa-eye-slash text-slate-500';
+            btnToggleRanking.className = 'text-xs font-bold px-3.5 py-1.5 rounded-xl border border-slate-300 bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center gap-1.5 cursor-pointer transition-all shadow-sm active:scale-95';
+          } else {
+            btnToggleRankingText.innerText = 'เปิดแสดงตารางสด';
+            btnToggleRankingIcon.className = 'fa-solid fa-eye text-emerald-600';
+            btnToggleRanking.className = 'text-xs font-bold px-3.5 py-1.5 rounded-xl border border-emerald-300 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 flex items-center gap-1.5 cursor-pointer transition-all shadow-sm active:scale-95';
+          }
         }
       }
 
-      if (tableWrapper) tableWrapper.style.display = isLiveRankingTableVisible ? 'block' : 'none';
-      if (tableNotice) tableNotice.style.display = isLiveRankingTableVisible ? 'none' : 'block';
+      var showRankingTable = isLiveRankingTableVisible || !isAdmin;
+      if (tableWrapper) tableWrapper.style.display = showRankingTable ? 'block' : 'none';
+      if (tableNotice) tableNotice.style.display = showRankingTable ? 'none' : 'block';
 
       var tbodyRank = document.getElementById('voteRankingTableBody');
       if (tbodyRank) {
@@ -10126,10 +10190,17 @@
         }
       }
 
-      // 4. Render Vote Audit Log Table
+      // 4. Render Vote Audit Log Table (Admin only)
+      var auditSection = document.getElementById('voteAuditLogSection');
+      if (auditSection) {
+        auditSection.style.display = isAdmin ? 'block' : 'none';
+      }
+
       var tbodyLog = document.getElementById('voteLogTableBody');
       if (tbodyLog) {
-        if (votesData.length === 0) {
+        if (!isAdmin) {
+          tbodyLog.innerHTML = '';
+        } else if (votesData.length === 0) {
           tbodyLog.innerHTML = '<tr><td colspan="5" class="text-center py-6 text-slate-400">ยังไม่มีรายการลงคะแนนโหวต</td></tr>';
         } else {
           var sortedVotes = votesData.slice().reverse();
@@ -11728,6 +11799,7 @@
                 if (res.activities) setActivitiesDataClean(res.activities);
                 if (res.submissions) setSubmissionsDataClean(res.submissions);
                 if (typeof res.isScoresHidden !== 'undefined') setScoresHiddenState(res.isScoresHidden);
+                if (typeof res.isVotesHidden !== 'undefined') setVotesHiddenState(res.isVotesHidden);
                 if (typeof res.isVotingOpen !== 'undefined') isVotingOpen = res.isVotingOpen;
                 if (typeof res.boobyRank !== 'undefined') boobyRank = Number(res.boobyRank || 0);
                 if (res.votes) votesData = res.votes;
@@ -11736,6 +11808,12 @@
                   try { safeSetStorage('rally_session_user', JSON.stringify(currentUser)); } catch (e) {}
                 }
                 setupNavigation();
+                if (isScoresHidden && (!currentUser || currentUser.role !== 'Admin') && currentActiveViewName === 'Leaderboard') {
+                  currentActiveViewName = (currentUser && currentUser.role === 'Sub-Admin') ? 'Grading' : 'UserDashboard';
+                }
+                if (isVotesHidden && (!currentUser || currentUser.role !== 'Admin') && currentActiveViewName === 'VoteResults') {
+                  currentActiveViewName = (currentUser && currentUser.role === 'Sub-Admin') ? 'Grading' : 'UserDashboard';
+                }
                 switchView(currentActiveViewName, currentActiveFilterCat);
                 showSyncSuccessToast();
               } else {
@@ -11805,13 +11883,16 @@
           if (live.settings) {
             if (typeof live.settings.isScoresHidden !== 'undefined') setScoresHiddenState(live.settings.isScoresHidden);
             if (typeof live.settings.isVotingOpen !== 'undefined') isVotingOpen = live.settings.isVotingOpen;
-            if (typeof live.settings.isVotesHidden !== 'undefined') isVotesHidden = live.settings.isVotesHidden;
+            if (typeof live.settings.isVotesHidden !== 'undefined') setVotesHiddenState(live.settings.isVotesHidden);
             if (typeof live.settings.boobyRank !== 'undefined') boobyRank = Number(live.settings.boobyRank || 0);
           }
 
           if (currentUser) {
             setupNavigation();
             if (isScoresHidden && currentUser.role !== 'Admin' && currentActiveViewName === 'Leaderboard') {
+              switchView(currentUser.role === 'Sub-Admin' ? 'Grading' : 'UserDashboard');
+            }
+            if (isVotesHidden && currentUser.role !== 'Admin' && currentActiveViewName === 'VoteResults') {
               switchView(currentUser.role === 'Sub-Admin' ? 'Grading' : 'UserDashboard');
             }
             if (currentActiveViewName === 'UserMissions') {
