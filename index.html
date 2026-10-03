@@ -2499,6 +2499,15 @@
         if (isScoresHidden && currentUser.role !== 'Admin' && currentActiveViewName === 'Leaderboard') {
           switchView(currentUser.role === 'Sub-Admin' ? 'Grading' : 'UserDashboard');
         }
+        if (currentActiveViewName === 'UserHistory' && typeof renderUserHistoryTable === 'function') {
+          renderUserHistoryTable(submissionsData);
+        }
+        if (currentActiveViewName === 'UserDashboard' && typeof renderUserDashboard === 'function') {
+          renderUserDashboard();
+        }
+        if (currentActiveViewName === 'UserMissions' && typeof renderUserMissionsGrid === 'function') {
+          renderUserMissionsGrid();
+        }
       }
     }
 
@@ -3713,6 +3722,7 @@
       renderLeaderboard();
       renderGradingList();
       renderAnalytics();
+      if (typeof renderUserHistoryTable === 'function') renderUserHistoryTable(submissionsData);
 
       // INSTANT BROADCAST TO FIREBASE REALTIME DATABASE (< 0.1s update)
       try {
@@ -5289,14 +5299,21 @@
       }
 
       if (isSubAdmin) {
+        var hideSubAdminScore = isScoresHidden;
         if (titleEl) titleEl.innerText = 'ประวัติการให้คะแนน (ของกรรมการประจำฐาน)';
-        if (descEl) descEl.innerText = 'ตรวจสอบประวัติการตรวจและให้คะแนนแก่ผู้แข่งขันแต่ละคันในฐานของคุณ';
+        if (descEl) descEl.innerText = hideSubAdminScore
+          ? 'ตรวจสอบประวัติการตรวจและให้คะแนนแก่ผู้แข่งขันแต่ละคันในฐานของคุณ (โหมดซ่อนคะแนนการแข่งขัน)'
+          : 'ตรวจสอบประวัติการตรวจและให้คะแนนแก่ผู้แข่งขันแต่ละคันในฐานของคุณ';
+
+        var subAdminScoreHeader = hideSubAdminScore
+          ? '<th class="py-3 px-3.5 font-bold whitespace-nowrap text-center text-amber-700"><i class="fa-solid fa-lock text-[10px] mr-1"></i>คะแนน (ซ่อนอยู่)</th>'
+          : '<th class="py-3 px-3.5 font-bold whitespace-nowrap text-center">คะแนนที่ให้</th>';
 
         thead.innerHTML = '<tr>' +
           '<th class="py-3 px-3.5 font-bold whitespace-nowrap">เวลาที่ให้คะแนน</th>' +
           '<th class="py-3 px-3.5 font-bold whitespace-nowrap">ผู้แข่งขัน (ชื่อทีม / รหัสรถ)</th>' +
           '<th class="py-3 px-3.5 font-bold whitespace-nowrap">กิจกรรมฐานที่ตรวจ</th>' +
-          '<th class="py-3 px-3.5 font-bold whitespace-nowrap text-center">คะแนนที่ให้</th>' +
+          subAdminScoreHeader +
           '</tr>';
 
         var subAdminSubs = submissionsData.filter(function(s) {
@@ -5335,11 +5352,15 @@
           var carCode = userObj.carCode || '-';
           var carColor = userObj.carColor || s.carColor || '';
 
+          var scoreBadgeHTML = hideSubAdminScore
+            ? '<span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-100 text-amber-800 font-extrabold text-xs border border-amber-200 shadow-xs"><i class="fa-solid fa-lock text-[10px]"></i>ซ่อนคะแนน</span>'
+            : '<span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-50 text-emerald-700 font-extrabold text-xs border border-emerald-200 shadow-sm"><i class="fa-solid fa-star text-amber-500"></i>' + (s.score || 0) + ' / ' + (act.maxPoints || 500) + ' คะแนน</span>';
+
           return '<tr class="hover:bg-purple-50/40 transition-colors border-b border-slate-100">' +
             '<td class="py-3 px-3.5 text-slate-500 font-mono text-[11px] whitespace-nowrap">' + timeStr + '</td>' +
             '<td class="py-3 px-3.5 whitespace-nowrap"><div class="flex items-center gap-2"><span class="font-bold text-slate-800">' + escapeHTML(teamName) + '</span><span class="text-[11px] text-purple-600 font-mono">(' + escapeHTML(carCode) + ')</span><span class="px-2 py-0.5 rounded-full text-[9px] font-semibold ' + getCarColorStyle(carColor) + '">' + escapeHTML(getCarColorThaiName(carColor)) + '</span></div></td>' +
             '<td class="py-3 px-3.5 font-semibold text-slate-700 whitespace-nowrap">' + escapeHTML(act.title || s.activityId) + '</td>' +
-            '<td class="py-3 px-3.5 whitespace-nowrap text-center"><span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-50 text-emerald-700 font-extrabold text-xs border border-emerald-200 shadow-sm"><i class="fa-solid fa-star text-amber-500"></i>' + (s.score || 0) + ' / ' + (act.maxPoints || 500) + ' คะแนน</span></td>' +
+            '<td class="py-3 px-3.5 whitespace-nowrap text-center">' + scoreBadgeHTML + '</td>' +
             '</tr>';
         }).join('');
         return;
@@ -5391,8 +5412,14 @@
         return;
       }
 
+      var shouldHide = isScoresHidden && (!currentUser || currentUser.role !== 'Admin');
+
       if (titleEl) titleEl.innerText = isAdmin ? 'ประวัติคะแนน (ศูนย์รวมข้อมูล)' : 'ประวัติการส่งคำตอบ (รวมทุกกิจกรรม)';
-      if (descEl) descEl.innerText = isAdmin ? 'ตรวจสอบประวัติการส่งคำตอบของผู้แข่งขันและประวัติการให้คะแนนของกรรมการทุกฐาน' : 'ตรวจสอบรายละเอียดประวัติการส่งคำตอบ เวลา ผลลัพธ์ และคะแนนที่ได้รับ';
+      if (descEl) descEl.innerText = isAdmin ? 'ตรวจสอบประวัติการส่งคำตอบของผู้แข่งขันและประวัติการให้คะแนนของกรรมการทุกฐาน' : (shouldHide ? 'ตรวจสอบรายละเอียดประวัติการส่งคำตอบและเวลาที่บันทึก (โหมดซ่อนคะแนนการแข่งขัน)' : 'ตรวจสอบรายละเอียดประวัติการส่งคำตอบ เวลา ผลลัพธ์ และคะแนนที่ได้รับ');
+
+      var userScoreHeader = shouldHide
+        ? '<th class="py-3 px-3.5 text-right font-bold whitespace-nowrap text-amber-700"><i class="fa-solid fa-lock text-[10px] mr-1"></i>คะแนน (ซ่อนอยู่)</th>'
+        : '<th class="py-3 px-3.5 text-right font-bold whitespace-nowrap">คะแนน</th>';
 
       thead.innerHTML = '<tr>' +
         '<th class="py-3 px-3.5 font-bold whitespace-nowrap">เวลาที่บันทึก</th>' +
@@ -5400,7 +5427,7 @@
         '<th class="py-3 px-3.5 font-bold whitespace-nowrap">ประเภท</th>' +
         '<th class="py-3 px-3.5 font-bold whitespace-nowrap">คำตอบที่คุณส่ง</th>' +
         '<th class="py-3 px-3.5 font-bold whitespace-nowrap">' + (isAdmin ? 'ผลลัพธ์ (กดตรวจ)' : 'ผลลัพธ์') + '</th>' +
-        '<th class="py-3 px-3.5 text-right font-bold whitespace-nowrap">คะแนน</th>' +
+        userScoreHeader +
         '</tr>';
 
       var displaySubmissions = submissions;
@@ -5413,8 +5440,6 @@
         return;
       }
 
-      var shouldHide = isScoresHidden && currentUser.role !== 'Admin';
-
       tbody.innerHTML = displaySubmissions.map(function(s) {
         var act = (activitiesData || []).find(function(a) { return a && a.id === s.activityId; }) || {};
         var userObj = (usersData || []).find(function(u) { return u && u.username === s.username; }) || {};
@@ -5424,7 +5449,7 @@
 
         if (shouldHide) {
           resultTag = '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-blue-50 text-blue-600 border border-blue-200 whitespace-nowrap"><i class="fa-solid fa-circle-check mr-1"></i>ส่งคำตอบแล้ว</span>';
-          scoreTag = '<span class="px-2 py-0.5 rounded-lg bg-amber-100 text-amber-800 font-bold text-xs border border-amber-200 whitespace-nowrap"><i class="fa-solid fa-lock text-[10px] mr-1"></i>ซ่อน</span>';
+          scoreTag = '<span class="px-2.5 py-1 rounded-xl bg-amber-100 text-amber-800 font-bold text-xs border border-amber-200 whitespace-nowrap shadow-xs inline-flex items-center gap-1.5"><i class="fa-solid fa-lock text-[11px]"></i>ซ่อนคะแนน</span>';
         } else {
           if (isAdmin) {
             var subIdArg = escapeHTML(s.id || '');
@@ -5469,7 +5494,7 @@
       }).join('');
     }
 
-    function scrollToLatestHistory() {
+        function scrollToLatestHistory() {
       var mainEl = document.querySelector('main');
       if (mainEl) {
         mainEl.scrollTo({ top: mainEl.scrollHeight, behavior: 'smooth' });
