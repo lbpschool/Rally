@@ -6046,9 +6046,9 @@
 
         var shouldHide = isScoresHidden && currentUser.role !== 'Admin';
 
-        var rcCountText = shouldHide ? '' : ('<span class="text-[9px] text-slate-400 font-semibold whitespace-nowrap leading-none mt-0.5">ผ่าน ' + item.rcPassedCount + '</span>');
-        var baseCountText = shouldHide ? '' : ('<span class="text-[9px] text-slate-400 font-semibold whitespace-nowrap leading-none mt-0.5">ผ่าน ' + item.basePassedCount + '</span>');
-        var quizCountText = shouldHide ? '' : ('<span class="text-[9px] text-slate-400 font-semibold whitespace-nowrap leading-none mt-0.5">ผ่าน ' + item.quizPassedCount + '</span>');
+        var rcCountText = shouldHide ? '' : ('<span class="text-[11px] sm:text-xs text-slate-700 font-bold whitespace-nowrap leading-none mt-1">ผ่าน ' + item.rcPassedCount + '</span>');
+        var baseCountText = shouldHide ? '' : ('<span class="text-[11px] sm:text-xs text-slate-700 font-bold whitespace-nowrap leading-none mt-1">ผ่าน ' + item.basePassedCount + '</span>');
+        var quizCountText = shouldHide ? '' : ('<span class="text-[11px] sm:text-xs text-slate-700 font-bold whitespace-nowrap leading-none mt-1">ผ่าน ' + item.quizPassedCount + '</span>');
 
         var rcScoreBadge = shouldHide ? '<span class="text-amber-800 font-bold text-xs"><i class="fa-solid fa-lock text-[10px] mr-1"></i>ซ่อน</span>' : ('<span class="inline-flex items-center justify-center min-w-[34px] sm:min-w-[38px] px-2 py-0.5 rounded-full bg-sky-500 text-white font-black text-[11px] sm:text-xs shadow-xs">' + item.rcScore + '</span>');
         var baseScoreBadge = shouldHide ? '<span class="text-amber-800 font-bold text-xs"><i class="fa-solid fa-lock text-[10px] mr-1"></i>ซ่อน</span>' : ('<span class="inline-flex items-center justify-center min-w-[34px] sm:min-w-[38px] px-2 py-0.5 rounded-full bg-purple-500 text-white font-black text-[11px] sm:text-xs shadow-xs">' + item.baseScore + '</span>');
