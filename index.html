@@ -1418,34 +1418,35 @@
             </button>
           </div>
 
-          <!-- 3. Section 1: Overall Competition Awards (การแข่งขันคะแนนรวม) -->
+          <!-- 3. Section 1: Overall Competition Awards & Booby Prize (การแข่งขันคะแนนรวม & รางวัลบู้บี้) -->
           <div id="ceremonyOverallSection" class="space-y-5">
             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pt-1">
               <div>
                 <h3 class="text-base sm:text-lg font-black text-slate-800 flex items-center gap-2">
-                  <i class="fa-solid fa-trophy text-amber-500"></i> 3 อันดับคะแนนรวมสูงสุด (Top 3 Overall Champions)
+                  <i class="fa-solid fa-trophy text-amber-500"></i> ผลรางวัลการแข่งขันคะแนนรวม & รางวัลบู้บี้ (Overall Champions & Booby Prize)
                 </h3>
-                <p class="text-xs text-slate-400 mt-0.5">คำนวณจากคะแนนรวมทุกภารกิจ (RC + กิจกรรมฐาน + Quiz + คะแนนพิเศษ) คลิกประกาศผลทีละอันดับบนเวที</p>
+                <p class="text-xs text-slate-400 mt-0.5">รางวัลชนะเลิศอันดับ 1, รองชนะเลิศ 2 รางวัล และรางวัลบู้บี้ประจำการแข่งขัน คลิกประกาศผลทีละอันดับบนเวที</p>
               </div>
               <div class="flex items-center gap-2 flex-wrap self-start sm:self-auto">
-                <button type="button" onclick="revealAllOverallPodium()" class="px-3.5 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-600 hover:from-amber-600 hover:to-yellow-700 text-white font-bold text-xs shadow-sm flex items-center gap-1.5 transition-all cursor-pointer active:scale-95" title="เปิดเผยผลทั้ง 3 อันดับทันที">
-                  <i class="fa-solid fa-eye text-xs"></i> เปิดเผยทั้ง 3 อันดับ
+                <button type="button" onclick="revealAllOverallPodium()" class="px-3.5 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-600 hover:from-amber-600 hover:to-yellow-700 text-white font-bold text-xs shadow-sm flex items-center gap-1.5 transition-all cursor-pointer active:scale-95" title="เปิดเผยผลทุกรางวัลทันที">
+                  <i class="fa-solid fa-eye text-xs"></i> เปิดเผยผลทั้งหมด
                 </button>
-                <button type="button" onclick="resetOverallPodiumReveal()" class="px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs border border-slate-200 flex items-center gap-1.5 transition-all cursor-pointer active:scale-95" title="ซ่อนผล Top 3 ทั้งหมดเพื่อเริ่มพิธีประกาศผลใหม่">
-                  <i class="fa-solid fa-lock text-xs"></i> ซ่อนผล Top 3 ทั้งหมด
+                <button type="button" onclick="resetOverallPodiumReveal()" class="px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs border border-slate-200 flex items-center gap-1.5 transition-all cursor-pointer active:scale-95" title="ซ่อนผลทั้งหมดเพื่อเริ่มพิธีประกาศผลใหม่">
+                  <i class="fa-solid fa-lock text-xs"></i> ซ่อนผลทั้งหมด
                 </button>
               </div>
             </div>
 
-            <div id="ceremonyOverallContainer" class="grid grid-cols-1 md:grid-cols-3 gap-5">
-              <!-- Dynamically rendered top 3 overall cards -->
+            <div id="ceremonyOverallContainer" class="space-y-6">
+              <!-- Dynamically rendered:
+                   1. Hero Card: รางวัลที่ 1 (ชนะเลิศคะแนนรวม) - Large Vertical Center
+                   2. Bottom 3-Card Grid: รางวัลที่ 2, รางวัลที่ 3, รางวัลบู้บี้
+              -->
             </div>
 
-            <!-- Booby Prize Showcase (รางวัลบู้บี้) -->
-            <div id="ceremonyBoobySection" class="pt-3">
-              <div id="ceremonyBoobyContainer">
-                <!-- Dynamically rendered Booby Prize card -->
-              </div>
+            <!-- Legacy container retained hidden for backward compatibility -->
+            <div id="ceremonyBoobySection" style="display: none;">
+              <div id="ceremonyBoobyContainer"></div>
             </div>
           </div>
 
@@ -10174,7 +10175,7 @@
     }
     window.renderCeremonyView = renderCeremonyView;
 
-    // Overall Competition Awards (การแข่งขันคะแนนรวม)
+    // Overall Competition Awards & Booby Prize (การแข่งขันคะแนนรวม & รางวัลบู้บี้)
     function renderCeremonyOverallPodium() {
       var container = document.getElementById('ceremonyOverallContainer');
       if (!container) return;
@@ -10198,50 +10199,111 @@
       });
 
       var top3 = leaderboardData.slice(0, 3);
-      var medalIcons = [
-        '<span class="w-9 h-9 rounded-full bg-amber-400 text-amber-900 font-black text-sm flex items-center justify-center shadow-md border-2 border-white"><i class="fa-solid fa-trophy mr-0.5"></i>1</span>',
-        '<span class="w-9 h-9 rounded-full bg-slate-300 text-slate-800 font-black text-sm flex items-center justify-center shadow-md border-2 border-white"><i class="fa-solid fa-medal mr-0.5"></i>2</span>',
-        '<span class="w-9 h-9 rounded-full bg-amber-700 text-amber-100 font-black text-sm flex items-center justify-center shadow-md border-2 border-white"><i class="fa-solid fa-award mr-0.5"></i>3</span>'
-      ];
 
-      var podiumGradients = [
-        'bg-gradient-to-b from-amber-50 to-white border-amber-300 shadow-amber-200/50',
-        'bg-gradient-to-b from-slate-50 to-white border-slate-300 shadow-slate-200/50',
-        'bg-gradient-to-b from-orange-50 to-white border-orange-300 shadow-orange-200/50'
-      ];
+      if (top3.length === 0) {
+        container.innerHTML = '<div class="text-center py-12 text-slate-400 glass-card rounded-3xl">ยังไม่มีข้อมูลผู้เข้าแข่งขัน</div>';
+        return;
+      }
+
+      // =========================================================================
+      // 1. TOP HERO CARD: รางวัลที่ 1 (ชนะเลิศคะแนนรวม) - แบบ ข: แนวตั้งจัดกึ่งกลาง
+      // =========================================================================
+      var t1 = top3[0];
+      var isRevealed1 = !!revealedOverallPodiumRanks[1];
+      var heroHtml = '';
+
+      if (!isRevealed1) {
+        heroHtml = '<div class="w-full">' +
+          '<div class="glass-card p-6 sm:p-8 rounded-3xl border-2 border-amber-400 bg-gradient-to-b from-amber-50/95 via-white to-amber-50/40 shadow-xl shadow-amber-200/50 flex flex-col items-center justify-between text-center relative max-w-2xl mx-auto">' +
+            '<div class="flex items-center justify-center gap-2 mb-4">' +
+              '<span class="px-5 py-1.5 rounded-full text-xs sm:text-sm font-black bg-gradient-to-r from-amber-500 via-yellow-500 to-amber-600 text-white shadow-md shadow-amber-500/30 flex items-center gap-2 border border-amber-300 tracking-wide uppercase">' +
+                '<i class="fa-solid fa-trophy text-amber-200 text-base"></i> ชนะเลิศอันดับที่ 1 (Champion)' +
+              '</span>' +
+            '</div>' +
+            '<div class="flex flex-col items-center w-full">' +
+              '<div class="w-full h-52 sm:h-64 rounded-2xl overflow-hidden shadow-inner border-2 border-dashed border-amber-300 mb-4 relative flex flex-col items-center justify-center bg-gradient-to-tr from-amber-100 via-yellow-50 to-amber-200 text-amber-800">' +
+                '<div class="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-white/85 shadow-md flex items-center justify-center text-4xl sm:text-5xl font-black mb-2 animate-pulse text-amber-700">' +
+                  '?' +
+                '</div>' +
+                '<span class="text-xs sm:text-sm font-black tracking-wider uppercase">รอการประกาศผลชนะเลิศอันดับที่ 1...</span>' +
+              '</div>' +
+              '<h4 class="text-lg sm:text-xl font-black text-slate-400 mb-1">??? (ยังไม่เปิดเผย)</h4>' +
+            '</div>' +
+            '<div class="w-full mt-4 max-w-md mx-auto">' +
+              '<button type="button" onclick="revealOverallPodiumRank(1)" class="w-full py-3.5 px-6 rounded-2xl font-black text-xs sm:text-sm shadow-xl transition-all cursor-pointer active:scale-95 flex items-center justify-center gap-2 border bg-gradient-to-r from-amber-500 via-yellow-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white shadow-amber-500/40 border-amber-300">' +
+                '<i class="fa-solid fa-sparkles text-amber-200"></i> 🥇 ประกาศผลอันดับที่ 1 (ชนะเลิศคะแนนรวม)' +
+              '</button>' +
+            '</div>' +
+          '</div>' +
+        '</div>';
+      } else {
+        var formattedScore1 = Number(t1.totalNetScore || 0).toLocaleString('th-TH');
+        heroHtml = '<div class="w-full">' +
+          '<div class="glass-card p-6 sm:p-8 rounded-3xl border-2 border-amber-400 bg-gradient-to-b from-amber-50/95 via-white to-amber-50/40 shadow-xl shadow-amber-200/50 flex flex-col items-center justify-between text-center relative max-w-2xl mx-auto group animate-fade-in">' +
+            '<div class="flex items-center justify-center gap-2 mb-4">' +
+              '<span class="px-5 py-1.5 rounded-full text-xs sm:text-sm font-black bg-gradient-to-r from-amber-500 via-yellow-500 to-amber-600 text-white shadow-md shadow-amber-500/30 flex items-center gap-2 border border-amber-300 tracking-wide uppercase">' +
+                '<i class="fa-solid fa-trophy text-amber-200 text-base"></i> ชนะเลิศอันดับที่ 1 (Champion)' +
+              '</span>' +
+            '</div>' +
+            '<div class="flex flex-col items-center w-full">' +
+              '<div class="w-full h-52 sm:h-64 rounded-2xl overflow-hidden shadow-md border-2 border-amber-300 mb-4 relative group cursor-pointer" onclick="openImageModal(\'' + escapeHTML(t1.user.profileUrl) + '\', \'' + escapeHTML(t1.user.name) + '\')">' +
+                '<img src="' + escapeHTML(t1.user.profileUrl) + '" class="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-300" alt="Team Picture">' +
+                '<div class="absolute inset-0 bg-black/25 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">' +
+                  '<i class="fa-solid fa-magnifying-glass-plus text-white text-2xl"></i>' +
+                '</div>' +
+              '</div>' +
+              '<h4 class="text-xl sm:text-2xl font-black text-slate-800 line-clamp-1 mt-1">' + escapeHTML(t1.user.name) + '</h4>' +
+            '</div>' +
+            '<div class="w-full mt-4 flex flex-col items-center gap-2.5 max-w-md mx-auto">' +
+              '<div class="w-full py-2.5 px-6 rounded-full bg-gradient-to-r from-amber-500 to-yellow-600 text-white font-black text-sm sm:text-base shadow-lg shadow-amber-500/25 flex items-center justify-center gap-2">' +
+                '<i class="fa-solid fa-trophy text-amber-200"></i> คะแนนรวม ' + formattedScore1 + ' คะแนน' +
+              '</div>' +
+              '<button type="button" onclick="showOverallCelebrationModal(1)" class="text-xs sm:text-sm font-bold text-slate-500 hover:text-amber-600 flex items-center justify-center gap-1.5 py-1 cursor-pointer transition-colors">' +
+                '<i class="fa-solid fa-trophy text-amber-500"></i> ดูหน้าต่างยินดี' +
+              '</button>' +
+            '</div>' +
+          '</div>' +
+        '</div>';
+      }
+
+      // =========================================================================
+      // 2. BOTTOM ROW: Grid 3 คอลัมน์ (อันดับ 2, อันดับ 3, รางวัลบู้บี้)
+      // =========================================================================
+      var medalIcons = {
+        2: '<span class="w-9 h-9 rounded-full bg-slate-300 text-slate-800 font-black text-sm flex items-center justify-center shadow-md border-2 border-white"><i class="fa-solid fa-medal mr-0.5"></i>2</span>',
+        3: '<span class="w-9 h-9 rounded-full bg-amber-700 text-amber-100 font-black text-sm flex items-center justify-center shadow-md border-2 border-white"><i class="fa-solid fa-award mr-0.5"></i>3</span>'
+      };
+
+      var podiumGradients = {
+        2: 'bg-gradient-to-b from-slate-50 to-white border-slate-300 shadow-slate-200/50',
+        3: 'bg-gradient-to-b from-orange-50 to-white border-orange-300 shadow-orange-200/50'
+      };
 
       var rankBtnTitles = {
-        1: '🥇 ประกาศผลอันดับที่ 1 (ชนะเลิศคะแนนรวม)',
         2: '🥈 ประกาศผลอันดับที่ 2 (รองชนะเลิศอันดับ 1)',
         3: '🥉 ประกาศผลอันดับที่ 3 (รองชนะเลิศอันดับ 2)'
       };
 
       var rankBtnColors = {
-        1: 'bg-gradient-to-r from-amber-500 via-yellow-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white shadow-amber-500/30 border-amber-300',
         2: 'bg-gradient-to-r from-slate-500 via-slate-600 to-slate-700 hover:from-slate-600 hover:to-slate-800 text-white shadow-slate-500/30 border-slate-300',
         3: 'bg-gradient-to-r from-orange-600 via-amber-600 to-orange-700 hover:from-orange-700 hover:to-amber-800 text-white shadow-orange-500/30 border-orange-300'
       };
 
       var mysteryBoxes = {
-        1: 'bg-gradient-to-tr from-amber-100 via-yellow-50 to-amber-200 text-amber-800 border-amber-300',
         2: 'bg-gradient-to-tr from-slate-100 via-gray-50 to-slate-200 text-slate-700 border-slate-300',
         3: 'bg-gradient-to-tr from-orange-100 via-amber-50 to-orange-200 text-orange-800 border-orange-300'
       };
 
-      if (top3.length === 0) {
-        container.innerHTML = '<div class="col-span-3 text-center py-12 text-slate-400 glass-card rounded-3xl">ยังไม่มีข้อมูลผู้เข้าแข่งขัน</div>';
-        return;
-      }
+      function renderSubPodiumCard(rank) {
+        var idx = rank - 1;
+        var t = top3[idx];
+        if (!t) return '<div class="glass-card p-6 rounded-3xl border-2 border-slate-200 text-center text-slate-400">ไม่มีข้อมูลอันดับที่ ' + rank + '</div>';
 
-      container.innerHTML = top3.map(function(t, idx) {
-        var rank = idx + 1;
         var isRevealed = !!revealedOverallPodiumRanks[rank];
-
         if (!isRevealed) {
-          // Mystery / Locked State
-          return '<div class="glass-card p-6 rounded-3xl border-2 ' + podiumGradients[idx] + ' flex flex-col justify-between relative shadow-lg text-center">' +
-            '<div class="absolute top-4 left-4 z-10">' + medalIcons[idx] + '</div>' +
-            '<div class="flex flex-col items-center w-full">' +
+          return '<div class="glass-card p-6 rounded-3xl border-2 ' + podiumGradients[rank] + ' flex flex-col justify-between relative shadow-lg text-center">' +
+            '<div class="absolute top-4 left-4 z-10">' + medalIcons[rank] + '</div>' +
+            '<div class="flex flex-col items-center w-full mt-3 sm:mt-2">' +
               '<div class="w-full h-40 sm:h-44 rounded-2xl overflow-hidden shadow-inner border-2 border-dashed mb-3 relative flex flex-col items-center justify-center ' + mysteryBoxes[rank] + '">' +
                 '<div class="w-14 h-14 rounded-2xl bg-white/80 shadow-sm flex items-center justify-center text-3xl font-black mb-1.5 animate-pulse text-amber-700">' +
                   '?' +
@@ -10257,11 +10319,10 @@
             '</div>' +
           '</div>';
         } else {
-          // Revealed State: Shows Team Photo, Team Name, Score (STRICTLY NO CAR CODE, NO COLOR!)
           var formattedScore = Number(t.totalNetScore || 0).toLocaleString('th-TH');
-          return '<div class="glass-card p-6 rounded-3xl border-2 ' + podiumGradients[idx] + ' flex flex-col justify-between relative shadow-lg text-center group">' +
-            '<div class="absolute top-4 left-4 z-10">' + medalIcons[idx] + '</div>' +
-            '<div class="flex flex-col items-center w-full">' +
+          return '<div class="glass-card p-6 rounded-3xl border-2 ' + podiumGradients[rank] + ' flex flex-col justify-between relative shadow-lg text-center group animate-fade-in">' +
+            '<div class="absolute top-4 left-4 z-10">' + medalIcons[rank] + '</div>' +
+            '<div class="flex flex-col items-center w-full mt-3 sm:mt-2">' +
               '<div class="w-full h-40 sm:h-44 rounded-2xl overflow-hidden shadow-sm border border-slate-100 mb-3 relative group cursor-pointer" onclick="openImageModal(\'' + escapeHTML(t.user.profileUrl) + '\', \'' + escapeHTML(t.user.name) + '\')">' +
                 '<img src="' + escapeHTML(t.user.profileUrl) + '" class="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-300" alt="Team Picture">' +
                 '<div class="absolute inset-0 bg-black/25 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">' +
@@ -10280,7 +10341,103 @@
             '</div>' +
           '</div>';
         }
-      }).join('');
+      }
+
+      function renderBoobyColumnCard() {
+        if (!boobyRank || boobyRank <= 0) {
+          return '<div class="glass-card p-6 rounded-3xl border-2 border-dashed border-purple-200 bg-purple-50/40 flex flex-col justify-between items-center text-center shadow-sm relative min-h-[300px]">' +
+            '<div class="w-12 h-12 rounded-2xl bg-purple-100 text-purple-700 flex items-center justify-center text-xl mt-4">' +
+              '<i class="fa-solid fa-bullseye"></i>' +
+            '</div>' +
+            '<div class="my-3">' +
+              '<h4 class="text-sm font-bold text-purple-900">ยังไม่ได้กำหนดอันดับบู้บี้</h4>' +
+              '<p class="text-[11px] text-purple-700/80 mt-1 max-w-[200px]">กำหนดอันดับเพื่อนำมาแสดงและประกาศผลที่การ์ดนี้</p>' +
+            '</div>' +
+            '<button type="button" onclick="openBoobyRankModal()" class="w-full py-2.5 px-4 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs shadow-md shadow-purple-500/20 cursor-pointer transition-all active:scale-95">' +
+              '<i class="fa-solid fa-gear mr-1"></i> ตั้งค่าอันดับบู้บี้' +
+            '</button>' +
+          '</div>';
+        }
+
+        var targetBooby = leaderboardData[boobyRank - 1];
+        if (!targetBooby) {
+          return '<div class="glass-card p-6 rounded-3xl border-2 border-purple-200 bg-purple-50/30 flex flex-col justify-between items-center text-center relative shadow-sm min-h-[300px]">' +
+            '<div class="absolute top-4 right-4 z-10">' +
+              '<button type="button" onclick="openBoobyRankModal()" class="w-7 h-7 rounded-lg bg-white text-purple-700 border border-purple-200 flex items-center justify-center text-xs shadow-xs" title="เปลี่ยนอันดับ"><i class="fa-solid fa-gear"></i></button>' +
+            '</div>' +
+            '<div class="text-xs text-slate-400 py-12">กำหนดบู้บี้อันดับที่ ' + boobyRank + ' แต่มีผู้แข่งขัน ' + leaderboardData.length + ' ทีม</div>' +
+          '</div>';
+        }
+
+        var isRevealed = !!revealedBoobyPrize;
+        if (!isRevealed) {
+          return '<div class="glass-card p-6 rounded-3xl border-2 border-purple-300 bg-gradient-to-b from-purple-50 via-white to-pink-50/40 shadow-purple-200/50 flex flex-col justify-between relative shadow-lg text-center">' +
+            '<div class="absolute top-4 left-4 z-10">' +
+              '<span class="px-2.5 py-1 rounded-full bg-gradient-to-r from-purple-600 to-pink-500 text-white font-black text-xs flex items-center gap-1 shadow-md border-2 border-white">' +
+                '<i class="fa-solid fa-bullseye text-xs"></i> บู้บี้ (#' + boobyRank + ')' +
+              '</span>' +
+            '</div>' +
+            '<div class="absolute top-4 right-4 z-10">' +
+              '<button type="button" onclick="openBoobyRankModal()" class="w-7 h-7 rounded-lg bg-white/90 hover:bg-white text-purple-700 hover:text-purple-900 border border-purple-200 flex items-center justify-center text-xs shadow-xs transition-all cursor-pointer" title="เปลี่ยนอันดับรางวัลบู้บี้">' +
+                '<i class="fa-solid fa-gear"></i>' +
+              '</button>' +
+            '</div>' +
+            '<div class="flex flex-col items-center w-full mt-3 sm:mt-2">' +
+              '<div class="w-full h-40 sm:h-44 rounded-2xl overflow-hidden shadow-inner border-2 border-dashed border-purple-300 mb-3 relative flex flex-col items-center justify-center bg-gradient-to-tr from-purple-100 via-pink-50 to-purple-200 text-purple-800">' +
+                '<div class="w-14 h-14 rounded-2xl bg-white/80 shadow-sm flex items-center justify-center text-3xl font-black mb-1.5 animate-pulse text-purple-700">' +
+                  '?' +
+                '</div>' +
+                '<span class="text-xs font-black tracking-wider uppercase">รอการประกาศผลรางวัลบู้บี้...</span>' +
+              '</div>' +
+              '<h4 class="text-base font-black text-slate-400">??? (ยังไม่เปิดเผย)</h4>' +
+            '</div>' +
+            '<div class="mt-4">' +
+              '<button type="button" onclick="revealBoobyPrize()" class="w-full py-3 px-4 rounded-2xl font-black text-xs shadow-lg transition-all cursor-pointer active:scale-95 flex items-center justify-center gap-2 border bg-gradient-to-r from-purple-600 via-pink-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white shadow-purple-500/30 border-purple-300">' +
+                '<i class="fa-solid fa-sparkles"></i> 🎯 ประกาศผลบู้บี้ (อันดับที่ ' + boobyRank + ')' +
+              '</button>' +
+            '</div>' +
+          '</div>';
+        } else {
+          var formattedScore = Number(targetBooby.totalNetScore || 0).toLocaleString('th-TH');
+          return '<div class="glass-card p-6 rounded-3xl border-2 border-purple-300 bg-gradient-to-b from-purple-50 via-white to-pink-50/40 shadow-purple-200/50 flex flex-col justify-between relative shadow-lg text-center group animate-fade-in">' +
+            '<div class="absolute top-4 left-4 z-10">' +
+              '<span class="px-2.5 py-1 rounded-full bg-gradient-to-r from-purple-600 to-pink-500 text-white font-black text-xs flex items-center gap-1 shadow-md border-2 border-white">' +
+                '<i class="fa-solid fa-bullseye text-xs"></i> บู้บี้ (#' + boobyRank + ')' +
+              '</span>' +
+            '</div>' +
+            '<div class="absolute top-4 right-4 z-10">' +
+              '<button type="button" onclick="openBoobyRankModal()" class="w-7 h-7 rounded-lg bg-white/90 hover:bg-white text-purple-700 hover:text-purple-900 border border-purple-200 flex items-center justify-center text-xs shadow-xs transition-all cursor-pointer" title="เปลี่ยนอันดับรางวัลบู้บี้">' +
+                '<i class="fa-solid fa-gear"></i>' +
+              '</button>' +
+            '</div>' +
+            '<div class="flex flex-col items-center w-full mt-3 sm:mt-2">' +
+              '<div class="w-full h-40 sm:h-44 rounded-2xl overflow-hidden shadow-sm border border-purple-100 mb-3 relative group cursor-pointer" onclick="openImageModal(\'' + escapeHTML(targetBooby.user.profileUrl) + '\', \'' + escapeHTML(targetBooby.user.name) + '\')">' +
+                '<img src="' + escapeHTML(targetBooby.user.profileUrl) + '" class="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-300" alt="Team Photo">' +
+                '<div class="absolute inset-0 bg-black/25 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">' +
+                  '<i class="fa-solid fa-magnifying-glass-plus text-white text-xl"></i>' +
+                '</div>' +
+              '</div>' +
+              '<h4 class="text-base sm:text-lg font-black text-slate-800 line-clamp-1 mt-1">' + escapeHTML(targetBooby.user.name) + '</h4>' +
+            '</div>' +
+            '<div class="mt-4 flex flex-col gap-2.5">' +
+              '<div class="py-2 px-4 rounded-full bg-gradient-to-r from-purple-600 via-pink-600 to-indigo-600 text-white font-black text-xs shadow-md shadow-purple-500/20 flex items-center justify-center gap-1.5">' +
+                '<i class="fa-solid fa-trophy text-purple-200"></i> คะแนนรวม ' + formattedScore + ' คะแนน' +
+              '</div>' +
+              '<button type="button" onclick="showBoobyCelebrationModal()" class="text-xs font-bold text-slate-500 hover:text-purple-600 flex items-center justify-center gap-1.5 py-1 cursor-pointer transition-colors">' +
+                '<i class="fa-solid fa-bullseye text-purple-500"></i> ดูหน้าต่างยินดีบู้บี้' +
+              '</button>' +
+            '</div>' +
+          '</div>';
+        }
+      }
+
+      var bottomRowHtml = '<div class="grid grid-cols-1 md:grid-cols-3 gap-5">' +
+        renderSubPodiumCard(2) +
+        renderSubPodiumCard(3) +
+        renderBoobyColumnCard() +
+      '</div>';
+
+      container.innerHTML = heroHtml + bottomRowHtml;
     }
     window.renderCeremonyOverallPodium = renderCeremonyOverallPodium;
 
@@ -10293,12 +10450,13 @@
 
     function revealAllOverallPodium() {
       revealedOverallPodiumRanks = { 1: true, 2: true, 3: true };
+      revealedBoobyPrize = true;
       renderCeremonyOverallPodium();
       Swal.fire({
         toast: true,
         position: 'top-end',
         icon: 'success',
-        title: '🎉 เปิดเผยผลคะแนนรวมทั้ง 3 อันดับเรียบร้อยแล้ว',
+        title: '🎉 เปิดเผยผลคะแนนรวมและรางวัลบู้บี้ทั้งหมดเรียบร้อยแล้ว',
         showConfirmButton: false,
         timer: 2000
       });
@@ -10309,7 +10467,6 @@
       revealedOverallPodiumRanks = { 1: false, 2: false, 3: false };
       revealedBoobyPrize = false;
       renderCeremonyOverallPodium();
-      renderCeremonyBoobyCard();
       Swal.fire({
         toast: true,
         position: 'top-end',
@@ -11163,139 +11320,7 @@
     window.saveBoobyRankSetting = saveBoobyRankSetting;
 
     function renderCeremonyBoobyCard() {
-      var container = document.getElementById('ceremonyBoobyContainer');
-      var section = document.getElementById('ceremonyBoobySection');
-      if (!container || !section) return;
-
-      if (!boobyRank || boobyRank <= 0) {
-        if (currentUser && currentUser.role === 'Admin') {
-          section.style.display = 'block';
-          container.innerHTML = '<div class="glass-card p-4 sm:p-5 rounded-2xl border border-dashed border-purple-200 bg-purple-50/40 text-center flex flex-col sm:flex-row items-center justify-between gap-3">' +
-            '<div class="flex items-center gap-3 text-left">' +
-              '<div class="w-10 h-10 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center text-lg shrink-0">' +
-                '<i class="fa-solid fa-bullseye"></i>' +
-              '</div>' +
-              '<div>' +
-                '<h4 class="text-xs sm:text-sm font-bold text-purple-900">ยังไม่ได้กำหนดอันดับรางวัลบู้บี้</h4>' +
-                '<p class="text-[11px] text-purple-700/80 mt-0.5">คุณสามารถกำหนดอันดับรางวัลบู้บี้ (เช่น อันดับ 17 หรือรองบ๊วย) เพื่อนำมาประกาศผลบนเวทีได้</p>' +
-              '</div>' +
-            '</div>' +
-            '<button type="button" onclick="openBoobyRankModal()" class="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs shadow-md shadow-purple-500/20 whitespace-nowrap cursor-pointer transition-all active:scale-95">' +
-              '<i class="fa-solid fa-gear mr-1"></i> ตั้งค่าอันดับบู้บี้' +
-            '</button>' +
-          '</div>';
-        } else {
-          section.style.display = 'none';
-          container.innerHTML = '';
-        }
-        return;
-      }
-
-      section.style.display = 'block';
-
-      // Calculate Leaderboard
-      var competitors = usersData.filter(function(u) { return u.role === 'User'; });
-      var leaderboardData = competitors.map(function(comp) {
-        var mySubs = getCompetitorPassedSubs(comp.username);
-        var rcScore = mySubs.filter(function(s) { return s.category === 'RC'; }).reduce(function(a, b) { return a + Number(b.score || 0); }, 0);
-        var baseScore = mySubs.filter(function(s) { return s.category === 'Base'; }).reduce(function(a, b) { return a + Number(b.score || 0); }, 0);
-        var quizScore = mySubs.filter(function(s) { return s.category === 'Quiz'; }).reduce(function(a, b) { return a + Number(b.score || 0); }, 0);
-        var bonusScore = Number(comp.bonusPoints || 0);
-        var totalNetScore = rcScore + baseScore + quizScore + bonusScore;
-        return {
-          user: comp,
-          totalNetScore: totalNetScore
-        };
-      });
-
-      leaderboardData.sort(function(a, b) {
-        return b.totalNetScore - a.totalNetScore;
-      });
-
-      var targetItem = leaderboardData[boobyRank - 1];
-      if (!targetItem) {
-        container.innerHTML = '<div class="glass-card p-4 rounded-2xl text-center text-xs text-slate-400">กำหนดรางวัลบู้บี้เป็นอันดับที่ ' + boobyRank + ' แต่มีผู้แข่งขันเพียง ' + leaderboardData.length + ' ทีม</div>';
-        return;
-      }
-
-      var isRevealed = !!revealedBoobyPrize;
-
-      if (!isRevealed) {
-        // Mystery Box State
-        container.innerHTML = '<div class="glass-card p-6 sm:p-7 rounded-3xl border-2 border-purple-300 bg-gradient-to-br from-purple-50/80 via-white to-pink-50/50 shadow-xl relative text-center overflow-hidden">' +
-          '<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 mb-4 border-b border-purple-100">' +
-            '<div class="flex items-center gap-3 text-left">' +
-              '<div class="w-11 h-11 rounded-2xl bg-gradient-to-tr from-purple-600 to-pink-500 text-white flex items-center justify-center text-xl shadow-md shrink-0">' +
-                '<i class="fa-solid fa-bullseye"></i>' +
-              '</div>' +
-              '<div>' +
-                '<h3 class="text-base sm:text-lg font-black text-slate-800 flex items-center gap-2">' +
-                  '<span>🎯 รางวัลพิเศษ: รางวัลบู้บี้ (Booby Prize)</span>' +
-                  '<span class="px-2.5 py-0.5 rounded-full text-xs font-black bg-purple-100 text-purple-800 border border-purple-300">อันดับที่ ' + boobyRank + '</span>' +
-                '</h3>' +
-                '<p class="text-xs text-slate-500 mt-0.5">รางวัลสุดพิเศษประจำการแข่งขัน กำหนดให้ผู้ที่ได้คะแนนรวมสุทธิในอันดับที่ ' + boobyRank + '</p>' +
-              '</div>' +
-            '</div>' +
-            '<button type="button" onclick="openBoobyRankModal()" class="self-start sm:self-auto text-xs text-purple-700 hover:text-purple-900 font-bold px-3 py-1.5 rounded-xl border border-purple-200 bg-white hover:bg-purple-50 cursor-pointer transition-all">' +
-              '<i class="fa-solid fa-gear mr-1"></i> เปลี่ยนอันดับ' +
-            '</button>' +
-          '</div>' +
-          '<div class="max-w-md mx-auto py-4 flex flex-col items-center">' +
-            '<div class="w-full h-40 sm:h-44 rounded-2xl overflow-hidden shadow-inner border-2 border-dashed border-purple-300 mb-4 relative flex flex-col items-center justify-center bg-gradient-to-tr from-purple-100 via-pink-50 to-purple-200 text-purple-800">' +
-              '<div class="w-14 h-14 rounded-2xl bg-white/80 shadow-sm flex items-center justify-center text-3xl font-black mb-1.5 animate-pulse text-purple-700">' +
-                '?' +
-              '</div>' +
-              '<span class="text-xs font-black tracking-wider uppercase">รอการประกาศผลรางวัลบู้บี้...</span>' +
-            '</div>' +
-            '<h4 class="text-base font-black text-slate-400 mb-4">??? (ยังไม่เปิดเผย)</h4>' +
-            '<button type="button" onclick="revealBoobyPrize()" class="w-full sm:w-auto px-8 py-3 rounded-2xl font-black text-xs shadow-xl transition-all cursor-pointer active:scale-95 flex items-center justify-center gap-2 bg-gradient-to-r from-purple-600 via-pink-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white border border-purple-300 shadow-purple-500/30">' +
-              '<i class="fa-solid fa-sparkles"></i> 🎯 ประกาศผลรางวัลบู้บี้ (อันดับที่ ' + boobyRank + ')' +
-            '</button>' +
-          '</div>' +
-        '</div>';
-      } else {
-        // Revealed State: Shows Team Photo, Team Name, Total Score (STRICTLY NO CAR CODE, NO COLOR!)
-        var formattedScore = Number(targetItem.totalNetScore || 0).toLocaleString('th-TH');
-        container.innerHTML = '<div class="glass-card p-6 sm:p-7 rounded-3xl border-2 border-purple-400 bg-gradient-to-br from-purple-50/90 via-white to-pink-50/60 shadow-xl relative text-center overflow-hidden animate-fade-in">' +
-          '<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 mb-4 border-b border-purple-100">' +
-            '<div class="flex items-center gap-3 text-left">' +
-              '<div class="w-11 h-11 rounded-2xl bg-gradient-to-tr from-purple-600 to-pink-500 text-white flex items-center justify-center text-xl shadow-md shrink-0">' +
-                '<i class="fa-solid fa-bullseye"></i>' +
-              '</div>' +
-              '<div>' +
-                '<h3 class="text-base sm:text-lg font-black text-slate-800 flex items-center gap-2">' +
-                  '<span>🎯 รางวัลพิเศษ: รางวัลบู้บี้ (Booby Prize)</span>' +
-                  '<span class="px-2.5 py-0.5 rounded-full text-xs font-black bg-purple-600 text-white shadow-xs">อันดับที่ ' + boobyRank + '</span>' +
-                '</h3>' +
-                '<p class="text-xs text-slate-500 mt-0.5">รางวัลสุดพิเศษประจำการแข่งขัน กำหนดให้ผู้ที่ได้คะแนนรวมสุทธิในอันดับที่ ' + boobyRank + '</p>' +
-              '</div>' +
-            '</div>' +
-            '<div class="flex items-center gap-2 self-start sm:self-auto">' +
-              '<button type="button" onclick="resetBoobyPrizeReveal()" class="text-xs text-slate-600 hover:text-slate-800 font-bold px-3 py-1.5 rounded-xl border border-slate-200 bg-slate-100 hover:bg-slate-200 cursor-pointer transition-all">' +
-                '<i class="fa-solid fa-lock text-xs mr-1"></i> ซ่อนผลบู้บี้' +
-              '</button>' +
-              '<button type="button" onclick="openBoobyRankModal()" class="text-xs text-purple-700 hover:text-purple-900 font-bold px-3 py-1.5 rounded-xl border border-purple-200 bg-white hover:bg-purple-50 cursor-pointer transition-all">' +
-                '<i class="fa-solid fa-gear mr-1"></i> ตั้งค่า' +
-              '</button>' +
-            '</div>' +
-          '</div>' +
-          '<div class="max-w-md mx-auto py-2 flex flex-col items-center">' +
-            '<div class="w-full h-44 sm:h-48 rounded-2xl overflow-hidden shadow-md border-2 border-purple-200 mb-3.5 relative group cursor-pointer" onclick="openImageModal(\'' + escapeHTML(targetItem.user.profileUrl) + '\', \'' + escapeHTML(targetItem.user.name) + '\')">' +
-              '<img src="' + escapeHTML(targetItem.user.profileUrl) + '" class="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-300" alt="Team Photo">' +
-              '<div class="absolute inset-0 bg-black/25 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">' +
-                '<i class="fa-solid fa-magnifying-glass-plus text-white text-xl"></i>' +
-              '</div>' +
-            '</div>' +
-            '<h4 class="text-lg sm:text-xl font-black text-slate-800 line-clamp-1 mb-3">' + escapeHTML(targetItem.user.name) + '</h4>' +
-            '<div class="py-2 px-6 rounded-full bg-gradient-to-r from-purple-600 via-pink-600 to-indigo-600 text-white font-black text-sm shadow-lg shadow-purple-500/25 flex items-center justify-center gap-2 mb-3">' +
-              '<i class="fa-solid fa-trophy text-purple-200"></i> คะแนนรวม ' + formattedScore + ' คะแนน' +
-            '</div>' +
-            '<button type="button" onclick="showBoobyCelebrationModal()" class="text-xs font-bold text-slate-500 hover:text-purple-600 flex items-center justify-center gap-1.5 py-1 cursor-pointer transition-colors">' +
-              '<i class="fa-solid fa-bullseye text-purple-500"></i> ดูหน้าต่างยินดีบู้บี้' +
-            '</button>' +
-          '</div>' +
-        '</div>';
-      }
+      renderCeremonyOverallPodium();
     }
     window.renderCeremonyBoobyCard = renderCeremonyBoobyCard;
 
