@@ -2261,23 +2261,23 @@
             apiGetInitialData: function(username, token) {
               callFetch('getInitialData', { username: username, sessionToken: token || sessionToken });
             },
-            apiSetBoobyRank: function(boobyRank) {
-              callFetch('setBoobyRank', { boobyRank: boobyRank });
+            apiSetBoobyRank: function(boobyRank, token) {
+              callFetch('setBoobyRank', { boobyRank: boobyRank, sessionToken: token || sessionToken });
             },
-            apiSetScoreVisibility: function(isScoresHidden) {
-              callFetch('setScoreVisibility', { isScoresHidden: isScoresHidden });
+            apiSetScoreVisibility: function(isScoresHidden, token) {
+              callFetch('setScoreVisibility', { isScoresHidden: isScoresHidden, sessionToken: token || sessionToken });
             },
-            apiSetVotingStatus: function(isVotingOpen) {
-              callFetch('setVotingStatus', { isVotingOpen: isVotingOpen });
+            apiSetVotingStatus: function(isVotingOpen, token) {
+              callFetch('setVotingStatus', { isVotingOpen: isVotingOpen, sessionToken: token || sessionToken });
             },
-            apiSetVoteVisibility: function(isVotesHidden) {
-              callFetch('setVoteVisibility', { isVotesHidden: isVotesHidden });
+            apiSetVoteVisibility: function(isVotesHidden, token) {
+              callFetch('setVoteVisibility', { isVotesHidden: isVotesHidden, sessionToken: token || sessionToken });
             },
             apiCastVote: function(voterUsername, targetUsername) {
-              callFetch('castVote', { voterUsername: voterUsername, targetUsername: targetUsername });
+              callFetch('castVote', { voterUsername: voterUsername, targetUsername: targetUsername, sessionToken: sessionToken });
             },
-            apiResetVotes: function() {
-              callFetch('resetVotes', {});
+            apiResetVotes: function(token) {
+              callFetch('resetVotes', { sessionToken: token || sessionToken });
             },
             apiSubmitAnswer: function(username, activityId, answerText, imageFileObj, token) {
               callFetch('submitAnswer', { username: username, activityId: activityId, answerText: answerText, imageFileObj: imageFileObj, sessionToken: token || sessionToken });
@@ -2488,10 +2488,19 @@
     var isScoresHidden = safeGetStorage("rally_setting_scores_hidden") === "true";
 
     function setScoresHiddenState(val) {
-      isScoresHidden = !!val;
+      var prev = isScoresHidden;
+      isScoresHidden = (val === true || val === 'true' || val === 1 || val === '1');
       try {
         safeSetStorage("rally_setting_scores_hidden", isScoresHidden ? "true" : "false");
       } catch (e) {}
+
+      if (currentUser && prev !== isScoresHidden) {
+        setupNavigation();
+        if (isScoresHidden && currentUser.role !== 'Admin' && currentActiveViewName === 'Leaderboard') {
+          switchView(currentUser.role === 'Sub-Admin' ? 'Grading' : 'UserDashboard');
+        }
+      }
+    }
 
     // Instant Local App Cache (Stale-While-Revalidate for 0ms First Paint)
     function saveLocalAppCache() {
@@ -2534,8 +2543,6 @@
       }
     }
     window.loadLocalAppCache = loadLocalAppCache;
-
-    }
 
     // Activities Integrity & Cleaning Helper
     function setActivitiesDataClean(rawList) {
@@ -2601,10 +2608,18 @@
     var isVotesHidden = safeGetStorage("rally_setting_votes_hidden") === "true";
 
     function setVotesHiddenState(val) {
-      isVotesHidden = !!val;
+      var prev = isVotesHidden;
+      isVotesHidden = (val === true || val === 'true' || val === 1 || val === '1');
       try {
         safeSetStorage("rally_setting_votes_hidden", isVotesHidden ? "true" : "false");
       } catch (e) {}
+
+      if (currentUser && prev !== isVotesHidden) {
+        setupNavigation();
+        if (isVotesHidden && currentUser.role !== 'Admin' && currentActiveViewName === 'VoteResults') {
+          switchView(currentUser.role === 'Sub-Admin' ? 'Grading' : 'UserDashboard');
+        }
+      }
     }
     var userCategoryFilter = 'ALL';
     var currentActiveViewName = 'UserDashboard';

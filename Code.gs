@@ -190,9 +190,8 @@ function handleApiRequest(action, payload) {
   }
 
   // Invalidate shared cache only on global reset or full-scale data clearing
-  // (Routine actions like submitAnswer, gradeSubmission, updateBonusPoints, castVote, saveUser, deleteUser, saveActivity, deleteActivity, resetCompetitorProfiles update the cache in-place!)
+  // (Routine actions like submitAnswer, gradeSubmission, updateBonusPoints, castVote, saveUser, deleteUser, saveActivity, deleteActivity, resetCompetitorProfiles, and setting mutations update the cache in-place!)
   const structuralActions = [
-    'setBoobyRank', 'setScoreVisibility', 'setVotingStatus', 'setVoteVisibility',
     'resetVotes', 'batchGradeActivity', 'regradeAutoSubmissions', 'swapCars', 'updateSelfProfile', 'clearAllSubmissions', 'clearAllActivities'
   ];
   if (structuralActions.indexOf(action) !== -1 && result && result.success !== false) {
@@ -1138,6 +1137,15 @@ function apiSetBoobyRank(boobyRank, sessionToken) {
   const rankNum = Math.max(0, parseInt(boobyRank, 10) || 0);
   return withLock(function() {
     setSetting('boobyRank', String(rankNum));
+    let shared = getCachedSharedData();
+    if (!shared) {
+      shared = fetchSharedDataFromSheets();
+    }
+    if (shared) {
+      if (!shared.settings) shared.settings = {};
+      shared.settings.boobyRank = rankNum;
+      setCachedSharedData(shared, true);
+    }
     return { success: true, boobyRank: rankNum };
   });
 }
@@ -1146,9 +1154,19 @@ function apiSetScoreVisibility(isScoresHidden, sessionToken) {
   const auth = verifyAuth(sessionToken, ['Admin']);
   if (!auth.success) return auth;
 
+  const hidden = (isScoresHidden === true || isScoresHidden === 'true' || isScoresHidden === 1 || isScoresHidden === '1');
   return withLock(function() {
-    setSetting('isScoresHidden', isScoresHidden ? 'true' : 'false');
-    return { success: true, isScoresHidden: isScoresHidden };
+    setSetting('isScoresHidden', hidden ? 'true' : 'false');
+    let shared = getCachedSharedData();
+    if (!shared) {
+      shared = fetchSharedDataFromSheets();
+    }
+    if (shared) {
+      if (!shared.settings) shared.settings = {};
+      shared.settings.isScoresHidden = hidden;
+      setCachedSharedData(shared, true);
+    }
+    return { success: true, isScoresHidden: hidden };
   });
 }
 
@@ -1163,9 +1181,19 @@ function apiSetVoteVisibility(isVotesHidden, sessionToken) {
   const auth = verifyAuth(sessionToken, ['Admin']);
   if (!auth.success) return auth;
 
+  const hidden = (isVotesHidden === true || isVotesHidden === 'true' || isVotesHidden === 1 || isVotesHidden === '1');
   return withLock(function() {
-    setSetting('isVotesHidden', isVotesHidden ? 'true' : 'false');
-    return { success: true, isVotesHidden: isVotesHidden, message: isVotesHidden ? 'ซ่อนผลการโหวตคะแนนเรียบร้อยแล้ว' : 'เปิดแสดงผลการโหวตคะแนนเรียบร้อยแล้ว' };
+    setSetting('isVotesHidden', hidden ? 'true' : 'false');
+    let shared = getCachedSharedData();
+    if (!shared) {
+      shared = fetchSharedDataFromSheets();
+    }
+    if (shared) {
+      if (!shared.settings) shared.settings = {};
+      shared.settings.isVotesHidden = hidden;
+      setCachedSharedData(shared, true);
+    }
+    return { success: true, isVotesHidden: hidden, message: hidden ? 'ซ่อนผลการโหวตคะแนนเรียบร้อยแล้ว' : 'เปิดแสดงผลการโหวตคะแนนเรียบร้อยแล้ว' };
   });
 }
 
@@ -1173,9 +1201,19 @@ function apiSetVotingStatus(isVotingOpen, sessionToken) {
   const auth = verifyAuth(sessionToken, ['Admin']);
   if (!auth.success) return auth;
 
+  const open = (isVotingOpen === true || isVotingOpen === 'true' || isVotingOpen === 1 || isVotingOpen === '1');
   return withLock(function() {
-    setSetting('isVotingOpen', isVotingOpen ? 'true' : 'false');
-    return { success: true, isVotingOpen: isVotingOpen, message: isVotingOpen ? 'เปิดระบบโหวตคะแนนเรียบร้อยแล้ว' : 'ปิดระบบโหวตคะแนนเรียบร้อยแล้ว' };
+    setSetting('isVotingOpen', open ? 'true' : 'false');
+    let shared = getCachedSharedData();
+    if (!shared) {
+      shared = fetchSharedDataFromSheets();
+    }
+    if (shared) {
+      if (!shared.settings) shared.settings = {};
+      shared.settings.isVotingOpen = open;
+      setCachedSharedData(shared, true);
+    }
+    return { success: true, isVotingOpen: open, message: open ? 'เปิดระบบโหวตคะแนนเรียบร้อยแล้ว' : 'ปิดระบบโหวตคะแนนเรียบร้อยแล้ว' };
   });
 }
 
