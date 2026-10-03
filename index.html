@@ -232,6 +232,11 @@
       box-shadow: 0 20px 40px 0 rgba(31, 38, 135, 0.12), inset 0 1px 0 rgba(255, 255, 255, 1), inset 1px 0 0 rgba(255, 255, 255, 0.8);
     }
 
+    button, .cursor-pointer, .sidebar-item {
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+    }
+
     .sidebar-item {
       display: flex;
       items-center: center;
@@ -241,8 +246,9 @@
       font-size: 0.875rem;
       font-weight: 500;
       color: #64748b;
-      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      transition: background-color 0.15s ease, color 0.15s ease, transform 0.15s ease;
       cursor: pointer;
+      user-select: none;
     }
     .sidebar-item:hover {
       background: rgba(255, 255, 255, 0.6);
@@ -4346,22 +4352,8 @@
     }
 
     function switchViewFilter(cat) {
-      switchView('UserMissions');
-      filterUserCategory(cat);
-      if (cat === 'RC') {
-        updateActiveSidebarItem('sideNavRC');
-      } else if (cat === 'Base') {
-        updateActiveSidebarItem('sideNavBase');
-      } else if (cat === 'Quiz') {
-        updateActiveSidebarItem('sideNavQuiz');
-      } else if (cat === 'ALL') {
-        updateActiveSidebarItem('sideNavMissionsAll');
-      } else {
-        updateActiveSidebarItem('sideNavDashboard');
-      }
-      if ((!activitiesData || activitiesData.length === 0) && currentUser) {
-        loadAppData(true);
-      }
+      userCategoryFilter = cat || 'ALL';
+      switchView('UserMissions', cat || 'ALL');
     }
 
     function switchView(viewName, filterCategory) {
@@ -4394,9 +4386,11 @@
         }
       }
 
-      hideAllViews();
+      // 1. Immediately close mobile sidebar drawer (0ms instant response)
       var sidebar = document.getElementById('mobileSidebar');
-      if (sidebar) sidebar.style.display = 'none';
+      if (sidebar && sidebar.style.display !== 'none') {
+        sidebar.style.display = 'none';
+      }
 
       if (viewName === 'AdminActivitiesRC') {
         viewName = 'AdminActivities';
@@ -4410,30 +4404,35 @@
       } else if (viewName === 'AdminGradingHistory') {
         viewName = 'UserHistory';
         activeAdminHistoryTab = 'judgeGrading';
-        updateActiveSidebarItem('sideNavAdminGradingHistory');
       }
 
       currentActiveViewName = viewName;
       currentActiveFilterCat = filterCategory || '';
 
+      // 2. Hide all views and show target immediately (0ms visual switch)
+      hideAllViews();
       var target = document.getElementById('view' + viewName);
       if (target) {
         target.style.display = (viewName === 'Login' ? 'flex' : 'block');
       }
 
+      // 3. Immediately update active state on sidebar & render content
       if (viewName === 'UserDashboard') {
         updateActiveSidebarItem('sideNavDashboard');
         renderUserDashboard();
       } else if (viewName === 'UserHistory') {
-        updateActiveSidebarItem('sideNavHistory');
+        if (activeAdminHistoryTab === 'judgeGrading') {
+          updateActiveSidebarItem('sideNavAdminGradingHistory');
+        } else {
+          updateActiveSidebarItem('sideNavHistory');
+        }
         renderUserHistoryTable(submissionsData);
       } else if (viewName === 'UserMissions') {
+        var targetCat = filterCategory || userCategoryFilter || 'ALL';
+        userCategoryFilter = targetCat;
+        filterUserCategory(targetCat, true); // Update tabs and title without redundant double render
         renderUserMissionsGrid();
       } else if (viewName === 'Leaderboard') {
-        if (isScoresHidden && (currentUser && currentUser.role !== 'Admin')) {
-          switchView('UserDashboard');
-          return;
-        }
         updateActiveSidebarItem('sideNavLeaderboard');
         renderLeaderboard();
       } else if (viewName === 'Grading') {
@@ -4723,8 +4722,6 @@
       var competitors = usersData.filter(function(u) { return u.role === 'User'; });
       renderRealtimeFeed(competitors);
 
-      // Render History Table ONLY
-      renderUserHistoryTable(submissionsData);
     }
 
     function renderRealtimeFeed(competitors) {
@@ -4887,7 +4884,7 @@
       feedContainer.innerHTML = topBannerHTML + cardsHTML;
     }
 
-    function filterUserCategory(cat) {
+    function filterUserCategory(cat, skipRender) {
       userCategoryFilter = cat;
       ['ALL', 'RC', 'Base', 'Quiz'].forEach(function(c) {
         var btn = document.getElementById('tabUser' + c);
@@ -4921,7 +4918,9 @@
         updateActiveSidebarItem('sideNavMissionsAll');
       }
 
-      renderUserMissionsGrid();
+      if (!skipRender) {
+        renderUserMissionsGrid();
+      }
     }
 
     function renderUserMissionsGrid() {
