@@ -3723,6 +3723,7 @@
       renderGradingList();
       renderAnalytics();
       if (typeof renderUserHistoryTable === 'function') renderUserHistoryTable(submissionsData);
+      if (typeof renderUserMissionsGrid === 'function') renderUserMissionsGrid();
 
       // INSTANT BROADCAST TO FIREBASE REALTIME DATABASE (< 0.1s update)
       try {
