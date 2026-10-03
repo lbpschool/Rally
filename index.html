@@ -2487,6 +2487,19 @@
     var votesData = [];
     var isScoresHidden = safeGetStorage("rally_setting_scores_hidden") === "true";
 
+    function redirectFromLeaderboardIfHidden() {
+      if (isScoresHidden && (!currentUser || currentUser.role !== 'Admin')) {
+        if (currentUser && currentUser.role === 'Sub-Admin') {
+          switchView('Grading');
+        } else {
+          switchViewFilter('ALL');
+        }
+        return true;
+      }
+      return false;
+    }
+    window.redirectFromLeaderboardIfHidden = redirectFromLeaderboardIfHidden;
+
     function setScoresHiddenState(val) {
       var prev = isScoresHidden;
       isScoresHidden = (val === true || val === 'true' || val === 1 || val === '1');
@@ -2494,10 +2507,10 @@
         safeSetStorage("rally_setting_scores_hidden", isScoresHidden ? "true" : "false");
       } catch (e) {}
 
-      if (currentUser && prev !== isScoresHidden) {
+      if (currentUser) {
         setupNavigation();
         if (isScoresHidden && currentUser.role !== 'Admin' && currentActiveViewName === 'Leaderboard') {
-          switchView(currentUser.role === 'Sub-Admin' ? 'Grading' : 'UserDashboard');
+          redirectFromLeaderboardIfHidden();
         }
         if (currentActiveViewName === 'UserHistory' && typeof renderUserHistoryTable === 'function') {
           renderUserHistoryTable(submissionsData);
@@ -4338,7 +4351,10 @@
       } else if (currentUser.role === 'Sub-Admin') {
         // SUB-ADMIN (JUDGE) ROLE: ONLY Dashboard, Grading, History, Leaderboard (if open), Votes (if open)
         if (navDashboard) navDashboard.style.display = 'flex';
-        if (navLeaderboard) navLeaderboard.style.display = showLeaderboardTab ? 'flex' : 'none';
+        if (navLeaderboard) {
+          navLeaderboard.style.display = showLeaderboardTab ? 'flex' : 'none';
+          if (!showLeaderboardTab) navLeaderboard.classList.remove('active');
+        }
         if (navVotes) navVotes.style.display = showVotesTab ? 'flex' : 'none';
         if (navGrading) navGrading.style.display = 'flex';
         if (navHistory) navHistory.style.display = 'flex';
@@ -4375,7 +4391,10 @@
         if (navBase) navBase.style.display = 'flex';
         if (navQuiz) navQuiz.style.display = 'flex';
         if (navHistory) navHistory.style.display = 'flex';
-        if (navLeaderboard) navLeaderboard.style.display = showLeaderboardTab ? 'flex' : 'none';
+        if (navLeaderboard) {
+          navLeaderboard.style.display = showLeaderboardTab ? 'flex' : 'none';
+          if (!showLeaderboardTab) navLeaderboard.classList.remove('active');
+        }
         if (navVotes) navVotes.style.display = showVotesTab ? 'flex' : 'none';
 
         if (navGrading) navGrading.style.display = 'none';
@@ -4476,10 +4495,7 @@
       }
 
       if (viewName === 'Leaderboard') {
-        if (isScoresHidden && (!currentUser || currentUser.role !== 'Admin')) {
-          switchView(currentUser && currentUser.role === 'Sub-Admin' ? 'Grading' : 'UserDashboard');
-          return;
-        }
+        if (redirectFromLeaderboardIfHidden()) return;
       }
 
       // 1. Immediately close mobile sidebar drawer (0ms instant response)
@@ -4640,7 +4656,7 @@
                 saveLocalAppCache();
                 setupNavigation();
                 if (isScoresHidden && (!currentUser || currentUser.role !== 'Admin') && currentActiveViewName === 'Leaderboard') {
-                  switchView(currentUser && currentUser.role === 'Sub-Admin' ? 'Grading' : 'UserDashboard');
+                  redirectFromLeaderboardIfHidden();
                 }
                 if (isVotesHidden && (!currentUser || currentUser.role !== 'Admin') && currentActiveViewName === 'VoteResults') {
                   switchView(currentUser && currentUser.role === 'Sub-Admin' ? 'Grading' : 'UserDashboard');
@@ -6081,6 +6097,7 @@
     }
 
     function renderLeaderboard() {
+      if (redirectFromLeaderboardIfHidden()) return;
       var tbody = document.getElementById('leaderboardBody');
       if (!tbody) return;
 
@@ -11912,7 +11929,8 @@
 
         setupNavigation();
         if (isScoresHidden && (!currentUser || currentUser.role !== 'Admin') && currentActiveViewName === 'Leaderboard') {
-          currentActiveViewName = (currentUser && currentUser.role === 'Sub-Admin') ? 'Grading' : 'UserDashboard';
+          currentActiveViewName = (currentUser && currentUser.role === 'Sub-Admin') ? 'Grading' : 'UserMissions';
+          currentActiveFilterCat = 'ALL';
         }
         if (isVotesHidden && (!currentUser || currentUser.role !== 'Admin') && currentActiveViewName === 'VoteResults') {
           currentActiveViewName = (currentUser && currentUser.role === 'Sub-Admin') ? 'Grading' : 'UserDashboard';
@@ -12035,7 +12053,7 @@
           if (currentUser) {
             setupNavigation();
             if (isScoresHidden && currentUser.role !== 'Admin' && currentActiveViewName === 'Leaderboard') {
-              switchView(currentUser.role === 'Sub-Admin' ? 'Grading' : 'UserDashboard');
+              redirectFromLeaderboardIfHidden();
             }
             if (isVotesHidden && currentUser.role !== 'Admin' && currentActiveViewName === 'VoteResults') {
               switchView(currentUser.role === 'Sub-Admin' ? 'Grading' : 'UserDashboard');

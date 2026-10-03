@@ -295,13 +295,39 @@ function syncToFirebase(sharedData) {
     });
 
     UrlFetchApp.fetch(firebaseUrl, {
-      method: 'put',
+      method: 'patch',
       contentType: 'application/json',
       payload: payload,
       muteHttpExceptions: true
     });
   } catch (e) {
     Logger.log('Firebase sync error: ' + e);
+  }
+}
+
+/**
+ * Real-time Push ONLY Settings to Firebase Realtime Database (< 0.1s update)
+ * Synchronizes settings without overwriting or interfering with other data nodes.
+ */
+function syncSettingsToFirebase(settings) {
+  try {
+    if (!settings) return;
+    const firebaseUrl = FIREBASE_DATABASE_URL + '/live_rally_data/settings.json';
+    UrlFetchApp.fetch(firebaseUrl, {
+      method: 'put',
+      contentType: 'application/json',
+      payload: JSON.stringify(settings),
+      muteHttpExceptions: true
+    });
+    // Update timestamp to notify all listening clients
+    UrlFetchApp.fetch(FIREBASE_DATABASE_URL + '/live_rally_data/timestamp.json', {
+      method: 'put',
+      contentType: 'application/json',
+      payload: JSON.stringify(Date.now()),
+      muteHttpExceptions: true
+    });
+  } catch (e) {
+    Logger.log('syncSettingsToFirebase error: ' + e);
   }
 }
 
@@ -1136,16 +1162,15 @@ function apiSetBoobyRank(boobyRank, sessionToken) {
 
   const rankNum = Math.max(0, parseInt(boobyRank, 10) || 0);
   return withLock(function() {
-    setSetting('boobyRank', String(rankNum));
-    let shared = getCachedSharedData();
-    if (!shared) {
-      shared = fetchSharedDataFromSheets();
-    }
+    const ss = getSpreadsheet();
+    setSetting('boobyRank', String(rankNum), ss);
+    const freshSettings = getSettingsMap(ss);
+    let shared = getCachedSharedData() || fetchSharedDataFromSheets();
     if (shared) {
-      if (!shared.settings) shared.settings = {};
-      shared.settings.boobyRank = rankNum;
-      setCachedSharedData(shared, true);
+      shared.settings = freshSettings;
+      setCachedSharedData(shared, false);
     }
+    syncSettingsToFirebase(freshSettings);
     return { success: true, boobyRank: rankNum };
   });
 }
@@ -1156,16 +1181,15 @@ function apiSetScoreVisibility(isScoresHidden, sessionToken) {
 
   const hidden = (isScoresHidden === true || isScoresHidden === 'true' || isScoresHidden === 1 || isScoresHidden === '1');
   return withLock(function() {
-    setSetting('isScoresHidden', hidden ? 'true' : 'false');
-    let shared = getCachedSharedData();
-    if (!shared) {
-      shared = fetchSharedDataFromSheets();
-    }
+    const ss = getSpreadsheet();
+    setSetting('isScoresHidden', hidden ? 'true' : 'false', ss);
+    const freshSettings = getSettingsMap(ss);
+    let shared = getCachedSharedData() || fetchSharedDataFromSheets();
     if (shared) {
-      if (!shared.settings) shared.settings = {};
-      shared.settings.isScoresHidden = hidden;
-      setCachedSharedData(shared, true);
+      shared.settings = freshSettings;
+      setCachedSharedData(shared, false);
     }
+    syncSettingsToFirebase(freshSettings);
     return { success: true, isScoresHidden: hidden };
   });
 }
@@ -1183,16 +1207,15 @@ function apiSetVoteVisibility(isVotesHidden, sessionToken) {
 
   const hidden = (isVotesHidden === true || isVotesHidden === 'true' || isVotesHidden === 1 || isVotesHidden === '1');
   return withLock(function() {
-    setSetting('isVotesHidden', hidden ? 'true' : 'false');
-    let shared = getCachedSharedData();
-    if (!shared) {
-      shared = fetchSharedDataFromSheets();
-    }
+    const ss = getSpreadsheet();
+    setSetting('isVotesHidden', hidden ? 'true' : 'false', ss);
+    const freshSettings = getSettingsMap(ss);
+    let shared = getCachedSharedData() || fetchSharedDataFromSheets();
     if (shared) {
-      if (!shared.settings) shared.settings = {};
-      shared.settings.isVotesHidden = hidden;
-      setCachedSharedData(shared, true);
+      shared.settings = freshSettings;
+      setCachedSharedData(shared, false);
     }
+    syncSettingsToFirebase(freshSettings);
     return { success: true, isVotesHidden: hidden, message: hidden ? 'ซ่อนผลการโหวตคะแนนเรียบร้อยแล้ว' : 'เปิดแสดงผลการโหวตคะแนนเรียบร้อยแล้ว' };
   });
 }
@@ -1203,16 +1226,15 @@ function apiSetVotingStatus(isVotingOpen, sessionToken) {
 
   const open = (isVotingOpen === true || isVotingOpen === 'true' || isVotingOpen === 1 || isVotingOpen === '1');
   return withLock(function() {
-    setSetting('isVotingOpen', open ? 'true' : 'false');
-    let shared = getCachedSharedData();
-    if (!shared) {
-      shared = fetchSharedDataFromSheets();
-    }
+    const ss = getSpreadsheet();
+    setSetting('isVotingOpen', open ? 'true' : 'false', ss);
+    const freshSettings = getSettingsMap(ss);
+    let shared = getCachedSharedData() || fetchSharedDataFromSheets();
     if (shared) {
-      if (!shared.settings) shared.settings = {};
-      shared.settings.isVotingOpen = open;
-      setCachedSharedData(shared, true);
+      shared.settings = freshSettings;
+      setCachedSharedData(shared, false);
     }
+    syncSettingsToFirebase(freshSettings);
     return { success: true, isVotingOpen: open, message: open ? 'เปิดระบบโหวตคะแนนเรียบร้อยแล้ว' : 'ปิดระบบโหวตคะแนนเรียบร้อยแล้ว' };
   });
 }
@@ -1243,9 +1265,30 @@ function apiCastVote(voterUsername, targetUsername, sessionToken) {
 
     const ss = getSpreadsheet();
 
-    // 2. Check if voting is open in settings via DAO Helper
+    // 2. Check if voting is open in settings via 3-Tier fail-safe (Sheet -> Cache -> Firebase Live Authority)
+    let isVotingOpen = false;
     const settings = getSettingsMap(ss);
-    if (!settings.isVotingOpen) {
+    if (settings && settings.isVotingOpen) {
+      isVotingOpen = true;
+    } else {
+      const cached = getCachedSharedData();
+      if (cached && cached.settings && cached.settings.isVotingOpen) {
+        isVotingOpen = true;
+      } else {
+        try {
+          const fbRes = UrlFetchApp.fetch(FIREBASE_DATABASE_URL + '/live_rally_data/settings/isVotingOpen.json', { muteHttpExceptions: true });
+          if (fbRes.getResponseCode() === 200) {
+            const fbVal = JSON.parse(fbRes.getContentText());
+            if (fbVal === true) {
+              isVotingOpen = true;
+              setSetting('isVotingOpen', 'true', ss); // Auto-heal sheet setting
+            }
+          }
+        } catch (e) {}
+      }
+    }
+
+    if (!isVotingOpen) {
       return { success: false, message: 'ระบบปิดรับคะแนนโหวตแล้ว หรือยังไม่ได้เปิดระบบ' };
     }
 
