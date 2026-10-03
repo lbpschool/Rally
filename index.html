@@ -851,20 +851,17 @@
             <div id="leaderboardAdminControlsContainer" class="flex flex-wrap items-center gap-2.5" style="display: none;"></div>
           </div>
 
-          <div class="glass-card p-6 overflow-hidden">
+          <div class="glass-card p-3.5 sm:p-5 overflow-hidden">
             <div class="overflow-x-auto">
               <table id="leaderboardTable" class="w-full text-left text-xs">
                 <thead class="text-slate-600 border-b border-slate-200 uppercase bg-purple-50/40">
                   <tr>
-                    <th onclick="sortLeaderboard('rank')" class="py-3 px-3 text-center font-bold text-[11px] cursor-pointer hover:bg-purple-100/60 transition-all rounded-lg select-none" title="คลิกเพื่อเรียงอันดับการแข่งขัน">อันดับ <i id="sortIcon_rank" class="fa-solid fa-sort text-[10px] opacity-40 ml-0.5"></i></th>
-                    <th class="py-3 px-3 text-center font-bold text-[11px]">ชื่อ (USERNAME)</th>
-                    <th onclick="sortLeaderboard('rcPassedCount')" class="py-3 px-3 text-center font-bold text-[11px] cursor-pointer hover:bg-purple-100/60 transition-all rounded-lg select-none" title="คลิกเพื่อเรียงอันดับตามจำนวนจุด RC ที่ผ่าน">ผ่าน RC <i id="sortIcon_rcPassedCount" class="fa-solid fa-sort text-[10px] opacity-40 ml-0.5"></i></th>
-                    <th onclick="sortLeaderboard('basePassedCount')" class="py-3 px-3 text-center font-bold text-[11px] cursor-pointer hover:bg-purple-100/60 transition-all rounded-lg select-none" title="คลิกเพื่อเรียงอันดับตามจำนวนกิจกรรมฐานที่ผ่าน">ผ่านฐาน <i id="sortIcon_basePassedCount" class="fa-solid fa-sort text-[10px] opacity-40 ml-0.5"></i></th>
-                    <th onclick="sortLeaderboard('quizPassedCount')" class="py-3 px-3 text-center font-bold text-[11px] cursor-pointer hover:bg-purple-100/60 transition-all rounded-lg select-none" title="คลิกเพื่อเรียงอันดับตามจำนวนเกมส์คำถามที่ผ่าน">ผ่านเกมส์ <i id="sortIcon_quizPassedCount" class="fa-solid fa-sort text-[10px] opacity-40 ml-0.5"></i></th>
-                    <th onclick="sortLeaderboard('rcScore')" class="py-3 px-3 text-center font-bold text-[11px] text-blue-600 cursor-pointer hover:bg-blue-100/60 transition-all rounded-lg select-none" title="คลิกเพื่อเรียงอันดับดูผู้ที่มีคะแนน RC สูงสุด">คะแนน RC <i id="sortIcon_rcScore" class="fa-solid fa-sort text-[10px] opacity-40 ml-0.5"></i></th>
-                    <th onclick="sortLeaderboard('baseScore')" class="py-3 px-3 text-center font-bold text-[11px] text-purple-600 cursor-pointer hover:bg-purple-100/60 transition-all rounded-lg select-none" title="คลิกเพื่อเรียงอันดับดูผู้ที่มีคะแนนฐานสูงสุด">คะแนนฐาน <i id="sortIcon_baseScore" class="fa-solid fa-sort text-[10px] opacity-40 ml-0.5"></i></th>
-                    <th onclick="sortLeaderboard('quizScore')" class="py-3 px-3 text-center font-bold text-[11px] text-emerald-600 cursor-pointer hover:bg-emerald-100/60 transition-all rounded-lg select-none" title="คลิกเพื่อเรียงอันดับดูผู้ที่มีคะแนนเกมส์สูงสุด">คะแนนเกมส์ <i id="sortIcon_quizScore" class="fa-solid fa-sort text-[10px] opacity-40 ml-0.5"></i></th>
-                    <th onclick="sortLeaderboard('totalNetScore')" class="py-3 px-3 text-right font-bold text-[11px] text-amber-600 cursor-pointer hover:bg-amber-100/60 transition-all rounded-lg select-none" title="คลิกเพื่อเรียงอันดับตามคะแนนรวมสุทธิ">รวมสุทธิ <i id="sortIcon_totalNetScore" class="fa-solid fa-sort-down text-[10px] text-purple-600 font-black ml-0.5"></i></th>
+                    <th onclick="sortLeaderboard('rank')" class="py-2.5 sm:py-3 px-1.5 sm:px-2.5 text-center font-bold text-[10px] sm:text-[11px] cursor-pointer hover:bg-purple-100/60 transition-all rounded-lg select-none w-10 sm:w-12" title="คลิกเพื่อเรียงอันดับการแข่งขัน">อันดับ <i id="sortIcon_rank" class="fa-solid fa-sort text-[10px] opacity-40 ml-0.5"></i></th>
+                    <th class="py-2.5 sm:py-3 px-1.5 sm:px-2.5 text-center font-bold text-[10px] sm:text-[11px] whitespace-nowrap min-w-[85px] sm:min-w-[105px]">ทีม / ผู้เข้าแข่งขัน</th>
+                    <th onclick="sortLeaderboard('rcScore')" class="py-2.5 sm:py-3 px-1 sm:px-2 text-center font-bold text-[10px] sm:text-[11px] text-blue-600 cursor-pointer hover:bg-blue-100/60 transition-all rounded-lg select-none whitespace-nowrap" title="คลิกเพื่อเรียงอันดับคะแนน RC">RC <i id="sortIcon_rcScore" class="fa-solid fa-sort text-[10px] opacity-40 ml-0.5"></i></th>
+                    <th onclick="sortLeaderboard('baseScore')" class="py-2.5 sm:py-3 px-1 sm:px-2 text-center font-bold text-[10px] sm:text-[11px] text-purple-600 cursor-pointer hover:bg-purple-100/60 transition-all rounded-lg select-none whitespace-nowrap" title="คลิกเพื่อเรียงอันดับคะแนนฐาน">ฐาน <i id="sortIcon_baseScore" class="fa-solid fa-sort text-[10px] opacity-40 ml-0.5"></i></th>
+                    <th onclick="sortLeaderboard('quizScore')" class="py-2.5 sm:py-3 px-1 sm:px-2 text-center font-bold text-[10px] sm:text-[11px] text-emerald-600 cursor-pointer hover:bg-emerald-100/60 transition-all rounded-lg select-none whitespace-nowrap" title="คลิกเพื่อเรียงอันดับคะแนนเกมส์">เกมส์ <i id="sortIcon_quizScore" class="fa-solid fa-sort text-[10px] opacity-40 ml-0.5"></i></th>
+                    <th onclick="sortLeaderboard('totalNetScore')" class="py-2.5 sm:py-3 px-2 sm:px-3 text-right font-bold text-[10px] sm:text-[11px] text-amber-600 cursor-pointer hover:bg-amber-100/60 transition-all rounded-lg select-none whitespace-nowrap" title="คลิกเพื่อเรียงอันดับคะแนนรวมสุทธิ">รวมสุทธิ <i id="sortIcon_totalNetScore" class="fa-solid fa-sort-down text-[10px] text-purple-600 font-black ml-0.5"></i></th>
                   </tr>
                 </thead>
                 <tbody id="leaderboardBody" class="divide-y divide-slate-100">
@@ -6049,14 +6046,14 @@
 
         var shouldHide = isScoresHidden && currentUser.role !== 'Admin';
 
-        var rcCountBadge = '<span class="inline-flex items-center justify-center min-w-[28px] px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 font-bold text-xs border border-slate-200">' + item.rcPassedCount + '</span>';
-        var baseCountBadge = '<span class="inline-flex items-center justify-center min-w-[28px] px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 font-bold text-xs border border-slate-200">' + item.basePassedCount + '</span>';
-        var quizCountBadge = '<span class="inline-flex items-center justify-center min-w-[28px] px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 font-bold text-xs border border-slate-200">' + item.quizPassedCount + '</span>';
+        var rcCountText = shouldHide ? '' : ('<span class="text-[9px] text-slate-400 font-semibold whitespace-nowrap leading-none mt-0.5">ผ่าน ' + item.rcPassedCount + '</span>');
+        var baseCountText = shouldHide ? '' : ('<span class="text-[9px] text-slate-400 font-semibold whitespace-nowrap leading-none mt-0.5">ผ่าน ' + item.basePassedCount + '</span>');
+        var quizCountText = shouldHide ? '' : ('<span class="text-[9px] text-slate-400 font-semibold whitespace-nowrap leading-none mt-0.5">ผ่าน ' + item.quizPassedCount + '</span>');
 
-        var rcCell = shouldHide ? '<span class="text-amber-800 font-bold text-xs"><i class="fa-solid fa-lock text-[10px] mr-1"></i>ซ่อน</span>' : ('<span class="inline-flex items-center justify-center min-w-[36px] px-2.5 py-0.5 rounded-full bg-sky-500 text-white font-black text-xs shadow-sm">' + item.rcScore + '</span>');
-        var baseCell = shouldHide ? '<span class="text-amber-800 font-bold text-xs"><i class="fa-solid fa-lock text-[10px] mr-1"></i>ซ่อน</span>' : ('<span class="inline-flex items-center justify-center min-w-[36px] px-2.5 py-0.5 rounded-full bg-purple-500 text-white font-black text-xs shadow-sm">' + item.baseScore + '</span>');
-        var quizCell = shouldHide ? '<span class="text-amber-800 font-bold text-xs"><i class="fa-solid fa-lock text-[10px] mr-1"></i>ซ่อน</span>' : ('<span class="inline-flex items-center justify-center min-w-[36px] px-2.5 py-0.5 rounded-full bg-emerald-500 text-white font-black text-xs shadow-sm">' + item.quizScore + '</span>');
-        var totalCell = shouldHide ? '<span class="px-2.5 py-1 rounded-xl bg-amber-100 text-amber-800 font-bold text-xs border border-amber-200"><i class="fa-solid fa-lock text-[10px] mr-1"></i>ซ่อนคะแนน</span>' : ('<span class="inline-flex items-center justify-center px-3 py-1 rounded-full bg-gradient-to-r from-amber-400 via-orange-500 to-amber-600 text-white font-black text-sm shadow-md">' + item.totalNetScore + '</span>');
+        var rcScoreBadge = shouldHide ? '<span class="text-amber-800 font-bold text-xs"><i class="fa-solid fa-lock text-[10px] mr-1"></i>ซ่อน</span>' : ('<span class="inline-flex items-center justify-center min-w-[34px] sm:min-w-[38px] px-2 py-0.5 rounded-full bg-sky-500 text-white font-black text-[11px] sm:text-xs shadow-xs">' + item.rcScore + '</span>');
+        var baseScoreBadge = shouldHide ? '<span class="text-amber-800 font-bold text-xs"><i class="fa-solid fa-lock text-[10px] mr-1"></i>ซ่อน</span>' : ('<span class="inline-flex items-center justify-center min-w-[34px] sm:min-w-[38px] px-2 py-0.5 rounded-full bg-purple-500 text-white font-black text-[11px] sm:text-xs shadow-xs">' + item.baseScore + '</span>');
+        var quizScoreBadge = shouldHide ? '<span class="text-amber-800 font-bold text-xs"><i class="fa-solid fa-lock text-[10px] mr-1"></i>ซ่อน</span>' : ('<span class="inline-flex items-center justify-center min-w-[34px] sm:min-w-[38px] px-2 py-0.5 rounded-full bg-emerald-500 text-white font-black text-[11px] sm:text-xs shadow-xs">' + item.quizScore + '</span>');
+        var totalCell = shouldHide ? '<span class="px-2.5 py-1 rounded-xl bg-amber-100 text-amber-800 font-bold text-xs border border-amber-200"><i class="fa-solid fa-lock text-[10px] mr-1"></i>ซ่อนคะแนน</span>' : ('<span class="inline-flex items-center justify-center px-2.5 sm:px-3 py-1 rounded-full bg-gradient-to-r from-amber-400 via-orange-500 to-amber-600 text-white font-black text-xs sm:text-sm shadow-md whitespace-nowrap">' + item.totalNetScore + '</span>');
 
         var rowBgClass = 'hover:bg-purple-50/40';
         var firstCellBorderClass = 'border-l-4 border-l-transparent';
@@ -6078,27 +6075,44 @@
           '<td class="py-2.5 px-1.5 sm:px-2.5 text-center align-middle ' + firstCellBorderClass + '">' + rankBadge + '</td>' +
           
           '<!-- Name (USERNAME) Stacked Below Car Photo (Rectangular Landscape) -->' +
-          '<td class="py-2.5 px-1.5 sm:px-2.5 align-middle text-center">' +
-            '<div class="flex flex-col items-center justify-center gap-1 py-1 text-center min-w-[95px] sm:min-w-[110px] mx-auto">' +
-              '<div class="w-16 h-10 sm:w-20 sm:h-12 rounded-xl overflow-hidden shadow-sm border border-purple-200 cursor-pointer relative group shrink-0" onclick="openImageModal(\'' + escapeHTML(item.user.profileUrl) + '\', \'' + escapeHTML(item.user.name) + '\')">' +
+          '<td class="py-2.5 px-1.5 sm:px-2 align-middle text-center">' +
+            '<div class="flex flex-col items-center justify-center gap-1 py-1 text-center min-w-[85px] sm:min-w-[105px] mx-auto">' +
+              '<div class="w-14 h-9 sm:w-18 sm:h-11 rounded-xl overflow-hidden shadow-xs border border-purple-200 cursor-pointer relative group shrink-0" onclick="openImageModal(\'' + escapeHTML(item.user.profileUrl) + '\', \'' + escapeHTML(item.user.name) + '\')">' +
                 '<img src="' + escapeHTML(item.user.profileUrl) + '" class="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-200" alt="Car Picture">' +
               '</div>' +
               '<div class="text-center leading-tight">' +
                 '<p class="font-extrabold text-slate-800 text-xs sm:text-sm leading-snug line-clamp-2">' + escapeHTML(item.user.name) + '</p>' +
-                '<p class="text-[10px] sm:text-[11px] text-slate-400 font-medium mt-0.5">(' + escapeHTML(item.user.username) + ')</p>' +
+                '<p class="text-[9px] sm:text-[10px] text-slate-400 font-medium mt-0.5">(' + escapeHTML(item.user.username) + ')</p>' +
               '</div>' +
             '</div>' +
           '</td>' +
           
-          '<td class="py-2.5 px-1.5 sm:px-2.5 text-center align-middle">' + rcCountBadge + '</td>' +
-          '<td class="py-2.5 px-1.5 sm:px-2.5 text-center align-middle">' + baseCountBadge + '</td>' +
-          '<td class="py-2.5 px-1.5 sm:px-2.5 text-center align-middle">' + quizCountBadge + '</td>' +
+          '<!-- RC (Score + Passed) -->' +
+          '<td class="py-2.5 px-1 sm:px-2 text-center align-middle">' +
+            '<div class="flex flex-col items-center justify-center gap-0.5">' +
+              rcScoreBadge +
+              rcCountText +
+            '</div>' +
+          '</td>' +
+
+          '<!-- Base (Score + Passed) -->' +
+          '<td class="py-2.5 px-1 sm:px-2 text-center align-middle">' +
+            '<div class="flex flex-col items-center justify-center gap-0.5">' +
+              baseScoreBadge +
+              baseCountText +
+            '</div>' +
+          '</td>' +
+
+          '<!-- Quiz (Score + Passed) -->' +
+          '<td class="py-2.5 px-1 sm:px-2 text-center align-middle">' +
+            '<div class="flex flex-col items-center justify-center gap-0.5">' +
+              quizScoreBadge +
+              quizCountText +
+            '</div>' +
+          '</td>' +
           
-          '<td class="py-2.5 px-1.5 sm:px-2.5 text-center align-middle">' + rcCell + '</td>' +
-          '<td class="py-2.5 px-1.5 sm:px-2.5 text-center align-middle">' + baseCell + '</td>' +
-          '<td class="py-2.5 px-1.5 sm:px-2.5 text-center align-middle">' + quizCell + '</td>' +
-          
-          '<td class="py-2.5 px-1.5 sm:px-2.5 text-right align-middle">' + totalCell + '</td>' +
+          '<!-- Total Net Score -->' +
+          '<td class="py-2.5 px-2 sm:px-3 text-right align-middle">' + totalCell + '</td>' +
           '</tr>';
       }).join('');
     }
