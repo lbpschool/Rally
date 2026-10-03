@@ -559,31 +559,17 @@
 
       <!-- Mobile Sidebar Drawer -->
       <div id="mobileSidebar" style="display: none;" class="fixed inset-0 z-40 bg-slate-900/50 backdrop-blur-sm md:hidden" onclick="toggleMobileSidebar()">
-        <div class="w-72 sm:w-80 max-w-[85vw] h-full bg-white px-4 pt-9 pb-5 sm:px-5 sm:pt-11 sm:pb-6 flex flex-col justify-between overflow-hidden shadow-2xl" onclick="event.stopPropagation()">
+        <div class="w-72 sm:w-80 max-w-[85vw] h-full bg-white px-4 pt-5 pb-5 sm:px-5 sm:pt-6 sm:pb-6 flex flex-col justify-between overflow-hidden shadow-2xl" onclick="event.stopPropagation()">
           <div class="flex-1 flex flex-col overflow-hidden min-h-0">
-            <!-- Header bar with Title & Close button -->
-            <div class="flex items-center justify-between pb-2 shrink-0">
-              <span class="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
-                <i class="fa-solid fa-car-side text-purple-600"></i> โปรไฟล์ทีม
-              </span>
-              <button onclick="toggleMobileSidebar()" class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 flex items-center justify-center transition-all active:scale-95 cursor-pointer" title="ปิดเมนู">
-                <i class="fa-solid fa-xmark text-base"></i>
-              </button>
-            </div>
-
             <!-- Profile Card: Horizontal Banner Image on Top, Team Info Below -->
-            <div class="bg-gradient-to-b from-purple-50/70 via-slate-50 to-white border border-purple-100/80 rounded-2xl p-2.5 shrink-0 shadow-xs mb-3">
+            <div class="bg-gradient-to-b from-purple-50/70 via-slate-50 to-white border border-purple-100/80 rounded-2xl p-2.5 shrink-0 shadow-xs mb-2">
               <!-- Horizontal Image Banner -->
               <div class="w-full h-28 sm:h-32 rounded-xl overflow-hidden bg-slate-200 border border-purple-100 shadow-inner relative">
                 <img id="mobileAvatar" src="" class="w-full h-full object-cover" alt="รูปรถ/ผู้แข่งขัน">
               </div>
-              <!-- Team Name & Role below image -->
-              <div class="mt-2.5 text-center">
+              <!-- Team Name below image -->
+              <div class="mt-2 text-center">
                 <p id="mobileName" class="text-base font-black text-slate-800 leading-tight truncate px-1"></p>
-                <div class="inline-flex items-center gap-1.5 mt-1 px-2.5 py-0.5 rounded-full bg-purple-100 text-purple-700 text-xs font-bold shadow-xs">
-                  <i class="fa-solid fa-shield-halved text-[10px]"></i>
-                  <span id="mobileRole"></span>
-                </div>
               </div>
             </div>
 
@@ -4173,7 +4159,8 @@
       document.getElementById('mobileAvatar').src = currentUser.profileUrl || '';
       document.getElementById('mobileName').innerText = currentUser.name || currentUser.username;
       var roleThai = currentUser.role === 'Admin' ? 'ผู้ดูแลระบบ' : (currentUser.role === 'Sub-Admin' ? 'กรรมการประจำฐาน' : ('ผู้แข่งขัน' + (currentUser.carCode ? ' (' + currentUser.carCode + ')' : '')));
-      document.getElementById('mobileRole').innerText = roleThai;
+      var mobileRoleEl = document.getElementById('mobileRole');
+      if (mobileRoleEl) mobileRoleEl.innerText = roleThai;
 
       
 
