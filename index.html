@@ -2499,7 +2499,14 @@
     var activitiesData = [];
     var submissionsData = [];
     var votesData = [];
-    var isScoresHidden = false;
+    var isScoresHidden = safeGetStorage("rally_setting_scores_hidden") === "true";
+
+    function setScoresHiddenState(val) {
+      isScoresHidden = !!val;
+      try {
+        safeSetStorage("rally_setting_scores_hidden", isScoresHidden ? "true" : "false");
+      } catch (e) {}
+    }
 
     // Activities Integrity & Cleaning Helper
     function setActivitiesDataClean(rawList) {
@@ -3633,7 +3640,7 @@
         return;
       }
       var targetState = !isScoresHidden;
-      isScoresHidden = targetState;
+      setScoresHiddenState(targetState);
 
       setupNavigation();
       renderUserDashboard();
@@ -4023,7 +4030,7 @@
                   sessionToken = res.sessionToken;
                   safeSetStorage('rally_session_token', sessionToken);
                 }
-                if (typeof res.isScoresHidden !== 'undefined') isScoresHidden = res.isScoresHidden;
+                if (typeof res.isScoresHidden !== 'undefined') setScoresHiddenState(res.isScoresHidden);
                 if (typeof res.isVotesHidden !== 'undefined') isVotesHidden = res.isVotesHidden;
                 if (typeof res.isVotingOpen !== 'undefined') isVotingOpen = res.isVotingOpen;
                 if (typeof res.boobyRank !== 'undefined') boobyRank = Number(res.boobyRank || 0);
@@ -4527,7 +4534,7 @@
                 setActivitiesDataClean(res.activities);
                 setSubmissionsDataClean(res.submissions);
                 if (typeof res.isScoresHidden !== 'undefined') {
-                  isScoresHidden = res.isScoresHidden;
+                  setScoresHiddenState(res.isScoresHidden);
                 }
                 if (typeof res.boobyRank !== 'undefined') {
                   boobyRank = Number(res.boobyRank || 0);
@@ -11733,7 +11740,7 @@
                 if (res.users) usersData = res.users;
                 if (res.activities) setActivitiesDataClean(res.activities);
                 if (res.submissions) setSubmissionsDataClean(res.submissions);
-                if (typeof res.isScoresHidden !== 'undefined') isScoresHidden = res.isScoresHidden;
+                if (typeof res.isScoresHidden !== 'undefined') setScoresHiddenState(res.isScoresHidden);
                 if (typeof res.isVotingOpen !== 'undefined') isVotingOpen = res.isVotingOpen;
                 if (typeof res.boobyRank !== 'undefined') boobyRank = Number(res.boobyRank || 0);
                 if (res.votes) votesData = res.votes;
@@ -11809,13 +11816,17 @@
             votesData = live.votes;
           }
           if (live.settings) {
-            if (typeof live.settings.isScoresHidden !== 'undefined') isScoresHidden = live.settings.isScoresHidden;
+            if (typeof live.settings.isScoresHidden !== 'undefined') setScoresHiddenState(live.settings.isScoresHidden);
             if (typeof live.settings.isVotingOpen !== 'undefined') isVotingOpen = live.settings.isVotingOpen;
             if (typeof live.settings.isVotesHidden !== 'undefined') isVotesHidden = live.settings.isVotesHidden;
             if (typeof live.settings.boobyRank !== 'undefined') boobyRank = Number(live.settings.boobyRank || 0);
           }
 
           if (currentUser) {
+            setupNavigation();
+            if (isScoresHidden && currentUser.role !== 'Admin' && currentActiveViewName === 'Leaderboard') {
+              switchView(currentUser.role === 'Sub-Admin' ? 'Grading' : 'UserDashboard');
+            }
             if (currentActiveViewName === 'UserMissions') {
               renderUserMissionsGrid();
             } else if (currentActiveViewName === 'AdminActivities') {
