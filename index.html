@@ -1016,6 +1016,9 @@
             
             <div class="flex items-center gap-2 flex-wrap">
               <input type="text" id="searchUserInput" placeholder="ค้นหาผู้แข่งขัน..." class="px-4 py-2 rounded-xl glass-input text-xs">
+              <button onclick="autoAssignFixedCarColors()" title="กำหนดสีประจำรถตายตัววนซ้ำ 4 สี (ชมพู, ฟ้า, แดง, เขียว) ตามลำดับเบอร์รถ C1, C2, C3..." class="px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold shadow-md transition-all flex items-center gap-2 whitespace-nowrap cursor-pointer active:scale-95">
+                <i class="fa-solid fa-palette"></i> กำหนดสีตามลำดับเบอร์รถ
+              </button>
               <button onclick="resetCompetitorProfiles()" title="รีเซ็ตชื่อ รูปโปรไฟล์ และล้างรายชื่อผู้เล่นประจำรถของผู้แข่งขันทุกคันกลับเป็นค่าเริ่มต้น (Admin/Sub-Admin ไม่ถูกเปลี่ยน)" class="px-3.5 py-2 rounded-xl bg-pink-600 hover:bg-pink-700 text-white text-xs font-semibold shadow-md transition-all flex items-center gap-2 whitespace-nowrap cursor-pointer">
                 <i class="fa-solid fa-user-gear"></i> รีเซ็ตชื่อ/รูปผู้แข่งขัน
               </button>
@@ -2364,6 +2367,9 @@
             },
             apiResetCompetitorProfiles: function(token) {
               callFetch('resetCompetitorProfiles', { sessionToken: token || sessionToken });
+            },
+            apiAutoAssignCarColors: function(token) {
+              callFetch('autoAssignCarColors', { sessionToken: token || sessionToken });
             },
             uploadFileToDrive: function(base64Data, fileName, mimeType) {
               callFetch('uploadFileToDrive', { base64Data: base64Data, fileName: fileName, mimeType: mimeType });
@@ -4099,6 +4105,181 @@
       });
     }
     window.resetCompetitorProfiles = resetCompetitorProfiles;
+
+    // Helper to extract numeric value from car code or username (e.g. C1 -> 1, C12 -> 12, car03 -> 3)
+    function getCarNumericCode(str) {
+      if (!str) return 999;
+      var m = String(str).match(/\d+/);
+      return m ? parseInt(m[0], 10) : 999;
+    }
+
+    // =========================================================================
+    // ADMIN: AUTO-ASSIGN FIXED CAR COLORS (กำหนดสีตายตัวตามลำดับเบอร์รถ)
+    // ลำดับสีวนซ้ำ 4 สี: 1. ชมพู -> 2. ฟ้า -> 3. แดง -> 4. เขียว
+    // =========================================================================
+    function autoAssignFixedCarColors() {
+      if (!ensureAuthenticated()) return;
+      if (!currentUser || currentUser.role !== 'Admin') {
+        Swal.fire('ไม่มีสิทธิ์', 'เฉพาะผู้ดูแลระบบ (Admin) เท่านั้นที่สามารถกำหนดสีรถได้', 'warning');
+        return;
+      }
+
+      var competitors = (usersData || []).filter(function(u) { return u && u.role === 'User'; });
+      if (!competitors.length) {
+        Swal.fire('ไม่พบผู้แข่งขัน', 'ยังไม่มีข้อมูลรถผู้แข่งขันในระบบ', 'info');
+        return;
+      }
+
+      // 1. Sort competitors by car number in carCode or username ascending
+      competitors.sort(function(a, b) {
+        var numA = getCarNumericCode(a.carCode || a.username);
+        var numB = getCarNumericCode(b.carCode || b.username);
+        if (numA !== numB) return numA - numB;
+        return (a.carCode || a.username).localeCompare(b.carCode || b.username);
+      });
+
+      // 2. Fixed color loop: 1. ชมพู -> 2. ฟ้า -> 3. แดง -> 4. เขียว
+      var colorSequence = ['Pink', 'Blue', 'Red', 'Green'];
+
+      // Build Preview Table HTML
+      var previewRows = competitors.map(function(c, idx) {
+        var targetColor = colorSequence[idx % colorSequence.length];
+        var currentColor = c.carColor || '';
+        var isChanged = targetColor.toLowerCase() !== currentColor.toLowerCase();
+        var targetThai = getCarColorThaiName(targetColor);
+        var currentThai = getCarColorThaiName(currentColor);
+
+        return '<tr class="border-b border-slate-100 hover:bg-slate-50/50">' +
+          '<td class="py-2 px-3 font-mono font-bold text-slate-700">' + escapeHTML(c.carCode || c.username) + '</td>' +
+          '<td class="py-2 px-3 font-semibold text-slate-800 truncate max-w-[130px]">' + escapeHTML(c.name || c.username) + '</td>' +
+          '<td class="py-2 px-3 text-center"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold ' + getCarColorStyle(currentColor) + '">' + escapeHTML(currentThai) + '</span></td>' +
+          '<td class="py-2 px-3 text-center"><i class="fa-solid fa-arrow-right text-[10px] text-slate-400"></i></td>' +
+          '<td class="py-2 px-3 text-center"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold ' + getCarColorStyle(targetColor) + '">' + escapeHTML(targetThai) + '</span>' + (isChanged ? ' <span class="text-[9px] text-emerald-600 font-bold ml-1">●</span>' : '') + '</td>' +
+        '</tr>';
+      }).join('');
+
+      var previewHTML = '<div class="text-left space-y-3 mt-2">' +
+        '<div class="p-3 rounded-2xl bg-indigo-50/70 border border-indigo-100 text-xs text-indigo-950">' +
+          '<p class="font-bold text-indigo-900 mb-1 flex items-center gap-1.5"><i class="fa-solid fa-palette text-indigo-600"></i> ลำดับสีตายตัววนซ้ำ 4 สี:</p>' +
+          '<div class="flex items-center gap-2 flex-wrap font-bold text-[11px]">' +
+            '<span class="px-2 py-0.5 rounded-full bg-pink-100 text-pink-700 border border-pink-200">1. ชมพู</span>' +
+            '<i class="fa-solid fa-chevron-right text-[8px] text-slate-400"></i>' +
+            '<span class="px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 border border-blue-200">2. ฟ้า</span>' +
+            '<i class="fa-solid fa-chevron-right text-[8px] text-slate-400"></i>' +
+            '<span class="px-2 py-0.5 rounded-full bg-rose-100 text-rose-700 border border-rose-200">3. แดง</span>' +
+            '<i class="fa-solid fa-chevron-right text-[8px] text-slate-400"></i>' +
+            '<span class="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 border border-emerald-200">4. เขียว</span>' +
+          '</div>' +
+        '</div>' +
+        '<div class="max-h-60 overflow-y-auto rounded-xl border border-slate-200/90 shadow-inner">' +
+          '<table class="w-full text-xs text-left">' +
+            '<thead class="bg-slate-100/90 text-slate-600 uppercase text-[10px] font-bold sticky top-0">' +
+              '<tr>' +
+                '<th class="py-2 px-3">เบอร์รถ</th>' +
+                '<th class="py-2 px-3">ชื่อทีม</th>' +
+                '<th class="py-2 px-3 text-center">สีปัจจุบัน</th>' +
+                '<th class="py-2 px-3 text-center"></th>' +
+                '<th class="py-2 px-3 text-center">สีใหม่ที่กำหนด</th>' +
+              '</tr>' +
+            '</thead>' +
+            '<tbody class="divide-y divide-slate-100">' + previewRows + '</tbody>' +
+          '</table>' +
+        '</div>' +
+        '<p class="text-[11px] text-slate-500">• เมื่อยืนยัน ข้อมูลจะถูกบันทึกลง Google Sheets และอัปเดตแบบเรียลไทม์ทุกเครื่องทันที</p>' +
+      '</div>';
+
+      Swal.fire({
+        title: '<div class="flex items-center justify-center gap-2 text-base font-black text-slate-800"><i class="fa-solid fa-palette text-indigo-600"></i> กำหนดสีตายตัวตามลำดับเบอร์รถ?</div>',
+        html: previewHTML,
+        width: '560px',
+        showCancelButton: true,
+        confirmButtonColor: '#4f46e5',
+        cancelButtonColor: '#64748b',
+        confirmButtonText: '<i class="fa-solid fa-check mr-1.5"></i> ยืนยันกำหนดสีตามลำดับ',
+        cancelButtonText: 'ยกเลิก',
+        customClass: {
+          popup: 'rounded-3xl shadow-2xl border border-slate-100'
+        }
+      }).then(function(result) {
+        if (result.isConfirmed) {
+          showLoading('กำลังบันทึกและจัดสีประจำรถให้ผู้แข่งขันทุกคัน...');
+
+          // 1. Optimistic in-memory update
+          competitors.forEach(function(c, idx) {
+            var targetColor = colorSequence[idx % colorSequence.length];
+            c.carColor = targetColor;
+            var u = usersData.find(function(x) { return x.username.toLowerCase() === c.username.toLowerCase(); });
+            if (u) u.carColor = targetColor;
+          });
+
+          if (currentUser && currentUser.role === 'User') {
+            var myUpdated = usersData.find(function(x) { return x.username.toLowerCase() === currentUser.username.toLowerCase(); });
+            if (myUpdated) {
+              currentUser.carColor = myUpdated.carColor;
+              try { safeSetStorage('rally_session_user', JSON.stringify(currentUser)); } catch (e) {}
+            }
+          }
+
+          saveLocalAppCache();
+
+          // 2. Instant broadcast to Firebase Realtime Database
+          try {
+            if (typeof firebase !== 'undefined' && firebase.apps && firebase.apps.length) {
+              firebase.database().ref('live_rally_data/users').set(usersData);
+              firebase.database().ref('live_rally_data/timestamp').set(Date.now());
+              console.log('[Firebase Realtime] Auto assigned car colors pushed to RTDB!');
+            }
+          } catch (fbErr) {
+            console.warn('[Firebase Realtime] RTDB push error:', fbErr);
+          }
+
+          // 3. Re-render UI views immediately
+          renderAdminUsersTable();
+          renderUserDashboard();
+          if (typeof renderAdminRaceTracker === 'function') renderAdminRaceTracker();
+
+          // 4. Persist to Google Apps Script Backend (Sheets)
+          if (!isMockMode && typeof google !== 'undefined' && google.script && google.script.run) {
+            google.script.run
+              .withSuccessHandler(function(res) {
+                hideLoading();
+                if (res && res.success) {
+                  Swal.fire({
+                    icon: 'success',
+                    title: 'กำหนดสีสำเร็จ',
+                    text: res.message || 'บันทึกสีตายตัวตามลำดับเบอร์รถเรียบร้อยแล้ว',
+                    timer: 2500,
+                    showConfirmButton: false
+                  });
+                } else {
+                  handleApiResponseError(res, 'ไม่สามารถบันทึกลงชีตได้');
+                }
+              })
+              .withFailureHandler(function(err) {
+                hideLoading();
+                console.error('[RallyApp] Backend autoAssignCarColors error:', err);
+                Swal.fire({
+                  icon: 'warning',
+                  title: 'บันทึกสำเร็จในระบบเรียลไทม์',
+                  text: 'ข้อมูลอัปเดตแบบเรียลไทม์แล้ว และระบบจะซิงค์กับฐานข้อมูลหลักในภายหลัง',
+                  timer: 2500
+                });
+              })
+              .apiAutoAssignCarColors(sessionToken);
+          } else {
+            hideLoading();
+            Swal.fire({
+              icon: 'success',
+              title: 'กำหนดสีสำเร็จ (Mock Mode)',
+              text: 'จัดสีประจำรถตามลำดับเบอร์เรียบร้อยแล้ว',
+              timer: 2000,
+              showConfirmButton: false
+            });
+          }
+        }
+      });
+    }
+    window.autoAssignFixedCarColors = autoAssignFixedCarColors;
 
     function toggleSystemMode(checked) {
       isMockMode = checked;

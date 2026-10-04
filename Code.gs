@@ -175,6 +175,9 @@ function handleApiRequest(action, payload) {
     case 'resetCompetitorProfiles':
       result = apiResetCompetitorProfiles(token);
       break;
+    case 'autoAssignCarColors':
+      result = apiAutoAssignCarColors(token);
+      break;
     case 'uploadFileToDrive':
       result = uploadFileToDrive(payload.base64Data, payload.fileName, payload.mimeType);
       break;
@@ -195,7 +198,7 @@ function handleApiRequest(action, payload) {
   // Invalidate shared cache only on global reset or full-scale data clearing
   // (Routine actions like submitAnswer, gradeSubmission, updateBonusPoints, castVote, saveUser, deleteUser, saveActivity, deleteActivity, resetCompetitorProfiles, and setting mutations update the cache in-place!)
   const structuralActions = [
-    'resetVotes', 'batchGradeActivity', 'regradeAutoSubmissions', 'swapCars', 'updateSelfProfile', 'clearAllSubmissions', 'clearAllActivities'
+    'resetVotes', 'batchGradeActivity', 'regradeAutoSubmissions', 'swapCars', 'updateSelfProfile', 'clearAllSubmissions', 'clearAllActivities', 'autoAssignCarColors'
   ];
   if (structuralActions.indexOf(action) !== -1 && result && result.success !== false) {
     invalidateGlobalCache();
@@ -2651,6 +2654,84 @@ function apiResetCompetitorProfiles(sessionToken) {
       syncToFirebase(freshShared);
     } catch (e) {
       Logger.log('apiResetCompetitorProfiles cache update error: ' + e);
+    }
+  }
+
+  return result;
+}
+
+/**
+ * API: Auto-assign fixed car colors based on car number sequence (Admin Only)
+ * Color Sequence: Pink -> Blue -> Red -> Green (repeating)
+ */
+function apiAutoAssignCarColors(sessionToken) {
+  const auth = verifyAuth(sessionToken, ['Admin']);
+  if (!auth.success) return auth;
+
+  const result = withLock(function() {
+    const ss = getSpreadsheet();
+    const usersSheet = getOrCreateSheet(ss, SHEET_NAMES.USERS);
+    const usersData = usersSheet.getDataRange().getValues();
+
+    if (usersData.length <= 1) {
+      return { success: false, message: 'ไม่พบข้อมูลผู้แข่งขันในระบบ' };
+    }
+
+    // 1. Gather all User competitors with their row index
+    const competitors = [];
+    for (let i = 1; i < usersData.length; i++) {
+      const role = String(usersData[i][3] || '').trim();
+      if (role === 'User') {
+        const username = String(usersData[i][0] || '').trim();
+        const carCode = String(usersData[i][4] || '').trim();
+        const numMatch = (carCode || username).match(/\d+/);
+        const carNum = numMatch ? parseInt(numMatch[0], 10) : 999;
+        competitors.push({
+          rowIndex: i,
+          username: username,
+          carCode: carCode,
+          carNum: carNum
+        });
+      }
+    }
+
+    // 2. Sort by carNum ascending
+    competitors.sort(function(a, b) {
+      if (a.carNum !== b.carNum) return a.carNum - b.carNum;
+      return a.carCode.localeCompare(b.carCode);
+    });
+
+    // 3. Assign colors: Pink, Blue, Red, Green
+    const colorSequence = ['Pink', 'Blue', 'Red', 'Green'];
+    let changed = false;
+
+    competitors.forEach(function(comp, idx) {
+      const assignedColor = colorSequence[idx % colorSequence.length];
+      const r = comp.rowIndex;
+      const oldColor = String(usersData[r][5] || '').trim();
+      if (oldColor.toLowerCase() !== assignedColor.toLowerCase()) {
+        usersData[r][5] = assignedColor; // col index 5 = carColor
+        changed = true;
+      }
+    });
+
+    if (changed) {
+      usersSheet.getRange(1, 1, usersData.length, usersData[0].length).setValues(usersData);
+    }
+
+    return {
+      success: true,
+      message: 'กำหนดสีตายตัวตามลำดับเบอร์รถ (ชมพู ➔ ฟ้า ➔ แดง ➔ เขียว) สำหรับรถ ' + competitors.length + ' คันเรียบร้อยแล้ว'
+    };
+  });
+
+  if (result && result.success) {
+    try {
+      invalidateGlobalCache();
+      const freshShared = fetchSharedDataFromSheets();
+      syncToFirebase(freshShared);
+    } catch (e) {
+      Logger.log('apiAutoAssignCarColors cache update error: ' + e);
     }
   }
 
