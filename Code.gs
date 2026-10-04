@@ -443,7 +443,7 @@ function appendCachedVote(newVote) {
     const shared = getCachedSharedData();
     if (!shared || !shared.votes) return;
     shared.votes.push(newVote);
-    setCachedSharedData(shared);
+    setCachedSharedData(shared, false);
   } catch (e) {
     Logger.log('appendCachedVote error: ' + e);
   }
@@ -1250,68 +1250,79 @@ function apiCastVote(voterUsername, targetUsername, sessionToken) {
   const auth = verifyAuth(sessionToken, ['User', 'Admin', 'Sub-Admin'], voterUsername);
   if (!auth.success) return auth;
 
-  const result = withLock(function() {
-    if (!voterUsername || !targetUsername) {
-      return { success: false, message: 'ข้อมูลการโหวตไม่สมบูรณ์' };
-    }
+  if (!voterUsername || !targetUsername) {
+    return { success: false, message: 'ข้อมูลการโหวตไม่สมบูรณ์' };
+  }
 
-    const voter = String(voterUsername).trim();
-    const target = String(targetUsername).trim();
+  const voter = String(voterUsername).trim();
+  const target = String(targetUsername).trim();
 
-    // 1. Self-vote prevention rule
-    if (voter === target) {
-      return { success: false, message: 'ผู้เล่นไม่สามารถให้คะแนนโหวตรถของตนเองได้' };
-    }
+  // 1. Self-vote prevention rule
+  if (voter.toLowerCase() === target.toLowerCase()) {
+    return { success: false, message: 'ผู้เล่นไม่สามารถให้คะแนนโหวตรถของตนเองได้' };
+  }
 
-    const ss = getSpreadsheet();
-
-    // 2. Check if voting is open in settings via 3-Tier fail-safe (Sheet -> Cache -> Firebase Live Authority)
-    let isVotingOpen = false;
-    const settings = getSettingsMap(ss);
-    if (settings && settings.isVotingOpen) {
-      isVotingOpen = true;
-    } else {
-      const cached = getCachedSharedData();
-      if (cached && cached.settings && cached.settings.isVotingOpen) {
-        isVotingOpen = true;
-      } else {
-        try {
-          const fbRes = UrlFetchApp.fetch(FIREBASE_DATABASE_URL + '/live_rally_data/settings/isVotingOpen.json', { muteHttpExceptions: true });
-          if (fbRes.getResponseCode() === 200) {
-            const fbVal = JSON.parse(fbRes.getContentText());
-            if (fbVal === true) {
-              isVotingOpen = true;
-              setSetting('isVotingOpen', 'true', ss); // Auto-heal sheet setting
-            }
-          }
-        } catch (e) {}
+  // 2. High-speed voting status check (RAM Cache -> Firebase Live -> Sheet)
+  let isVotingOpen = false;
+  const cached = getCachedSharedData();
+  if (cached && cached.settings && typeof cached.settings.isVotingOpen !== 'undefined') {
+    isVotingOpen = !!cached.settings.isVotingOpen;
+  } else {
+    try {
+      const fbRes = UrlFetchApp.fetch(FIREBASE_DATABASE_URL + '/live_rally_data/settings/isVotingOpen.json', { muteHttpExceptions: true });
+      if (fbRes.getResponseCode() === 200) {
+        const fbVal = JSON.parse(fbRes.getContentText());
+        if (fbVal === true) isVotingOpen = true;
       }
-    }
-
+    } catch (e) {}
     if (!isVotingOpen) {
-      return { success: false, message: 'ระบบปิดรับคะแนนโหวตแล้ว หรือยังไม่ได้เปิดระบบ' };
+      const ss = getSpreadsheet();
+      const settings = getSettingsMap(ss);
+      if (settings && settings.isVotingOpen) isVotingOpen = true;
     }
+  }
 
-    // 3. Check vote quota (max 4 votes per voter)
-    const votesSheet = getOrCreateSheet(ss, SHEET_NAMES.VOTES);
-    const votesData = votesSheet.getDataRange().getValues();
-    let currentVoterCount = 0;
-    for (let i = 1; i < votesData.length; i++) {
-      if (String(votesData[i][2]).trim() === voter) {
+  if (!isVotingOpen) {
+    return { success: false, message: 'ระบบปิดรับคะแนนโหวตแล้ว หรือยังไม่ได้เปิดระบบ' };
+  }
+
+  // 3. Fast-path vote quota check from RAM cache (< 1ms)
+  let currentVoterCount = 0;
+  if (cached && Array.isArray(cached.votes)) {
+    for (let i = 0; i < cached.votes.length; i++) {
+      if (String(cached.votes[i].voterUsername || '').trim().toLowerCase() === voter.toLowerCase()) {
         currentVoterCount++;
       }
     }
-
     if (currentVoterCount >= 4) {
       return { success: false, message: 'คุณได้ใช้สิทธิ์โหวตครบ 4 ครั้งตามโควตาแล้ว' };
     }
+  }
 
-    // 4. Record new vote
+  // 4. Atomic append inside lightweight lock (~150ms lock duration)
+  const result = withLock(function() {
+    const ss = getSpreadsheet();
+    const votesSheet = getOrCreateSheet(ss, SHEET_NAMES.VOTES);
+
+    // Double-check quota from sheet only if cache was missing
+    if (!cached || !Array.isArray(cached.votes)) {
+      const votesData = votesSheet.getDataRange().getValues();
+      currentVoterCount = 0;
+      for (let i = 1; i < votesData.length; i++) {
+        if (String(votesData[i][2] || '').trim().toLowerCase() === voter.toLowerCase()) {
+          currentVoterCount++;
+        }
+      }
+      if (currentVoterCount >= 4) {
+        return { success: false, message: 'คุณได้ใช้สิทธิ์โหวตครบ 4 ครั้งตามโควตาแล้ว' };
+      }
+    }
+
     const newVoteId = 'VOTE_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
     const timestamp = new Date().toISOString();
     votesSheet.appendRow([newVoteId, timestamp, voter, target]);
 
-    const remainingVotes = 4 - (currentVoterCount + 1);
+    const remainingVotes = Math.max(0, 4 - (currentVoterCount + 1));
 
     return {
       success: true,
@@ -1324,7 +1335,7 @@ function apiCastVote(voterUsername, targetUsername, sessionToken) {
       },
       remainingVotes: remainingVotes
     };
-  });
+  }, 10000);
 
   if (result && result.success && result.vote) {
     appendCachedVote(result.vote);

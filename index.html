@@ -9750,65 +9750,70 @@
         }
       }).then(function(result) {
         if (result.isConfirmed) {
-          showLoading('กำลังบันทึกคะแนนโหวตของคุณ...');
+          // 1. Generate new unique vote entry immediately
+          var newVoteId = 'VOTE_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
+          var timestamp = new Date().toISOString();
+          var newVote = {
+            id: newVoteId,
+            timestamp: timestamp,
+            voterUsername: currentUser.username,
+            targetUsername: targetUsername
+          };
 
-          if (isMockMode) {
-            setTimeout(function() {
-              var newVote = {
-                id: 'VOTE_' + Date.now(),
-                timestamp: new Date().toISOString(),
-                voterUsername: currentUser.username,
-                targetUsername: targetUsername
-              };
-              votesData.push(newVote);
-              hideLoading();
-              renderUserDashboard();
-              renderVoteResults();
-              Swal.fire({
-                icon: 'success',
-                title: 'โหวตสำเร็จ! ❤️',
-                html: '<p class="text-xs text-slate-600">บันทึกคะแนนโหวตให้ <strong>' + escapeHTML(targetName) + '</strong> เรียบร้อยแล้ว<br><span class="text-pink-600 font-bold mt-1.5 inline-block">คุณเหลือสิทธิ์โหวตอีก ' + nextRemaining + '/4 ครั้ง</span></p>',
-                timer: 2500,
-                showConfirmButton: false
-              });
-            }, 300);
-          } else {
-            if (typeof google !== 'undefined' && google.script && google.script.run) {
-              google.script.run
-                .withSuccessHandler(function(res) {
-                  hideLoading();
-                  if (res.success) {
-                    if (res.vote) votesData.push(res.vote);
-                    renderUserDashboard();
-                    renderVoteResults();
-                    Swal.fire({
-                      icon: 'success',
-                      title: 'โหวตสำเร็จ! ❤️',
-                      html: '<p class="text-xs text-slate-600">บันทึกคะแนนโหวตให้ <strong>' + escapeHTML(targetName) + '</strong> เรียบร้อยแล้ว<br><span class="text-pink-600 font-bold mt-1.5 inline-block">คุณเหลือสิทธิ์โหวตอีก ' + res.remainingVotes + '/4 ครั้ง</span></p>',
-                      timer: 2500,
-                      showConfirmButton: false
-                    });
-                  } else {
-                    Swal.fire('ข้อผิดพลาด', res.message || 'ไม่สามารถบันทึกคะแนนโหวตได้', 'error');
-                  }
-                })
-                .withFailureHandler(function(err) {
-                  hideLoading();
-                  var isTimeout = !err || err.name === 'AbortError' || err.isTimeout || String(err).includes('abort') || String(err).includes('Realtime');
-                  if (isTimeout) {
-                    Swal.fire({
-                      icon: 'info',
-                      title: 'บันทึกคะแนนโหวตแล้ว',
-                      text: 'ระบบได้บันทึกคะแนนโหวตของคุณเรียบร้อยแล้ว',
-                      timer: 2000,
-                      showConfirmButton: false
-                    });
-                  } else {
-                    Swal.fire('ข้อผิดพลาดระบบ', err.message, 'error');
-                  }
-                })
-                .apiCastVote(currentUser.username, targetUsername, sessionToken);
+          // 2. Optimistic local update (0ms perceived latency)
+          votesData.push(newVote);
+          saveLocalAppCache();
+          renderUserDashboard();
+          renderVoteResults();
+
+          // 3. Instant Firebase Realtime Sync (< 0.05s broadcast to all screens)
+          try {
+            if (typeof firebase !== 'undefined' && firebase.apps && firebase.apps.length) {
+              firebase.database().ref('live_rally_data/votes').set(votesData);
+              firebase.database().ref('live_rally_data/timestamp').set(Date.now());
             }
+          } catch (fbErr) {
+            console.warn('[Vote] Firebase instant push notice:', fbErr);
+          }
+
+          // 4. Instant SweetAlert2 feedback - NO SPINNER DELAY!
+          Swal.fire({
+            icon: 'success',
+            title: 'โหวตสำเร็จ! ❤️',
+            html: '<p class="text-xs text-slate-600">บันทึกคะแนนโหวตให้ <strong>' + escapeHTML(targetName) + '</strong> เรียบร้อยแล้ว<br><span class="text-pink-600 font-bold mt-1.5 inline-block">คุณเหลือสิทธิ์โหวตอีก ' + nextRemaining + '/4 ครั้ง</span></p>',
+            timer: 2500,
+            showConfirmButton: false,
+            customClass: {
+              popup: 'rounded-3xl shadow-2xl'
+            }
+          });
+
+          // 5. Asynchronous persistence to Google Sheets in background
+          if (!isMockMode && typeof google !== 'undefined' && google.script && google.script.run) {
+            google.script.run
+              .withSuccessHandler(function(res) {
+                if (res && res.success) {
+                  console.log('[RallyApp] Vote persisted to Google Sheet successfully:', res.vote ? res.vote.id : newVoteId);
+                } else if (res && !res.success) {
+                  console.warn('[RallyApp] Server vote rejection notice:', res.message);
+                  var idx = votesData.findIndex(function(v) { return v.id === newVoteId; });
+                  if (idx !== -1) votesData.splice(idx, 1);
+                  saveLocalAppCache();
+                  renderUserDashboard();
+                  renderVoteResults();
+                  try {
+                    if (typeof firebase !== 'undefined' && firebase.apps && firebase.apps.length) {
+                      firebase.database().ref('live_rally_data/votes').set(votesData);
+                      firebase.database().ref('live_rally_data/timestamp').set(Date.now());
+                    }
+                  } catch (e) {}
+                  Swal.fire('ข้อผิดพลาด', res.message || 'ไม่สามารถบันทึกคะแนนโหวตได้', 'error');
+                }
+              })
+              .withFailureHandler(function(err) {
+                console.warn('[RallyApp] Background Sheet sync notice (already live on Firebase):', err);
+              })
+              .apiCastVote(currentUser.username, targetUsername, sessionToken);
           }
         }
       });
