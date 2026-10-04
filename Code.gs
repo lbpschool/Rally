@@ -176,7 +176,7 @@ function handleApiRequest(action, payload) {
       result = apiResetCompetitorProfiles(token);
       break;
     case 'autoAssignCarColors':
-      result = apiAutoAssignCarColors(token);
+      result = apiAutoAssignCarColors(token, payload.assignments, payload.colorSequence);
       break;
     case 'uploadFileToDrive':
       result = uploadFileToDrive(payload.base64Data, payload.fileName, payload.mimeType);
@@ -2661,10 +2661,11 @@ function apiResetCompetitorProfiles(sessionToken) {
 }
 
 /**
- * API: Auto-assign fixed car colors based on car number sequence (Admin Only)
- * Color Sequence: Pink -> Blue -> Red -> Green (repeating)
+ * API: Auto-assign or batch assign car colors for competitors (Admin Only)
+ * Supports explicit assignments dictionary { [username]: targetColor }
+ * or repeating colorSequence (e.g. ['Pink', 'Blue', 'Red', 'Green'])
  */
-function apiAutoAssignCarColors(sessionToken) {
+function apiAutoAssignCarColors(sessionToken, assignments, colorSequence) {
   const auth = verifyAuth(sessionToken, ['Admin']);
   if (!auth.success) return auth;
 
@@ -2677,43 +2678,67 @@ function apiAutoAssignCarColors(sessionToken) {
       return { success: false, message: 'ไม่พบข้อมูลผู้แข่งขันในระบบ' };
     }
 
-    // 1. Gather all User competitors with their row index
-    const competitors = [];
-    for (let i = 1; i < usersData.length; i++) {
-      const role = String(usersData[i][3] || '').trim();
-      if (role === 'User') {
-        const username = String(usersData[i][0] || '').trim();
-        const carCode = String(usersData[i][4] || '').trim();
-        const numMatch = (carCode || username).match(/\d+/);
-        const carNum = numMatch ? parseInt(numMatch[0], 10) : 999;
-        competitors.push({
-          rowIndex: i,
-          username: username,
-          carCode: carCode,
-          carNum: carNum
-        });
-      }
-    }
-
-    // 2. Sort by carNum ascending
-    competitors.sort(function(a, b) {
-      if (a.carNum !== b.carNum) return a.carNum - b.carNum;
-      return a.carCode.localeCompare(b.carCode);
-    });
-
-    // 3. Assign colors: Pink, Blue, Red, Green
-    const colorSequence = ['Pink', 'Blue', 'Red', 'Green'];
     let changed = false;
+    let count = 0;
 
-    competitors.forEach(function(comp, idx) {
-      const assignedColor = colorSequence[idx % colorSequence.length];
-      const r = comp.rowIndex;
-      const oldColor = String(usersData[r][5] || '').trim();
-      if (oldColor.toLowerCase() !== assignedColor.toLowerCase()) {
-        usersData[r][5] = assignedColor; // col index 5 = carColor
-        changed = true;
+    // 1. If explicit assignments provided: { username: targetColor, ... }
+    if (assignments && typeof assignments === 'object' && Object.keys(assignments).length > 0) {
+      const normAssignments = {};
+      Object.keys(assignments).forEach(function(k) {
+        normAssignments[String(k).trim().toLowerCase()] = String(assignments[k]).trim();
+      });
+
+      for (let i = 1; i < usersData.length; i++) {
+        const role = String(usersData[i][3] || '').trim();
+        if (role === 'User') {
+          const username = String(usersData[i][0] || '').trim().toLowerCase();
+          if (normAssignments.hasOwnProperty(username)) {
+            const targetColor = normAssignments[username];
+            const oldColor = String(usersData[i][5] || '').trim();
+            if (oldColor.toLowerCase() !== targetColor.toLowerCase()) {
+              usersData[i][5] = targetColor;
+              changed = true;
+            }
+            count++;
+          }
+        }
       }
-    });
+    } else {
+      // 2. Auto-assign by color sequence
+      const seq = Array.isArray(colorSequence) && colorSequence.length > 0 ? colorSequence : ['Pink', 'Blue', 'Red', 'Green'];
+      const competitors = [];
+      for (let i = 1; i < usersData.length; i++) {
+        const role = String(usersData[i][3] || '').trim();
+        if (role === 'User') {
+          const username = String(usersData[i][0] || '').trim();
+          const carCode = String(usersData[i][4] || '').trim();
+          const numMatch = (carCode || username).match(/\d+/);
+          const carNum = numMatch ? parseInt(numMatch[0], 10) : 999;
+          competitors.push({
+            rowIndex: i,
+            username: username,
+            carCode: carCode,
+            carNum: carNum
+          });
+        }
+      }
+
+      competitors.sort(function(a, b) {
+        if (a.carNum !== b.carNum) return a.carNum - b.carNum;
+        return a.carCode.localeCompare(b.carCode);
+      });
+
+      competitors.forEach(function(comp, idx) {
+        const assignedColor = seq[idx % seq.length];
+        const r = comp.rowIndex;
+        const oldColor = String(usersData[r][5] || '').trim();
+        if (oldColor.toLowerCase() !== assignedColor.toLowerCase()) {
+          usersData[r][5] = assignedColor; // col index 5 = carColor
+          changed = true;
+        }
+        count++;
+      });
+    }
 
     if (changed) {
       usersSheet.getRange(1, 1, usersData.length, usersData[0].length).setValues(usersData);
@@ -2721,7 +2746,7 @@ function apiAutoAssignCarColors(sessionToken) {
 
     return {
       success: true,
-      message: 'กำหนดสีตายตัวตามลำดับเบอร์รถ (ชมพู ➔ ฟ้า ➔ แดง ➔ เขียว) สำหรับรถ ' + competitors.length + ' คันเรียบร้อยแล้ว'
+      message: 'บันทึกการกำหนดสีประจำรถสำหรับรถ ' + count + ' คันเรียบร้อยแล้ว'
     };
   });
 

@@ -2368,8 +2368,8 @@
             apiResetCompetitorProfiles: function(token) {
               callFetch('resetCompetitorProfiles', { sessionToken: token || sessionToken });
             },
-            apiAutoAssignCarColors: function(token) {
-              callFetch('autoAssignCarColors', { sessionToken: token || sessionToken });
+            apiAutoAssignCarColors: function(token, assignments, colorSequence) {
+              callFetch('autoAssignCarColors', { sessionToken: token || sessionToken, assignments: assignments, colorSequence: colorSequence });
             },
             uploadFileToDrive: function(base64Data, fileName, mimeType) {
               callFetch('uploadFileToDrive', { base64Data: base64Data, fileName: fileName, mimeType: mimeType });
@@ -3600,6 +3600,8 @@
       if (c === 'purple' || c === 'ม่วง') return 'bg-purple-100 text-purple-700 border border-purple-200';
       if (c === 'orange' || c === 'ส้ม') return 'bg-orange-100 text-orange-700 border border-orange-200';
       if (c === 'pink' || c === 'ชมพู') return 'bg-pink-100 text-pink-700 border border-pink-200';
+      if (c === 'white' || c === 'ขาว') return 'bg-slate-100 text-slate-800 border border-slate-300';
+      if (c === 'black' || c === 'ดำ') return 'bg-slate-800 text-white border border-slate-900';
       return 'bg-purple-100 text-purple-700 border border-purple-200';
     }
 
@@ -4115,7 +4117,9 @@
 
     // =========================================================================
     // ADMIN: AUTO-ASSIGN FIXED CAR COLORS (กำหนดสีตายตัวตามลำดับเบอร์รถ)
-    // ลำดับสีวนซ้ำ 4 สี: 1. ชมพู -> 2. ฟ้า -> 3. แดง -> 4. เขียว
+    // =========================================================================
+    // กำหนดสีประจำรถตามลำดับเบอร์รถ (Admin Only)
+    // รองรับ: ปรับสูตรวนซ้ำ 4 สีด้านบน + ปรับเลือกสีเฉพาะคันในตาราง + รองรับ 9 สี
     // =========================================================================
     function autoAssignFixedCarColors() {
       if (!ensureAuthenticated()) return;
@@ -4138,75 +4142,183 @@
         return (a.carCode || a.username).localeCompare(b.carCode || b.username);
       });
 
-      // 2. Fixed color loop: 1. ชมพู -> 2. ฟ้า -> 3. แดง -> 4. เขียว
+      // 2. Available color options (9 colors)
+      var availableColors = [
+        { key: 'Pink', name: 'ชมพู' },
+        { key: 'Blue', name: 'ฟ้า' },
+        { key: 'Red', name: 'แดง' },
+        { key: 'Green', name: 'เขียว' },
+        { key: 'Yellow', name: 'เหลือง' },
+        { key: 'Orange', name: 'ส้ม' },
+        { key: 'Purple', name: 'ม่วง' },
+        { key: 'Black', name: 'ดำ' },
+        { key: 'White', name: 'ขาว' }
+      ];
+
+      // 3. State management for modal
       var colorSequence = ['Pink', 'Blue', 'Red', 'Green'];
+      var carAssignments = {};
+      competitors.forEach(function(c, idx) {
+        carAssignments[c.username] = colorSequence[idx % colorSequence.length];
+      });
 
-      // Build Preview Table HTML
-      var previewRows = competitors.map(function(c, idx) {
-        var targetColor = colorSequence[idx % colorSequence.length];
-        var currentColor = c.carColor || '';
-        var isChanged = targetColor.toLowerCase() !== currentColor.toLowerCase();
-        var targetThai = getCarColorThaiName(targetColor);
-        var currentThai = getCarColorThaiName(currentColor);
+      function buildSlotSelectHTML(slotIdx) {
+        var curVal = colorSequence[slotIdx];
+        var opts = availableColors.map(function(col) {
+          var sel = (col.key.toLowerCase() === curVal.toLowerCase()) ? ' selected' : '';
+          return '<option value="' + col.key + '" class="bg-white text-slate-800 font-semibold"' + sel + '>' + col.name + '</option>';
+        }).join('');
 
-        return '<tr class="border-b border-slate-100 hover:bg-slate-50/50">' +
-          '<td class="py-2 px-3 font-mono font-bold text-slate-700">' + escapeHTML(c.carCode || c.username) + '</td>' +
-          '<td class="py-2 px-3 font-semibold text-slate-800 truncate max-w-[130px]">' + escapeHTML(c.name || c.username) + '</td>' +
-          '<td class="py-2 px-3 text-center"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold ' + getCarColorStyle(currentColor) + '">' + escapeHTML(currentThai) + '</span></td>' +
-          '<td class="py-2 px-3 text-center"><i class="fa-solid fa-arrow-right text-[10px] text-slate-400"></i></td>' +
-          '<td class="py-2 px-3 text-center"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold ' + getCarColorStyle(targetColor) + '">' + escapeHTML(targetThai) + '</span>' + (isChanged ? ' <span class="text-[9px] text-emerald-600 font-bold ml-1">●</span>' : '') + '</td>' +
-        '</tr>';
-      }).join('');
+        return '<div class="flex flex-col gap-1">' +
+          '<label class="text-[10px] font-bold text-slate-500">ลำดับ ' + (slotIdx + 1) + '</label>' +
+          '<select id="seqSlotSelect' + slotIdx + '" onchange="window._onSequenceSlotChange(' + slotIdx + ', this.value)" class="slot-color-select py-1.5 px-2 rounded-xl text-xs font-black border shadow-sm cursor-pointer transition-all ' + getCarColorStyle(curVal) + '">' +
+            opts +
+          '</select>' +
+        '</div>';
+      }
 
-      var previewHTML = '<div class="text-left space-y-3 mt-2">' +
-        '<div class="p-3 rounded-2xl bg-indigo-50/70 border border-indigo-100 text-xs text-indigo-950">' +
-          '<p class="font-bold text-indigo-900 mb-1 flex items-center gap-1.5"><i class="fa-solid fa-palette text-indigo-600"></i> ลำดับสีตายตัววนซ้ำ 4 สี:</p>' +
-          '<div class="flex items-center gap-2 flex-wrap font-bold text-[11px]">' +
-            '<span class="px-2 py-0.5 rounded-full bg-pink-100 text-pink-700 border border-pink-200">1. ชมพู</span>' +
-            '<i class="fa-solid fa-chevron-right text-[8px] text-slate-400"></i>' +
-            '<span class="px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 border border-blue-200">2. ฟ้า</span>' +
-            '<i class="fa-solid fa-chevron-right text-[8px] text-slate-400"></i>' +
-            '<span class="px-2 py-0.5 rounded-full bg-rose-100 text-rose-700 border border-rose-200">3. แดง</span>' +
-            '<i class="fa-solid fa-chevron-right text-[8px] text-slate-400"></i>' +
-            '<span class="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 border border-emerald-200">4. เขียว</span>' +
+      function buildRowsHTML() {
+        return competitors.map(function(c) {
+          var currentColor = c.carColor || '';
+          var assignedColor = carAssignments[c.username] || 'Pink';
+          var isChanged = assignedColor.toLowerCase() !== currentColor.toLowerCase();
+          var currentThai = getCarColorThaiName(currentColor);
+
+          var optionsHTML = availableColors.map(function(col) {
+            var selected = (col.key.toLowerCase() === assignedColor.toLowerCase()) ? ' selected' : '';
+            return '<option value="' + col.key + '" class="bg-white text-slate-800 font-semibold"' + selected + '>' + col.name + '</option>';
+          }).join('');
+
+          return '<tr class="border-b border-slate-100 hover:bg-slate-50/60 transition-colors">' +
+            '<td class="py-2 px-3 font-mono font-bold text-slate-700 text-xs">' + escapeHTML(c.carCode || c.username) + '</td>' +
+            '<td class="py-2 px-3 font-semibold text-slate-800 truncate max-w-[120px] text-xs">' + escapeHTML(c.name || c.username) + '</td>' +
+            '<td class="py-2 px-2 text-center"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold ' + getCarColorStyle(currentColor) + '">' + escapeHTML(currentThai) + '</span></td>' +
+            '<td class="py-2 px-1 text-center"><i class="fa-solid fa-arrow-right text-[10px] text-slate-400"></i></td>' +
+            '<td class="py-2 px-3 text-center">' +
+              '<div class="inline-flex items-center justify-center gap-1.5">' +
+                '<select id="carSelect_' + escapeHTML(c.username) + '" onchange="window._onCarColorChange(\'' + escapeHTML(c.username).replace(/'/g, "\\'") + '\', this.value, this)" class="py-1 px-2 rounded-lg text-[11px] font-black border transition-all cursor-pointer shadow-sm ' + getCarColorStyle(assignedColor) + '">' +
+                  optionsHTML +
+                '</select>' +
+                '<span id="diff-dot-' + escapeHTML(c.username) + '" class="text-[10px] text-emerald-600 font-bold' + (isChanged ? '' : ' invisible') + '" title="เปลี่ยนจากสีเดิม">●</span>' +
+              '</div>' +
+            '</td>' +
+          '</tr>';
+        }).join('');
+      }
+
+      function renderModalRows() {
+        var tbody = document.getElementById('carColorAssignTbody');
+        if (tbody) {
+          tbody.innerHTML = buildRowsHTML();
+        }
+      }
+
+      // Handlers hooked to window
+      window._onSequenceSlotChange = function(slotIdx, newColor) {
+        colorSequence[slotIdx] = newColor;
+        var slotEl = document.getElementById('seqSlotSelect' + slotIdx);
+        if (slotEl) {
+          slotEl.className = 'slot-color-select py-1.5 px-2 rounded-xl text-xs font-black border shadow-sm cursor-pointer transition-all ' + getCarColorStyle(newColor);
+        }
+        competitors.forEach(function(c, idx) {
+          carAssignments[c.username] = colorSequence[idx % colorSequence.length];
+        });
+        renderModalRows();
+      };
+
+      window._resetToDefaultSequence = function() {
+        colorSequence = ['Pink', 'Blue', 'Red', 'Green'];
+        for (var i = 0; i < 4; i++) {
+          var sel = document.getElementById('seqSlotSelect' + i);
+          if (sel) {
+            sel.value = colorSequence[i];
+            sel.className = 'slot-color-select py-1.5 px-2 rounded-xl text-xs font-black border shadow-sm cursor-pointer transition-all ' + getCarColorStyle(colorSequence[i]);
+          }
+        }
+        competitors.forEach(function(c, idx) {
+          carAssignments[c.username] = colorSequence[idx % colorSequence.length];
+        });
+        renderModalRows();
+      };
+
+      window._onCarColorChange = function(username, newColor, selectEl) {
+        carAssignments[username] = newColor;
+        if (selectEl) {
+          selectEl.className = 'py-1 px-2 rounded-lg text-[11px] font-black border transition-all cursor-pointer shadow-sm ' + getCarColorStyle(newColor);
+        }
+        var comp = competitors.find(function(x) { return x.username === username; });
+        var curColor = comp ? (comp.carColor || '') : '';
+        var isChanged = newColor.toLowerCase() !== curColor.toLowerCase();
+        var dot = document.getElementById('diff-dot-' + username);
+        if (dot) {
+          if (isChanged) dot.classList.remove('invisible');
+          else dot.classList.add('invisible');
+        }
+      };
+
+      var previewHTML = '<div class="text-left space-y-3 mt-1">' +
+        '<div class="p-3.5 rounded-2xl bg-indigo-50/80 border border-indigo-100 text-xs text-indigo-950 space-y-2.5">' +
+          '<div class="flex items-center justify-between flex-wrap gap-2">' +
+            '<p class="font-bold text-indigo-900 flex items-center gap-1.5">' +
+              '<i class="fa-solid fa-palette text-indigo-600"></i> ลำดับสีวนซ้ำ 4 สี (ปรับสูตรหลักได้):' +
+            '</p>' +
+            '<button type="button" onclick="window._resetToDefaultSequence()" class="text-[11px] text-indigo-600 hover:text-indigo-800 font-bold flex items-center gap-1 cursor-pointer transition-colors">' +
+              '<i class="fa-solid fa-rotate-left text-[10px]"></i> คืนค่าเริ่มต้น' +
+            '</button>' +
+          '</div>' +
+          '<div class="grid grid-cols-2 sm:grid-cols-4 gap-2">' +
+            buildSlotSelectHTML(0) +
+            buildSlotSelectHTML(1) +
+            buildSlotSelectHTML(2) +
+            buildSlotSelectHTML(3) +
           '</div>' +
         '</div>' +
         '<div class="max-h-60 overflow-y-auto rounded-xl border border-slate-200/90 shadow-inner">' +
           '<table class="w-full text-xs text-left">' +
-            '<thead class="bg-slate-100/90 text-slate-600 uppercase text-[10px] font-bold sticky top-0">' +
+            '<thead class="bg-slate-100/90 text-slate-600 uppercase text-[10px] font-bold sticky top-0 shadow-sm">' +
               '<tr>' +
-                '<th class="py-2 px-3">เบอร์รถ</th>' +
-                '<th class="py-2 px-3">ชื่อทีม</th>' +
-                '<th class="py-2 px-3 text-center">สีปัจจุบัน</th>' +
-                '<th class="py-2 px-3 text-center"></th>' +
-                '<th class="py-2 px-3 text-center">สีใหม่ที่กำหนด</th>' +
+                '<th class="py-2.5 px-3">เบอร์รถ</th>' +
+                '<th class="py-2.5 px-3">ชื่อทีม</th>' +
+                '<th class="py-2.5 px-2 text-center">สีปัจจุบัน</th>' +
+                '<th class="py-2.5 px-1 text-center"></th>' +
+                '<th class="py-2.5 px-3 text-center">สีใหม่ที่กำหนด (เลือกปรับได้)</th>' +
               '</tr>' +
             '</thead>' +
-            '<tbody class="divide-y divide-slate-100">' + previewRows + '</tbody>' +
+            '<tbody id="carColorAssignTbody" class="divide-y divide-slate-100">' + buildRowsHTML() + '</tbody>' +
           '</table>' +
         '</div>' +
-        '<p class="text-[11px] text-slate-500">• เมื่อยืนยัน ข้อมูลจะถูกบันทึกลง Google Sheets และอัปเดตแบบเรียลไทม์ทุกเครื่องทันที</p>' +
+        '<div class="space-y-1 text-[11px] text-slate-500">' +
+          '<p>• ปรับเปลี่ยนสูตรวนซ้ำ 4 สีด้านบน หรือคลิกเปลี่ยนสีเฉพาะคันในตารางได้อิสระ</p>' +
+          '<p>• เมื่อยืนยัน ข้อมูลจะถูกบันทึกลง Google Sheets และอัปเดตแบบเรียลไทม์ทุกเครื่องทันที</p>' +
+        '</div>' +
       '</div>';
 
       Swal.fire({
-        title: '<div class="flex items-center justify-center gap-2 text-base font-black text-slate-800"><i class="fa-solid fa-palette text-indigo-600"></i> กำหนดสีตายตัวตามลำดับเบอร์รถ?</div>',
+        title: '<div class="flex items-center justify-center gap-2 text-base font-black text-slate-800"><i class="fa-solid fa-palette text-indigo-600"></i> กำหนดสีประจำรถตามลำดับเบอร์รถ</div>',
         html: previewHTML,
-        width: '560px',
+        width: '580px',
         showCancelButton: true,
         confirmButtonColor: '#4f46e5',
         cancelButtonColor: '#64748b',
-        confirmButtonText: '<i class="fa-solid fa-check mr-1.5"></i> ยืนยันกำหนดสีตามลำดับ',
+        confirmButtonText: '<i class="fa-solid fa-check mr-1.5"></i> ยืนยันบันทึกสีทั้งหมด',
         cancelButtonText: 'ยกเลิก',
         customClass: {
           popup: 'rounded-3xl shadow-2xl border border-slate-100'
+        },
+        didClose: function() {
+          try {
+            delete window._onSequenceSlotChange;
+            delete window._resetToDefaultSequence;
+            delete window._onCarColorChange;
+          } catch(e) {}
         }
       }).then(function(result) {
         if (result.isConfirmed) {
           showLoading('กำลังบันทึกและจัดสีประจำรถให้ผู้แข่งขันทุกคัน...');
 
-          // 1. Optimistic in-memory update
-          competitors.forEach(function(c, idx) {
-            var targetColor = colorSequence[idx % colorSequence.length];
+          // 1. Optimistic in-memory update with final carAssignments
+          competitors.forEach(function(c) {
+            var targetColor = carAssignments[c.username] || c.carColor || 'Pink';
             c.carColor = targetColor;
             var u = usersData.find(function(x) { return x.username.toLowerCase() === c.username.toLowerCase(); });
             if (u) u.carColor = targetColor;
@@ -4247,7 +4359,7 @@
                   Swal.fire({
                     icon: 'success',
                     title: 'กำหนดสีสำเร็จ',
-                    text: res.message || 'บันทึกสีตายตัวตามลำดับเบอร์รถเรียบร้อยแล้ว',
+                    text: res.message || 'บันทึกสีประจำรถเรียบร้อยแล้ว',
                     timer: 2500,
                     showConfirmButton: false
                   });
@@ -4265,13 +4377,13 @@
                   timer: 2500
                 });
               })
-              .apiAutoAssignCarColors(sessionToken);
+              .apiAutoAssignCarColors(sessionToken, carAssignments, colorSequence);
           } else {
             hideLoading();
             Swal.fire({
               icon: 'success',
               title: 'กำหนดสีสำเร็จ (Mock Mode)',
-              text: 'จัดสีประจำรถตามลำดับเบอร์เรียบร้อยแล้ว',
+              text: 'จัดสีประจำรถตามลำดับเรียบร้อยแล้ว',
               timer: 2000,
               showConfirmButton: false
             });
