@@ -2589,11 +2589,11 @@
         }
         if (cSubs) {
           var parsedSubs = JSON.parse(cSubs);
-          if (Array.isArray(parsedSubs) && parsedSubs.length > 0) setSubmissionsDataClean(parsedSubs);
+          if (Array.isArray(parsedSubs)) setSubmissionsDataClean(parsedSubs);
         }
         if (cVotes) {
           var parsedVotes = JSON.parse(cVotes);
-          if (Array.isArray(parsedVotes) && parsedVotes.length > 0) votesData = parsedVotes;
+          if (Array.isArray(parsedVotes)) votesData = parsedVotes;
         }
       } catch (e) {
         console.warn('[Cache] Error restoring local cache:', e);
@@ -3856,7 +3856,7 @@
           try {
             if (typeof firebase !== 'undefined' && firebase.apps && firebase.apps.length) {
               var rtdb = firebase.database();
-              rtdb.ref('live_rally_data/submissions').set([]);
+              rtdb.ref('live_rally_data/submissions').remove();
               rtdb.ref('live_rally_data/users').set(usersData);
               rtdb.ref('live_rally_data/timestamp').set(Date.now());
             }
@@ -12556,7 +12556,11 @@
           }
         }
         if (data.activities) setActivitiesDataClean(data.activities);
-        if (data.submissions) setSubmissionsDataClean(data.submissions);
+        if (data.submissions) {
+          setSubmissionsDataClean(Array.isArray(data.submissions) ? data.submissions : Object.values(data.submissions));
+        } else {
+          setSubmissionsDataClean([]);
+        }
         if (data.votes && Array.isArray(data.votes)) votesData = data.votes;
 
         var settings = data.settings || data;
@@ -12676,8 +12680,16 @@
           if (live.activities) {
             setActivitiesDataClean(live.activities);
           }
-          if (live.submissions && Array.isArray(live.submissions)) {
-            setSubmissionsDataClean(live.submissions);
+          if (live.submissions) {
+            if (Array.isArray(live.submissions)) {
+              setSubmissionsDataClean(live.submissions);
+            } else if (typeof live.submissions === 'object') {
+              setSubmissionsDataClean(Object.values(live.submissions));
+            } else {
+              setSubmissionsDataClean([]);
+            }
+          } else {
+            setSubmissionsDataClean([]);
           }
           if (live.votes) {
             if (Array.isArray(live.votes)) {

@@ -306,6 +306,14 @@ function syncToFirebase(sharedData) {
       payload: payload,
       muteHttpExceptions: true
     });
+
+    // If submissions is empty, explicitly DELETE the submissions node so Firebase does not retain stale submissions
+    if (!sharedData.submissions || sharedData.submissions.length === 0) {
+      UrlFetchApp.fetch(FIREBASE_DATABASE_URL + '/live_rally_data/submissions.json', {
+        method: 'delete',
+        muteHttpExceptions: true
+      });
+    }
   } catch (e) {
     Logger.log('Firebase sync error: ' + e);
   }
@@ -2472,9 +2480,7 @@ function apiClearAllSubmissions(sessionToken) {
     // 4. Push wipe to Firebase Realtime Database (< 0.05s broadcast)
     try {
       UrlFetchApp.fetch(FIREBASE_DATABASE_URL + '/live_rally_data/submissions.json', {
-        method: 'put',
-        contentType: 'application/json',
-        payload: JSON.stringify([]),
+        method: 'delete',
         muteHttpExceptions: true
       });
       if (updatedUsers.length > 0) {
