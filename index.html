@@ -1233,8 +1233,8 @@
               <button onclick="refreshVoteResults()" class="px-3.5 py-1.5 rounded-xl bg-white/20 hover:bg-white/30 text-white font-bold text-xs backdrop-blur-md border border-white/30 transition-all flex items-center gap-1.5 cursor-pointer shadow-sm active:scale-95 whitespace-nowrap">
                 <i class="fa-solid fa-arrows-rotate text-xs"></i> รีเฟรชคะแนน
               </button>
-              <button id="btnToggleVoteVisibility" onclick="toggleVoteVisibility()" class="px-3.5 py-1.5 rounded-xl bg-white/20 hover:bg-white/30 text-white font-bold text-xs backdrop-blur-md border border-white/30 transition-all flex items-center gap-1.5 cursor-pointer shadow-sm active:scale-95 whitespace-nowrap">
-                <i id="btnToggleVoteVisibilityIcon" class="fa-solid fa-eye-slash text-xs"></i> <span id="btnToggleVoteVisibilityText">ซ่อนผลโหวตอยู่</span>
+              <button id="btnToggleVoteVisibility" onclick="toggleVoteVisibility()" class="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-md transition-all flex items-center gap-1.5 cursor-pointer active:scale-95 whitespace-nowrap">
+                <i id="btnToggleVoteVisibilityIcon" class="fa-solid fa-eye text-xs"></i> <span id="btnToggleVoteVisibilityText">แสดงผลโหวต</span>
               </button>
               <button id="btnToggleVoteSystem" onclick="toggleVotingSystem()" class="px-3.5 py-1.5 rounded-xl bg-white text-pink-700 hover:bg-pink-50 font-bold text-xs shadow-md transition-all flex items-center gap-1.5 cursor-pointer whitespace-nowrap active:scale-95">
                 <i class="fa-solid fa-power-off text-xs"></i> <span id="btnToggleVoteSystemText">ปิดระบบโหวต</span>
@@ -6172,8 +6172,8 @@
         if (currentUser && currentUser.role === 'Admin') {
           adminLbContainer.style.display = 'flex';
           var btnScoreToggle = isScoresHidden
-            ? '<button onclick="toggleScoreVisibility()" title="ขณะนี้ซ่อนคะแนนให้ผู้ใช้งานอื่นอยู่ (คลิกเพื่อเปิดแสดงคะแนน)" class="px-3.5 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs flex items-center gap-1.5 shadow-md transition-all cursor-pointer whitespace-nowrap active:scale-95"><i class="fa-solid fa-eye-slash text-xs"></i> ซ่อนคะแนนอยู่</button>'
-            : '<button onclick="toggleScoreVisibility()" title="ขณะนี้แสดงคะแนนตามปกติ (คลิกเพื่อซ่อนคะแนนให้ผู้ใช้งานอื่น)" class="px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-md transition-all cursor-pointer whitespace-nowrap active:scale-95"><i class="fa-solid fa-eye text-xs"></i> แสดงคะแนนอยู่</button>';
+            ? '<button onclick="toggleScoreVisibility()" title="ขณะนี้ซ่อนคะแนนอยู่ (คลิกเพื่อเปิดแสดงคะแนนให้ทุกคนเห็น)" class="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-md transition-all cursor-pointer whitespace-nowrap active:scale-95"><i class="fa-solid fa-eye text-xs"></i> แสดงคะแนน</button>'
+            : '<button onclick="toggleScoreVisibility()" title="ขณะนี้เปิดแสดงคะแนนอยู่ (คลิกเพื่อปิดซ่อนคะแนน)" class="px-3.5 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs flex items-center gap-1.5 shadow-md transition-all cursor-pointer whitespace-nowrap active:scale-95"><i class="fa-solid fa-eye-slash text-xs"></i> ปิดการแสดงคะแนน</button>';
 
           var btnResetSubs = '<button onclick="resetAllSubmissions()" title="ลบประวัติคำตอบของรถทุกคันเพื่อเริ่มการแข่งขันรอบใหม่" class="px-3.5 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-md transition-all cursor-pointer whitespace-nowrap active:scale-95"><i class="fa-solid fa-rotate-left text-xs"></i> รีเซ็ตการแข่งขัน</button>';
 
@@ -10095,13 +10095,13 @@
 
       if (btnVoteVisText && btnVoteVisIcon) {
         if (isVotesHidden) {
-          btnVoteVisText.innerText = 'ซ่อนผลโหวตอยู่';
-          btnVoteVisIcon.className = 'fa-solid fa-eye-slash text-sm';
-          if (btnVoteVis) btnVoteVis.className = 'px-3.5 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs shadow-md transition-all flex items-center gap-2 cursor-pointer';
-        } else {
-          btnVoteVisText.innerText = 'แสดงผลโหวตอยู่';
+          btnVoteVisText.innerText = 'แสดงผลโหวต';
           btnVoteVisIcon.className = 'fa-solid fa-eye text-sm';
-          if (btnVoteVis) btnVoteVis.className = 'px-3.5 py-2 rounded-xl bg-white/25 hover:bg-white/35 text-white font-bold text-xs backdrop-blur-md border border-white/30 transition-all flex items-center gap-2 cursor-pointer shadow-sm';
+          if (btnVoteVis) btnVoteVis.className = 'px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-md transition-all flex items-center gap-2 cursor-pointer active:scale-95';
+        } else {
+          btnVoteVisText.innerText = 'ปิดการแสดงผลโหวต';
+          btnVoteVisIcon.className = 'fa-solid fa-eye-slash text-sm';
+          if (btnVoteVis) btnVoteVis.className = 'px-3.5 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs shadow-md transition-all flex items-center gap-2 cursor-pointer active:scale-95';
         }
       }
 
