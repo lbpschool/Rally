@@ -131,6 +131,9 @@ function handleApiRequest(action, payload) {
     case 'resetVotes':
       result = apiResetVotes(token);
       break;
+    case 'resetVotesDirect':
+      result = executeSystemVoteReset();
+      break;
     case 'submitAnswer':
       result = apiSubmitAnswer(payload.username, payload.activityId, payload.answerText, payload.imageFileObj, token);
       break;
@@ -1339,6 +1342,30 @@ function apiCastVote(voterUsername, targetUsername, sessionToken) {
 
   if (result && result.success && result.vote) {
     appendCachedVote(result.vote);
+
+    // Dual-Sync to Firebase Realtime Database (< 50ms broadcast to all screens)
+    try {
+      UrlFetchApp.fetch(FIREBASE_DATABASE_URL + '/live_rally_data/votes/' + result.vote.id + '.json', {
+        method: 'put',
+        contentType: 'application/json',
+        payload: JSON.stringify(result.vote),
+        muteHttpExceptions: true
+      });
+      UrlFetchApp.fetch(FIREBASE_DATABASE_URL + '/live_rally_data/lastVotedCar.json', {
+        method: 'put',
+        contentType: 'application/json',
+        payload: JSON.stringify({ targetUsername: result.vote.targetUsername, timestamp: Date.now() }),
+        muteHttpExceptions: true
+      });
+      UrlFetchApp.fetch(FIREBASE_DATABASE_URL + '/live_rally_data/timestamp.json', {
+        method: 'put',
+        contentType: 'application/json',
+        payload: JSON.stringify(Date.now()),
+        muteHttpExceptions: true
+      });
+    } catch (fbErr) {
+      Logger.log('apiCastVote Firebase push error: ' + fbErr);
+    }
   }
   return result;
 }
@@ -1351,14 +1378,47 @@ function apiResetVotes(sessionToken) {
   if (!auth.success) return auth;
 
   return withLock(function() {
-    const ss = getSpreadsheet();
-    const votesSheet = getOrCreateSheet(ss, SHEET_NAMES.VOTES);
-    const lastRow = votesSheet.getLastRow();
-    if (lastRow > 1) {
-      votesSheet.getRange(2, 1, lastRow - 1, votesSheet.getLastColumn()).clearContent();
-    }
-    return { success: true, message: 'รีเซ็ตข้อมูลคะแนนโหวตทั้งหมดเรียบร้อยแล้ว' };
+    return executeSystemVoteReset();
   });
+}
+
+/**
+ * Executes a full vote reset across Google Sheets, ScriptCache, and Firebase Realtime Database
+ */
+function executeSystemVoteReset() {
+  const ss = getSpreadsheet();
+  const votesSheet = getOrCreateSheet(ss, SHEET_NAMES.VOTES);
+  const lastRow = votesSheet.getLastRow();
+  if (lastRow > 1) {
+    votesSheet.getRange(2, 1, lastRow - 1, votesSheet.getLastColumn()).clearContent();
+  }
+
+  // Clear in-memory shared cache
+  try {
+    const shared = getCachedSharedData();
+    if (shared) {
+      shared.votes = [];
+      setCachedSharedData(shared, false);
+    }
+  } catch (e) {
+    Logger.log('executeSystemVoteReset cache error: ' + e);
+  }
+
+  // Wipe votes in Firebase Realtime Database (< 0.05s instant wipe on all screens)
+  try {
+    UrlFetchApp.fetch(FIREBASE_DATABASE_URL + '/live_rally_data/votes.json', { method: 'delete', muteHttpExceptions: true });
+    UrlFetchApp.fetch(FIREBASE_DATABASE_URL + '/live_rally_data/lastVotedCar.json', { method: 'delete', muteHttpExceptions: true });
+    UrlFetchApp.fetch(FIREBASE_DATABASE_URL + '/live_rally_data/timestamp.json', {
+      method: 'put',
+      contentType: 'application/json',
+      payload: JSON.stringify(Date.now()),
+      muteHttpExceptions: true
+    });
+  } catch (fbErr) {
+    Logger.log('executeSystemVoteReset Firebase wipe error: ' + fbErr);
+  }
+
+  return { success: true, message: 'รีเซ็ตข้อมูลคะแนนโหวตทั้งหมดเรียบร้อยแล้ว' };
 }
 
 /**

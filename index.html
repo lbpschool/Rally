@@ -195,6 +195,29 @@
       outline: none;
     }
 
+    /* Real-time Vote Highlight & Pulse Animation */
+    @keyframes liveVotePulse {
+      0% {
+        background-color: rgba(244, 63, 94, 0.45) !important;
+        box-shadow: inset 0 0 15px rgba(244, 63, 94, 0.4), 0 4px 15px rgba(244, 63, 94, 0.3);
+        transform: scale(1.012);
+      }
+      50% {
+        background-color: rgba(251, 113, 133, 0.22) !important;
+        box-shadow: inset 0 0 8px rgba(244, 63, 94, 0.2);
+      }
+      100% {
+        background-color: transparent;
+        box-shadow: none;
+        transform: scale(1);
+      }
+    }
+    .vote-row-pulse {
+      animation: liveVotePulse 2.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+      position: relative;
+      z-index: 10;
+    }
+
     /* Fix Mobile iOS Safari Auto-Zoom on Input Focus (Font-size >= 16px prevents zoom) */
     @media screen and (max-width: 768px) {
       input, select, textarea, .glass-input {
@@ -9762,6 +9785,7 @@
 
           // 2. Optimistic local update (0ms perceived latency)
           votesData.push(newVote);
+          window.recentVotedTarget = targetUsername;
           saveLocalAppCache();
           renderUserDashboard();
           renderVoteResults();
@@ -9769,8 +9793,13 @@
           // 3. Instant Firebase Realtime Sync (< 0.05s broadcast to all screens)
           try {
             if (typeof firebase !== 'undefined' && firebase.apps && firebase.apps.length) {
-              firebase.database().ref('live_rally_data/votes').set(votesData);
-              firebase.database().ref('live_rally_data/timestamp').set(Date.now());
+              var rtdb = firebase.database();
+              rtdb.ref('live_rally_data/votes/' + newVoteId).set(newVote);
+              rtdb.ref('live_rally_data/lastVotedCar').set({
+                targetUsername: targetUsername,
+                timestamp: Date.now()
+              });
+              rtdb.ref('live_rally_data/timestamp').set(Date.now());
             }
           } catch (fbErr) {
             console.warn('[Vote] Firebase instant push notice:', fbErr);
@@ -9803,8 +9832,9 @@
                   renderVoteResults();
                   try {
                     if (typeof firebase !== 'undefined' && firebase.apps && firebase.apps.length) {
-                      firebase.database().ref('live_rally_data/votes').set(votesData);
-                      firebase.database().ref('live_rally_data/timestamp').set(Date.now());
+                      var rtdb = firebase.database();
+                      rtdb.ref('live_rally_data/votes/' + newVoteId).remove();
+                      rtdb.ref('live_rally_data/timestamp').set(Date.now());
                     }
                   } catch (e) {}
                   Swal.fire('ข้อผิดพลาด', res.message || 'ไม่สามารถบันทึกคะแนนโหวตได้', 'error');
@@ -9847,8 +9877,19 @@
           showLoading('กำลังรีเซ็ตข้อมูลผลโหวต...');
 
           votesData = [];
+          window.recentVotedTarget = null;
+          saveLocalAppCache();
           renderUserDashboard();
           renderVoteResults();
+
+          try {
+            if (typeof firebase !== 'undefined' && firebase.apps && firebase.apps.length) {
+              var rtdb = firebase.database();
+              rtdb.ref('live_rally_data/votes').remove();
+              rtdb.ref('live_rally_data/lastVotedCar').remove();
+              rtdb.ref('live_rally_data/timestamp').set(Date.now());
+            }
+          } catch (e) {}
 
           if (isMockMode) {
             setTimeout(function() {
@@ -9906,7 +9947,15 @@
           firebase.database().ref('live_rally_data').once('value').then(function(snapshot) {
             var live = snapshot.val();
             if (live) {
-              if (live.votes && Array.isArray(live.votes)) votesData = live.votes;
+              if (live.votes) {
+                if (Array.isArray(live.votes)) {
+                  votesData = live.votes.filter(function(v) { return !!v; });
+                } else if (typeof live.votes === 'object') {
+                  votesData = Object.values(live.votes);
+                }
+              } else {
+                votesData = [];
+              }
               if (live.users && Array.isArray(live.users)) usersData = live.users;
               if (live.settings && typeof live.settings.isVotingOpen !== 'undefined') isVotingOpen = live.settings.isVotingOpen;
               onVoteDataReady();
@@ -10227,6 +10276,12 @@
 
             var barWidth = maxVotes > 0 ? Math.round((item.votesCount / maxVotes) * 100) : 0;
 
+            var isRecentVoted = !!(window.recentVotedTarget && window.recentVotedTarget.toLowerCase() === (item.user.username || '').toLowerCase());
+            var pulseClass = isRecentVoted ? ' vote-row-pulse' : '';
+            var liveVotedBadge = isRecentVoted
+              ? '<span class="inline-flex items-center gap-1 text-[9px] font-black text-rose-700 bg-rose-100 border border-rose-300 px-2 py-0.5 rounded-full animate-bounce shadow-xs whitespace-nowrap"><i class="fa-solid fa-heart text-rose-600"></i> +1 โหวตสด!</span>'
+              : '';
+
             var rowBgClass = 'hover:bg-pink-50/40';
             var firstCellBorderClass = 'border-l-4 border-l-transparent';
             if (rank === 1) {
@@ -10246,7 +10301,7 @@
               firstCellBorderClass = 'border-l-4 border-l-emerald-400';
             }
 
-            return '<tr class="' + rowBgClass + ' transition-colors">' +
+            return '<tr class="' + rowBgClass + pulseClass + ' transition-colors">' +
               '<td class="py-2.5 px-2 sm:px-3 text-center ' + firstCellBorderClass + '">' + rankBadge + '</td>' +
               '<td class="py-2.5 px-2 sm:px-3">' +
                 '<div class="flex items-center gap-2.5 sm:gap-3">' +
@@ -10260,6 +10315,7 @@
                     '<div class="flex items-center gap-1.5 flex-wrap">' +
                       '<span class="font-bold text-slate-800 text-xs truncate">' + escapeHTML(item.user.name) + '</span>' +
                       rankAwardPill +
+                      liveVotedBadge +
                     '</div>' +
                     '<p class="text-[10px] text-slate-400 font-medium mt-0.5">Username: ' + escapeHTML(item.user.username) + '</p>' +
                   '</div>' +
@@ -10324,6 +10380,13 @@
               '</tr>';
           }).join('');
         }
+      }
+
+      if (window.recentVotedTarget) {
+        if (window._recentVotedTimer) clearTimeout(window._recentVotedTimer);
+        window._recentVotedTimer = setTimeout(function() {
+          window.recentVotedTarget = null;
+        }, 3500);
       }
     }
     window.renderVoteResults = renderVoteResults;
@@ -11999,8 +12062,21 @@
           if (live.submissions && Array.isArray(live.submissions)) {
             setSubmissionsDataClean(live.submissions);
           }
-          if (live.votes && Array.isArray(live.votes)) {
-            votesData = live.votes;
+          if (live.votes) {
+            if (Array.isArray(live.votes)) {
+              votesData = live.votes.filter(function(v) { return !!v; });
+            } else if (typeof live.votes === 'object') {
+              votesData = Object.values(live.votes);
+            }
+          } else {
+            votesData = [];
+          }
+
+          if (live.lastVotedCar && live.lastVotedCar.targetUsername) {
+            var voteAge = Date.now() - (Number(live.lastVotedCar.timestamp) || 0);
+            if (voteAge < 4500) {
+              window.recentVotedTarget = live.lastVotedCar.targetUsername;
+            }
           }
           saveLocalAppCache();
           if (live.settings) {
