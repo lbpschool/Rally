@@ -730,6 +730,36 @@
 
           </div>
 
+          <!-- Admin-Only: Race Field Tracker (ติดตามขบวนแข่งขัน: หัวขบวน & ท้ายขบวน) -->
+          <div id="adminRaceTrackerContainer" style="display: none;" class="space-y-3 pt-2">
+            <div class="flex items-center justify-between flex-wrap gap-2">
+              <div class="flex items-center gap-2">
+                <div class="w-8 h-8 rounded-xl bg-indigo-100 text-indigo-600 flex items-center justify-center text-sm shadow-xs">
+                  <i class="fa-solid fa-map-location-dot"></i>
+                </div>
+                <div>
+                  <h3 class="text-sm font-black text-slate-800 flex items-center gap-2">
+                    ติดตามขบวนแข่งขัน
+                    <span class="px-2 py-0.5 rounded-full text-[9px] font-extrabold bg-indigo-100 text-indigo-700 border border-indigo-200">เฉพาะผู้ดูแลระบบ (ADMIN)</span>
+                  </h3>
+                  <p class="text-[11px] text-slate-500 font-medium">ตรวจเช็คตำแหน่งรถคันแรกและคันสุดท้ายแบบเรียลไทม์ระหว่างการแข่งขัน</p>
+                </div>
+              </div>
+              <span id="adminRaceTrackerSummary" class="text-[11px] text-slate-500 font-semibold bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-200/80"></span>
+            </div>
+
+            <!-- Two Insight Cards: 1. Leader (หัวขบวน / มากที่สุด) vs 2. Tail (ท้ายขบวน / น้อยที่สุด) -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5 sm:gap-4">
+              <!-- Left Card: Most Submissions (หัวขบวน) -->
+              <div id="trackerLeaderCard" class="p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-emerald-500/10 via-teal-500/5 to-white border border-emerald-200/90 shadow-sm relative overflow-hidden flex flex-col justify-between">
+              </div>
+
+              <!-- Right Card: Least Submissions (ท้ายขบวน) -->
+              <div id="trackerTailCard" class="p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-amber-500/10 via-orange-500/5 to-white border border-amber-200/90 shadow-sm relative overflow-hidden flex flex-col justify-between">
+              </div>
+            </div>
+          </div>
+
           <!-- 3. Real-time Feed Competitors Grid -->
           <div class="space-y-3 pt-1">
             <h3 class="text-sm font-bold text-slate-800 flex items-center gap-2">
@@ -4896,6 +4926,8 @@
       var competitors = usersData.filter(function(u) { return u.role === 'User'; });
       renderRealtimeFeed(competitors);
 
+      // Render Admin-Only Race Field Tracker (ติดตามขบวนแข่งขัน)
+      renderAdminRaceTracker();
     }
 
     function renderRealtimeFeed(competitors) {
@@ -5057,6 +5089,233 @@
 
       feedContainer.innerHTML = topBannerHTML + cardsHTML;
     }
+
+    // =========================================================================
+    // ADMIN-ONLY: RACE FIELD TRACKER (ติดตามขบวนแข่งขัน: หัวขบวน & ท้ายขบวน)
+    // =========================================================================
+    function renderAdminRaceTracker() {
+      var container = document.getElementById('adminRaceTrackerContainer');
+      if (!container) return;
+
+      // Strict role check: ONLY Admin
+      if (!currentUser || currentUser.role !== 'Admin') {
+        container.style.display = 'none';
+        return;
+      }
+      container.style.display = 'block';
+
+      var leaderCard = document.getElementById('trackerLeaderCard');
+      var tailCard = document.getElementById('trackerTailCard');
+      var summaryEl = document.getElementById('adminRaceTrackerSummary');
+
+      var competitors = (usersData || []).filter(function(u) { return u && u.role === 'User'; });
+      var validActs = (activitiesData || []).filter(function(a) { return a && a.id; });
+      var totalActsCount = validActs.length;
+
+      if (!competitors.length) {
+        if (leaderCard) leaderCard.innerHTML = '<div class="text-xs text-slate-400 py-4 text-center">ไม่มีข้อมูลรถผู้เข้าแข่งขัน</div>';
+        if (tailCard) tailCard.innerHTML = '<div class="text-xs text-slate-400 py-4 text-center">ไม่มีข้อมูลรถผู้เข้าแข่งขัน</div>';
+        return;
+      }
+
+      // Compute stats per competitor:
+      // Option A: Count ALL submitted answers (unique activities) regardless of pass/fail
+      var compStats = competitors.map(function(comp) {
+        var userSubs = (submissionsData || []).filter(function(s) {
+          return s && s.username && String(s.username).trim().toLowerCase() === String(comp.username).trim().toLowerCase();
+        });
+
+        var uniqueActsMap = {};
+        userSubs.forEach(function(s) {
+          if (s.activityId) uniqueActsMap[String(s.activityId).trim()] = true;
+        });
+        var uniqueCount = Object.keys(uniqueActsMap).length;
+
+        // Latest submission based on timestamp
+        var latestSub = null;
+        if (userSubs.length > 0) {
+          var sorted = userSubs.slice().sort(function(a, b) {
+            var tA = a.timestamp ? new Date(a.timestamp).getTime() : 0;
+            var tB = b.timestamp ? new Date(b.timestamp).getTime() : 0;
+            return tB - tA;
+          });
+          latestSub = sorted[0];
+        }
+
+        var latestActName = '';
+        var latestActCategory = '';
+        var latestTimeStr = '';
+        if (latestSub) {
+          var act = validActs.find(function(a) { return a && String(a.id).trim() === String(latestSub.activityId).trim(); });
+          if (act) {
+            latestActName = act.title || act.name || act.id;
+            latestActCategory = act.category || '';
+          } else {
+            latestActName = latestSub.activityTitle || latestSub.activityId || 'ไม่ระบุชื่อกิจกรรม';
+            latestActCategory = latestSub.category || '';
+          }
+          if (latestSub.timestamp) {
+            var d = new Date(latestSub.timestamp);
+            if (!isNaN(d.getTime())) {
+              latestTimeStr = d.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }) + ' น.';
+            }
+          }
+        }
+
+        return {
+          user: comp,
+          uniqueCount: uniqueCount,
+          percentage: totalActsCount > 0 ? Math.round((uniqueCount / totalActsCount) * 100) : 0,
+          latestSub: latestSub,
+          latestActName: latestActName,
+          latestActCategory: latestActCategory,
+          latestTimeStr: latestTimeStr
+        };
+      });
+
+      var counts = compStats.map(function(cs) { return cs.uniqueCount; });
+      var maxCount = Math.max.apply(null, counts);
+      var minCount = Math.min.apply(null, counts);
+
+      var leaders = compStats.filter(function(cs) { return cs.uniqueCount === maxCount; });
+      var tails = compStats.filter(function(cs) { return cs.uniqueCount === minCount; });
+
+      if (summaryEl) {
+        summaryEl.innerHTML = '<i class="fa-solid fa-car-side text-indigo-600 mr-1.5"></i>รถแข่ง ' + competitors.length + ' คัน • กิจกรรม ' + totalActsCount + ' จุด';
+      }
+
+      function renderCard(opts) {
+        var isLeader = opts.isLeader;
+        var cars = opts.cars;
+        var count = opts.count;
+        var pct = totalActsCount > 0 ? Math.round((count / totalActsCount) * 100) : 0;
+
+        var headerIcon = isLeader ? 'fa-solid fa-flag-checkered' : 'fa-solid fa-shield-halved';
+        var headerIconBg = isLeader ? 'bg-emerald-600 text-white shadow-emerald-500/30' : 'bg-amber-500 text-white shadow-amber-500/30';
+        var titleText = isLeader ? 'รถคันแรก (ส่งคำตอบมากที่สุด)' : 'รถคันสุดท้าย (ส่งคำตอบน้อยที่สุด)';
+        var badgeText = isLeader 
+          ? (count > 0 ? 'ผู้นำขบวน' : 'รอเริ่มการแข่งขัน') 
+          : (count === 0 ? 'ยังไม่เริ่มส่งคำตอบ' : 'รั้งท้ายขบวน');
+        var badgeClass = isLeader
+          ? 'bg-emerald-100 text-emerald-800 border-emerald-200'
+          : (count === 0 ? 'bg-rose-100 text-rose-800 border-rose-200' : 'bg-amber-100 text-amber-800 border-amber-200');
+        var barColor = isLeader ? 'bg-emerald-500' : (count === 0 ? 'bg-slate-300' : 'bg-amber-500');
+
+        var carsHtml = '';
+        if (cars.length === 1) {
+          var c = cars[0];
+          var thaiCol = getCarColorThaiName(c.user.carColor);
+          var colStyle = getCarColorStyle(c.user.carColor);
+          var userAvatar = c.user.profileUrl || ('https://api.dicebear.com/7.x/bottts/svg?seed=' + encodeURIComponent(c.user.username));
+
+          carsHtml = '<div class="flex items-center gap-3 my-2">' +
+            '<img src="' + escapeHTML(userAvatar) + '" alt="' + escapeHTML(c.user.name) + '" class="w-11 h-11 rounded-2xl object-cover border-2 border-white shadow-xs shrink-0 bg-slate-100" onerror="this.src=\'https://api.dicebear.com/7.x/bottts/svg?seed=fallback\'">' +
+            '<div class="min-w-0 flex-1">' +
+              '<div class="flex items-center gap-2 flex-wrap">' +
+                '<span class="font-black text-slate-800 text-sm truncate">' + escapeHTML(c.user.name || c.user.username) + '</span>' +
+                '<span class="px-2 py-0.5 rounded-lg text-xs font-black bg-indigo-50 text-indigo-700 border border-indigo-200">' + escapeHTML(c.user.carCode || c.user.username) + '</span>' +
+                '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold ' + colStyle + '">' + escapeHTML(thaiCol) + '</span>' +
+              '</div>' +
+              '<p class="text-[11px] text-slate-400 font-mono mt-0.5">@' + escapeHTML(c.user.username) + '</p>' +
+            '</div>' +
+          '</div>';
+
+          // Checkpoint
+          if (c.latestSub && c.latestActName) {
+            var catClass = c.latestActCategory === 'RC' ? 'bg-blue-100 text-blue-700 border-blue-200' : (c.latestActCategory === 'Base' ? 'bg-purple-100 text-purple-700 border-purple-200' : 'bg-emerald-100 text-emerald-700 border-emerald-200');
+            carsHtml += '<div class="mt-2.5 p-3 rounded-2xl bg-white/95 border border-slate-200/90 shadow-xs">' +
+              '<div class="flex items-center justify-between text-[11px] text-slate-400 font-bold mb-1">' +
+                '<span><i class="fa-solid fa-location-dot text-indigo-500 mr-1"></i> จุดกิจกรรมล่าสุดที่ทำ:</span>' +
+                '<span class="text-slate-600 font-mono">' + c.latestTimeStr + '</span>' +
+              '</div>' +
+              '<div class="flex items-center gap-1.5 flex-wrap">' +
+                '<span class="px-2 py-0.5 rounded-md text-[10px] font-extrabold border ' + catClass + '">' + escapeHTML(c.latestActCategory || 'ภารกิจ') + '</span>' +
+                '<span class="font-bold text-slate-800 text-xs sm:text-sm">' + escapeHTML(c.latestActName) + '</span>' +
+              '</div>' +
+            '</div>';
+          } else {
+            carsHtml += '<div class="mt-2.5 p-3 rounded-2xl bg-white/80 border border-slate-200/70 text-slate-500 text-xs font-semibold flex items-center gap-2">' +
+              '<i class="fa-solid fa-hourglass-start text-slate-400"></i>' +
+              '<span>ยังไม่มีประวัติการส่งคำตอบกิจกรรมใดๆ</span>' +
+            '</div>';
+          }
+        } else {
+          // Multiple cars tied
+          carsHtml = '<div class="my-2 space-y-2">';
+          carsHtml += '<div class="text-[11px] font-bold text-slate-500 flex items-center gap-1.5">' +
+            '<i class="fa-solid fa-users text-indigo-500"></i> ' + (isLeader ? 'มีรถผู้นำเท่ากัน ' : 'มีรถท้ายขบวนเท่ากัน ') + cars.length + ' คัน:' +
+          '</div>';
+
+          if (cars.length > 3) {
+            carsHtml += '<div class="flex flex-wrap gap-1.5 p-2.5 rounded-xl bg-white/90 border border-slate-200/80 max-h-32 overflow-y-auto">';
+            cars.forEach(function(c) {
+              carsHtml += '<span class="px-2.5 py-1 rounded-lg text-xs font-black bg-slate-100 text-slate-700 border border-slate-200 flex items-center gap-1">' +
+                '<i class="fa-solid fa-car text-[10px] text-slate-400"></i>' +
+                escapeHTML(c.user.carCode || c.user.username) +
+              '</span>';
+            });
+            carsHtml += '</div>';
+
+            if (count > 0) {
+              carsHtml += '<p class="text-[11px] text-slate-500 mt-1 font-medium">ส่งคำตอบไปแล้วคนละ ' + count + ' ภารกิจ</p>';
+            } else {
+              carsHtml += '<div class="p-2.5 rounded-xl bg-rose-50/80 border border-rose-100 text-rose-700 text-xs font-bold flex items-center gap-1.5 mt-2">' +
+                '<i class="fa-solid fa-circle-exclamation"></i> รถทั้ง ' + cars.length + ' คันนี้ยังไม่เริ่มส่งคำตอบกิจกรรมแรก' +
+              '</div>';
+            }
+          } else {
+            cars.forEach(function(c) {
+              var thaiCol = getCarColorThaiName(c.user.carColor);
+              var colStyle = getCarColorStyle(c.user.carColor);
+              carsHtml += '<div class="p-2.5 rounded-xl bg-white/95 border border-slate-200/90 shadow-xs">' +
+                '<div class="flex items-center justify-between gap-2">' +
+                  '<div class="flex items-center gap-1.5 min-w-0">' +
+                    '<span class="px-2 py-0.5 rounded-md text-xs font-black bg-indigo-50 text-indigo-700 border border-indigo-200">' + escapeHTML(c.user.carCode || c.user.username) + '</span>' +
+                    '<span class="font-bold text-slate-800 text-xs truncate">' + escapeHTML(c.user.name || c.user.username) + '</span>' +
+                    '<span class="px-1.5 py-0.2 rounded text-[9px] font-bold ' + colStyle + '">' + escapeHTML(thaiCol) + '</span>' +
+                  '</div>' +
+                  '<span class="text-[10px] font-mono text-slate-500 whitespace-nowrap">' + (c.latestTimeStr || '-') + '</span>' +
+                '</div>' +
+                (c.latestActName ? ('<div class="text-[11px] text-slate-600 font-semibold mt-1 flex items-center gap-1.5 truncate"><i class="fa-solid fa-location-dot text-[10px] text-indigo-500"></i> ล่าสุด: ' + escapeHTML(c.latestActName) + '</div>') : '<div class="text-[11px] text-slate-400 mt-1">ยังไม่เริ่มส่งคำตอบ</div>') +
+              '</div>';
+            });
+          }
+          carsHtml += '</div>';
+        }
+
+        return '<div class="space-y-2.5">' +
+          '<div class="flex items-center justify-between">' +
+            '<div class="flex items-center gap-2">' +
+              '<div class="w-8 h-8 rounded-xl flex items-center justify-center text-sm shadow-xs ' + headerIconBg + '">' +
+                '<i class="' + headerIcon + '"></i>' +
+              '</div>' +
+              '<span class="font-extrabold text-xs sm:text-sm text-slate-800">' + titleText + '</span>' +
+            '</div>' +
+            '<span class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold border ' + badgeClass + '">' + badgeText + '</span>' +
+          '</div>' +
+
+          carsHtml +
+
+          '<div class="pt-2 border-t border-slate-200/60 mt-auto">' +
+            '<div class="flex items-center justify-between text-xs font-extrabold text-slate-700 mb-1">' +
+              '<span>ความคืบหน้าการส่งคำตอบ:</span>' +
+              '<span>' + count + ' / ' + totalActsCount + ' กิจกรรม (' + pct + '%)</span>' +
+            '</div>' +
+            '<div class="w-full bg-slate-200/80 rounded-full h-2 overflow-hidden">' +
+              '<div class="h-2 rounded-full transition-all duration-500 ' + barColor + '" style="width: ' + pct + '%"></div>' +
+            '</div>' +
+          '</div>' +
+        '</div>';
+      }
+
+      if (leaderCard) {
+        leaderCard.innerHTML = renderCard({ isLeader: true, cars: leaders, count: maxCount });
+      }
+      if (tailCard) {
+        tailCard.innerHTML = renderCard({ isLeader: false, cars: tails, count: minCount });
+      }
+    }
+    window.renderAdminRaceTracker = renderAdminRaceTracker;
 
     function filterUserCategory(cat, skipRender) {
       userCategoryFilter = cat;
