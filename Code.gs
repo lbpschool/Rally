@@ -2393,6 +2393,7 @@ function apiUpdateSelfProfile(username, name, profileUrl, sessionToken) {
 
 /**
  * API: Clear All Submissions (Reset Competition for New Event - Admin Only)
+ * Resets submissions and bonus points, while leaving ALL activities and solution images 100% untouched.
  */
 function apiClearAllSubmissions(sessionToken) {
   const auth = verifyAuth(sessionToken, ['Admin']);
@@ -2400,12 +2401,77 @@ function apiClearAllSubmissions(sessionToken) {
 
   return withLock(function() {
     const ss = getSpreadsheet();
+
+    // 1. Clear Submissions Sheet (keep header row 1)
     const subSheet = getOrCreateSheet(ss, SHEET_NAMES.SUBMISSIONS);
     const lastRow = subSheet.getLastRow();
     if (lastRow > 1) {
       subSheet.getRange(2, 1, lastRow - 1, subSheet.getLastColumn()).clearContent();
     }
-    return { success: true, message: 'ลบประวัติการส่งคำตอบของรถทุกคันเรียบร้อยแล้ว' };
+
+    // 2. Reset Bonus Points of competitors in Users sheet (col 8, index 7)
+    try {
+      const usersSheet = getOrCreateSheet(ss, SHEET_NAMES.USERS);
+      const uData = usersSheet.getDataRange().getValues();
+      let userChanged = false;
+      for (let i = 1; i < uData.length; i++) {
+        if (uData[i][3] === 'User' && Number(uData[i][7] || 0) !== 0) {
+          uData[i][7] = 0;
+          userChanged = true;
+        }
+      }
+      if (userChanged) {
+        usersSheet.getRange(1, 1, uData.length, uData[0].length).setValues(uData);
+      }
+    } catch(uErr) {
+      Logger.log('Reset bonus points error: ' + uErr);
+    }
+
+    // 3. Clear submissions & reset bonus points in RAM cache
+    let updatedUsers = [];
+    try {
+      const shared = getCachedSharedData();
+      if (shared) {
+        shared.submissions = [];
+        if (Array.isArray(shared.users)) {
+          shared.users.forEach(function(u) {
+            if (u && u.role === 'User') u.bonusPoints = 0;
+          });
+          updatedUsers = shared.users;
+        }
+        setCachedSharedData(shared, false);
+      }
+    } catch(cErr) {
+      Logger.log('Clear submissions cache error: ' + cErr);
+    }
+
+    // 4. Push wipe to Firebase Realtime Database (< 0.05s broadcast)
+    try {
+      UrlFetchApp.fetch(FIREBASE_DATABASE_URL + '/live_rally_data/submissions.json', {
+        method: 'put',
+        contentType: 'application/json',
+        payload: JSON.stringify([]),
+        muteHttpExceptions: true
+      });
+      if (updatedUsers.length > 0) {
+        UrlFetchApp.fetch(FIREBASE_DATABASE_URL + '/live_rally_data/users.json', {
+          method: 'put',
+          contentType: 'application/json',
+          payload: JSON.stringify(updatedUsers),
+          muteHttpExceptions: true
+        });
+      }
+      UrlFetchApp.fetch(FIREBASE_DATABASE_URL + '/live_rally_data/timestamp.json', {
+        method: 'put',
+        contentType: 'application/json',
+        payload: JSON.stringify(Date.now()),
+        muteHttpExceptions: true
+      });
+    } catch(fbErr) {
+      Logger.log('Firebase wipe submissions error: ' + fbErr);
+    }
+
+    return { success: true, message: 'ลบประวัติการส่งคำตอบและคะแนนของรถทุกคันเรียบร้อยแล้ว' };
   });
 }
 

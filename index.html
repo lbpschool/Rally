@@ -3269,6 +3269,10 @@
     window.navigateImageModalGallery = navigateImageModalGallery;
 
     function openSolutionGalleryModal(actId, initialIndex) {
+      if (currentUser && currentUser.role !== 'Admin' && isScoresHidden) {
+        Swal.fire('ยังไม่เปิดแสดงเฉลย', 'ภาพเฉลยจะเปิดให้รับชมหลังจากผู้ดูแลระบบเปิดแสดงคะแนนการแข่งขัน', 'info');
+        return;
+      }
       var act = (activitiesData || []).find(function(a) { return a && a.id === actId; });
       if (!act) return;
       var sImages = getActivitySolutionImages(act);
@@ -3791,50 +3795,80 @@
 
       Swal.fire({
         title: 'ยืนยันรีเซ็ตการแข่งขัน?',
-        text: 'การดำเนินการนี้จะทำการลบประวัติคำตอบของรถทุกคันออกทั้งหมด เพื่อให้ผู้แข่งขันเริ่มทำกิจกรรมรอบใหม่!',
+        html: '<div class="text-xs text-slate-600 text-left space-y-2.5 mt-2">' +
+          '<p class="text-slate-600 font-medium">การดำเนินการนี้จะทำการลบประวัติคำตอบและคะแนนของทุกทีมออกทั้งหมด เพื่อเริ่มการแข่งขันรอบใหม่</p>' +
+          '<div class="p-3 bg-emerald-50 rounded-xl border border-emerald-200 text-emerald-800 text-[11px] font-bold space-y-1">' +
+            '<p class="flex items-center gap-1.5"><i class="fa-solid fa-circle-check text-emerald-600"></i> ข้อมูลกิจกรรม, จุด RC, ฐาน, เกมส์คำถาม ทั้งหมดจะไม่ถูกลบ</p>' +
+            '<p class="flex items-center gap-1.5"><i class="fa-solid fa-circle-check text-emerald-600"></i> รูปภาพเฉลยและคำตอบเฉลยทั้งหมดจะคงอยู่ครบ 100%</p>' +
+          '</div>' +
+          '<div class="p-3 bg-rose-50 rounded-xl border border-rose-200 text-rose-800 text-[11px] font-bold space-y-1">' +
+            '<p class="flex items-center gap-1.5"><i class="fa-solid fa-trash-can text-rose-600"></i> ล้างประวัติการส่งคำตอบ (Submissions) ของรถทุกคัน</p>' +
+            '<p class="flex items-center gap-1.5"><i class="fa-solid fa-rotate-left text-rose-600"></i> รีเซ็ตคะแนนพิเศษ (Bonus Points) ของรถทุกคันเป็น 0</p>' +
+          '</div>' +
+          '</div>',
         icon: 'warning',
         showCancelButton: true,
         confirmButtonColor: '#e11d48',
         cancelButtonColor: '#64748b',
-        confirmButtonText: 'ใช่, ลบคำตอบทั้งหมดเริ่มรอบใหม่!',
-        cancelButtonText: 'ยกเลิก'
+        confirmButtonText: '<i class="fa-solid fa-rotate-left mr-1.5"></i> ยืนยันรีเซ็ตการแข่งขัน',
+        cancelButtonText: 'ยกเลิก',
+        customClass: {
+          popup: 'rounded-3xl shadow-2xl'
+        }
       }).then(function(result) {
         if (result.isConfirmed) {
-          showLoading('กำลังล้างข้อมูลประวัติคำตอบของรถทุกคัน...');
-          if (isMockMode) {
-            setTimeout(function() {
-              submissionsData = [];
-              hideLoading();
-              setupNavigation();
-              renderUserDashboard();
-              renderLeaderboard();
-              renderGradingList();
-              renderAnalytics();
-              Swal.fire('รีเซ็ตสำเร็จ!', 'ล้างข้อมูลประวัติคำตอบของรถทุกคันเรียบร้อยแล้ว พร้อมเริ่มการแข่งขันรอบใหม่', 'success');
-            }, 400);
-          } else {
-            if (typeof google !== 'undefined' && google.script && google.script.run) {
-              google.script.run
-                .withSuccessHandler(function(res) {
-                  hideLoading();
-                  if (res.success) {
-                    submissionsData = [];
-                    setupNavigation();
-                    renderUserDashboard();
-                    renderLeaderboard();
-                    renderGradingList();
-                    renderAnalytics();
-                    Swal.fire('รีเซ็ตสำเร็จ!', 'ล้างข้อมูลประวัติคำตอบของรถทุกคันเรียบร้อยแล้ว พร้อมเริ่มการแข่งขันรอบใหม่', 'success');
-                  } else {
-                    Swal.fire('ข้อผิดพลาด', res.message || 'ไม่สามารถล้างข้อมูลได้', 'error');
-                  }
-                })
-                .withFailureHandler(function(err) {
-                  hideLoading();
-                  Swal.fire('ข้อผิดพลาดระบบ', err.message, 'error');
-                })
-                .apiClearAllSubmissions(sessionToken);
+          // 1. Optimistic local wipe (0ms latency)
+          submissionsData = [];
+          if (Array.isArray(usersData)) {
+            usersData.forEach(function(u) {
+              if (u && u.role === 'User') u.bonusPoints = 0;
+            });
+          }
+          saveLocalAppCache();
+
+          // 2. Instant broadcast to Firebase Realtime Database (< 0.05s)
+          try {
+            if (typeof firebase !== 'undefined' && firebase.apps && firebase.apps.length) {
+              var rtdb = firebase.database();
+              rtdb.ref('live_rally_data/submissions').set([]);
+              rtdb.ref('live_rally_data/users').set(usersData);
+              rtdb.ref('live_rally_data/timestamp').set(Date.now());
             }
+          } catch (fbErr) {
+            console.warn('[Firebase] Submissions wipe notice:', fbErr);
+          }
+
+          // 3. Instant UI Re-render
+          setupNavigation();
+          renderUserMissionsGrid();
+          renderUserDashboard();
+          renderLeaderboard();
+          renderGradingList();
+          renderAnalytics();
+          if (typeof renderUserHistoryTable === 'function') renderUserHistoryTable(submissionsData);
+
+          // 4. Instant SweetAlert2 feedback - NO SPINNER DELAY!
+          Swal.fire({
+            icon: 'success',
+            title: 'รีเซ็ตการแข่งขันสำเร็จ!',
+            html: '<p class="text-xs text-slate-600">ล้างประวัติคำตอบและคะแนนของรถทุกคันเรียบร้อยแล้ว<br><span class="text-emerald-600 font-bold mt-1 inline-block">ข้อมูลภารกิจและรูปภาพเฉลยทั้งหมดคงอยู่ครบ 100%</span></p>',
+            timer: 2500,
+            showConfirmButton: false,
+            customClass: {
+              popup: 'rounded-3xl shadow-2xl'
+            }
+          });
+
+          // 5. Asynchronous persistence to Google Sheets in background
+          if (!isMockMode && typeof google !== 'undefined' && google.script && google.script.run) {
+            google.script.run
+              .withSuccessHandler(function(res) {
+                console.log('[RallyApp] Competition reset persisted in Google Sheets successfully');
+              })
+              .withFailureHandler(function(err) {
+                console.warn('[RallyApp] Competition reset background sync notice:', err);
+              })
+              .apiClearAllSubmissions(sessionToken);
           }
         }
       });
@@ -3853,15 +3887,25 @@
         html: '<div class="text-xs text-slate-600 text-left space-y-2 mt-2">' +
           '<p class="font-bold text-rose-600">คำเตือน: คุณกำลังจะลบภารกิจทั้งหมด (' + currentCount + ' รายการ) ออกจากระบบ!</p>' +
           '<p class="text-slate-600">• จุด RC, ฐานกิจกรรม และเกมส์คำถามทั้งหมดจะถูก<strong>ลบทิ้งจนเหลือ 0 รายการ</strong></p>' +
-          '<p class="text-slate-600">• ประวัติการส่งคำตอบและคะแนนของทุกทีมจะถูก<strong>ล้างออกทั้งหมด</strong>เพื่อให้เริ่มจัดกิจกรรมใหม่</p>' +
-          '<p class="text-rose-600 font-bold">• การดำเนินการนี้ไม่สามารถกู้คืนได้!</p>' +
+          '<p class="text-slate-600">• <strong>รูปภาพเฉลยและคำถามทั้งหมดจะถูกลบ</strong></p>' +
+          '<p class="text-amber-800 font-bold">• หากต้องการเพียงเริ่มรอบใหม่ ให้ใช้ปุ่ม "รีเซ็ตการแข่งขัน" แทน</p>' +
+          '<p class="text-slate-700 font-bold pt-1">พิมพ์คำว่า <span class="text-rose-600 font-black">DELETE</span> เพื่อยืนยัน:</p>' +
           '</div>',
+        input: 'text',
+        inputPlaceholder: 'พิมพ์ DELETE เพื่อยืนยัน',
         icon: 'warning',
         showCancelButton: true,
         confirmButtonColor: '#e11d48',
         cancelButtonColor: '#64748b',
         confirmButtonText: '<i class="fa-solid fa-trash-can mr-1"></i> ยืนยันลบทุกภารกิจ',
-        cancelButtonText: 'ยกเลิก'
+        cancelButtonText: 'ยกเลิก',
+        preConfirm: function(inputValue) {
+          if (inputValue !== 'DELETE') {
+            Swal.showValidationMessage('กรุณาพิมพ์ DELETE ให้ถูกต้องเพื่อยืนยัน');
+            return false;
+          }
+          return true;
+        }
       }).then(function(result) {
         if (result.isConfirmed) {
           showLoading('กำลังลบภารกิจทั้งหมดและล้างคะแนนระบบ...');
@@ -4436,7 +4480,7 @@
 
       var adminResetMissionsBtn = document.getElementById('userMissionsAdminResetContainer');
       if (adminResetMissionsBtn) {
-        adminResetMissionsBtn.style.display = (currentUser && currentUser.role === 'Admin') ? 'block' : 'none';
+        adminResetMissionsBtn.style.display = 'none';
       }
     }
 
@@ -5059,7 +5103,7 @@
 
       var adminResetBtn = document.getElementById('userMissionsAdminResetContainer');
       if (adminResetBtn) {
-        adminResetBtn.style.display = (currentUser && currentUser.role === 'Admin') ? 'block' : 'none';
+        adminResetBtn.style.display = 'none';
       }
 
       // Update RC Color Banner in Missions View (แสดงเฉพาะเมื่อดูแท็บ ALL หรือ RC และเป็น User)
@@ -5194,12 +5238,14 @@
           }
 
           var sImages = getActivitySolutionImages(act);
+          var badgeCount = sImages.length > 1 ? ' (' + sImages.length + ' ภาพ)' : '';
+
           if (sImages.length > 0) {
-            var badgeCount = sImages.length > 1 ? ' (' + sImages.length + ' ภาพ)' : '';
+            var adminStatusBadge = !isScoresHidden ? ' (เปิดให้ทุกคนดูแล้ว)' : ' (เฉพาะ Admin)';
             adminSolutionHTML = '<div class="mt-3 pt-3 border-t border-slate-200/80 flex flex-col gap-2">' +
               competitorImagesBtn +
               '<button type="button" onclick="openSolutionGalleryModal(\'' + act.id + '\', 0)" class="w-full py-3 px-3.5 rounded-2xl bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 hover:from-amber-600 hover:to-orange-600 text-white font-black text-xs sm:text-sm shadow-md shadow-amber-500/25 flex items-center justify-center gap-2 transition-all active:scale-95 cursor-pointer">' +
-              '<i class="fa-solid fa-key text-sm"></i> แสดงภาพเฉลย' + badgeCount + ' (เฉพาะ Admin)' +
+              '<i class="fa-solid fa-key text-sm"></i> แสดงภาพเฉลย' + badgeCount + adminStatusBadge +
               '</button>' +
               '<button type="button" onclick="openQuickSolutionModal(\'' + act.id + '\')" class="text-xs sm:text-sm text-amber-700 hover:text-amber-900 font-bold flex items-center justify-center gap-1.5 cursor-pointer py-1">' +
               '<i class="fa-solid fa-images"></i> จัดการภาพเฉลย (' + sImages.length + ' ภาพ)' +
@@ -5213,6 +5259,14 @@
               '</button>' +
               '</div>';
           }
+        }
+
+        // Solution button for all competitors when Admin reveals scores (!isScoresHidden)
+        var userSolutionBtn = '';
+        if (!isScoresHidden && sImages && sImages.length > 0) {
+          userSolutionBtn = '<button type="button" onclick="openSolutionGalleryModal(\'' + act.id + '\', 0)" class="w-full mt-2.5 py-3 px-3.5 rounded-2xl bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 hover:from-amber-600 hover:to-orange-600 text-white font-black text-xs sm:text-sm shadow-md shadow-amber-500/25 flex items-center justify-center gap-2 transition-all active:scale-95 cursor-pointer">' +
+            '<i class="fa-solid fa-key text-sm"></i> แสดงภาพเฉลย' + badgeCount +
+            '</button>';
         }
 
         var cardFooterHTML = '';
@@ -5232,7 +5286,7 @@
                 '<i class="fa-solid fa-lock text-slate-400 text-xs"></i>' +
                 '<span>บันทึกคำตอบแล้ว (ส่งได้เพียง 1 ครั้ง ไม่สามารถแก้ไขได้)</span>' +
               '</div>' +
-              '</div>';
+              '</div>' + userSolutionBtn;
           } else {
             // ยังไม่เคยส่งคำตอบ: แสดงแบบฟอร์มให้ส่ง
             var formHTML = '';
@@ -5264,7 +5318,7 @@
                 '<button type="submit" class="w-full py-3 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 hover:opacity-95 text-white font-black text-sm sm:text-base transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer active:scale-98">' +
                 '<i class="fa-solid fa-cloud-arrow-up text-sm"></i> อัปโหลดภาพส่งเข้าระบบ</button></form>';
             }
-            cardFooterHTML = formHTML;
+            cardFooterHTML = formHTML + userSolutionBtn;
           }
         }
 
