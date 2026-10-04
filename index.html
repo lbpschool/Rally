@@ -8669,6 +8669,23 @@
       var tbody = document.getElementById('adminUsersTableBody');
       if (!tbody) return;
 
+      // Sanitize non-user car colors in-memory
+      var nonUserCleaned = false;
+      (usersData || []).forEach(function(u) {
+        if (u && u.role !== 'User' && u.carColor) {
+          u.carColor = '';
+          nonUserCleaned = true;
+        }
+      });
+      if (nonUserCleaned) {
+        saveLocalAppCache();
+        try {
+          if (typeof firebase !== 'undefined' && firebase.apps && firebase.apps.length) {
+            firebase.database().ref('live_rally_data/users').set(usersData);
+          }
+        } catch(e) {}
+      }
+
       var filtered = (usersData || []).filter(function(u) { return u && u.username && String(u.username).trim(); });
       if (filterText) {
         var q = filterText.toLowerCase();
@@ -8687,6 +8704,10 @@
             ? '<span class="inline-flex items-center justify-center px-3 py-1 rounded-full text-[10px] font-bold bg-blue-100 text-blue-700 border border-blue-200 whitespace-nowrap leading-none">Sub-Admin</span>'
             : '<span class="inline-flex items-center justify-center px-3 py-1 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-700 border border-emerald-200 whitespace-nowrap leading-none">User</span>');
 
+        var carColorBadge = (u.role === 'User' && u.carColor)
+          ? '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-semibold ' + getCarColorStyle(u.carColor) + ' whitespace-nowrap">' + escapeHTML(getCarColorThaiName(u.carColor)) + '</span>'
+          : '';
+
         return '<tr class="hover:bg-slate-50 transition-colors border-b border-slate-100">' +
           '<td class="py-2.5 px-3.5 whitespace-nowrap"><div class="relative group cursor-pointer" onclick="openImageModal(\'' + escapeHTML(u.profileUrl) + '\', \'' + escapeHTML(u.name) + '\')">' +
           '<img src="' + escapeHTML(u.profileUrl) + '" class="w-10 h-10 sm:w-11 sm:h-11 rounded-xl object-cover object-center border-2 border-purple-100 shadow-sm group-hover:scale-105 transition-transform" alt="Avatar">' +
@@ -8703,7 +8724,7 @@
           '</td>' +
           '<td class="py-2.5 px-3.5 whitespace-nowrap">' + roleBadge + '</td>' +
           '<td class="py-2.5 px-3.5 text-slate-700 font-mono text-xs whitespace-nowrap">' + escapeHTML(u.carCode || '-') + '</td>' +
-          '<td class="py-2.5 px-3.5 text-center whitespace-nowrap"><span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-semibold ' + getCarColorStyle(u.carColor) + ' whitespace-nowrap">' + escapeHTML(getCarColorThaiName(u.carColor)) + '</span></td>' +
+          '<td class="py-2.5 px-3.5 text-center whitespace-nowrap">' + carColorBadge + '</td>' +
           '<td class="py-2.5 px-3.5 text-right whitespace-nowrap">' +(u.role === 'User' ? '<button onclick="openSwapCarModal(\'' + escapeHTML(u.username) + '\')" class="px-2.5 py-1 rounded-lg bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-600 hover:text-white transition-all text-[11px] font-semibold shadow-sm mr-1 cursor-pointer" title="สลับเบอร์รถ / จับฉลาก"><i class="fa-solid fa-arrows-rotate"></i> สลับเบอร์</button>' : '') +'<button onclick="editUser(\'' + u.username + '\')" class="px-2.5 py-1 rounded-lg bg-purple-50 text-purple-700 border border-purple-200 hover:bg-purple-600 hover:text-white transition-all text-[11px] font-semibold shadow-sm mr-1 cursor-pointer"><i class="fa-solid fa-pen"></i> แก้ไข</button><button onclick="deleteUser(\'' + u.username + '\')" class="px-2.5 py-1 rounded-lg bg-rose-50 text-rose-600 border border-rose-200 hover:bg-rose-600 hover:text-white transition-all text-[11px] font-semibold shadow-sm cursor-pointer"><i class="fa-solid fa-trash"></i> ลบ</button></td>' +
           '</tr>';
       }).join('');
@@ -9095,7 +9116,9 @@
       var password = document.getElementById('userFormPassword').value.trim();
       var name = document.getElementById('userFormName').value.trim();
       var role = document.getElementById('userFormRole').value;
-      var carColor = document.getElementById('userFormCarColor').value;
+      var carColor = (role === 'User')
+        ? (document.getElementById('userFormCarColor') ? document.getElementById('userFormCarColor').value.trim() : 'Red')
+        : '';
       var carCode = document.getElementById('userFormCarCode').value.trim();
 
       var members = [];

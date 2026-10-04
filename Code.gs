@@ -589,9 +589,19 @@ function fetchSharedDataFromSheets() {
   const usersSheet = getOrCreateSheet(ss, SHEET_NAMES.USERS);
   const usersRaw = usersSheet.getDataRange().getValues();
   const users = [];
+  let usersSheetDirty = false;
   for (let i = 1; i < usersRaw.length; i++) {
     const rawUsername = String(usersRaw[i][0] || '').trim();
     if (!rawUsername) continue;
+    const uRole = String(usersRaw[i][3] || '').trim();
+    let uCarColor = String(usersRaw[i][5] || '').trim();
+    if (uRole !== 'User') {
+      uCarColor = '';
+      if (String(usersRaw[i][5] || '').trim() !== '') {
+        usersRaw[i][5] = '';
+        usersSheetDirty = true;
+      }
+    }
     let membersList = [];
     try {
       membersList = JSON.parse(usersRaw[i][8] || '[]');
@@ -601,13 +611,20 @@ function fetchSharedDataFromSheets() {
     users.push({
       username: rawUsername,
       name: usersRaw[i][2],
-      role: usersRaw[i][3],
+      role: uRole,
       carCode: usersRaw[i][4],
-      carColor: usersRaw[i][5],
+      carColor: uCarColor,
       profileUrl: usersRaw[i][6],
       bonusPoints: Number(usersRaw[i][7]) || 0,
       members: Array.isArray(membersList) ? membersList : []
     });
+  }
+  if (usersSheetDirty) {
+    try {
+      usersSheet.getRange(1, 1, usersRaw.length, usersRaw[0].length).setValues(usersRaw);
+    } catch(e) {
+      Logger.log('fetchSharedDataFromSheets clean users error: ' + e);
+    }
   }
 
   // 2. Activities
@@ -2149,13 +2166,17 @@ function apiSaveUser(userData, sessionToken) {
       ? userData.members
       : existingMembers;
 
+    const finalCarColor = (userData.role === 'User')
+      ? (userData.carColor || 'Red')
+      : '';
+
     const rowContent = [
       userData.username,
       finalPassword,
       userData.name,
       userData.role,
       userData.carCode || '',
-      userData.carColor || 'Red',
+      finalCarColor,
       profileUrl,
       Number(userData.bonusPoints) || 0,
       JSON.stringify(finalMembers || [])
@@ -2738,6 +2759,15 @@ function apiAutoAssignCarColors(sessionToken, assignments, colorSequence) {
         }
         count++;
       });
+    }
+
+    // Ensure all non-User accounts (Admin, Sub-Admin) have blank carColor
+    for (let i = 1; i < usersData.length; i++) {
+      const role = String(usersData[i][3] || '').trim();
+      if (role !== 'User' && String(usersData[i][5] || '').trim() !== '') {
+        usersData[i][5] = '';
+        changed = true;
+      }
     }
 
     if (changed) {
