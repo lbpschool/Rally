@@ -588,7 +588,7 @@ function parseSolutionImages(rawVal) {
       if (Array.isArray(parsed)) return parsed.filter(Boolean);
     } catch(e) {}
   }
-  if (str.indexOf(',') !== -1 && !str.startsWith('http')) {
+  if (str.indexOf(',') !== -1) {
     return str.split(',').map(function(s){ return s.trim(); }).filter(Boolean);
   }
   return [str];
@@ -1996,15 +1996,26 @@ function updateActivitySolutionImagesInCache(activityId, currentImgs) {
       }
     }
     setCachedSharedData(shared);
+    syncToFirebase(shared);
   } catch (e) {
     Logger.log('updateActivitySolutionImagesInCache error: ' + e);
   }
 }
 
 /**
- * API: Quick Upload Solution Image(s) for Activity (Admin) - Supports single or multiple images
+ * API: Quick Upload Solution Image(s) for Activity (Admin) - Supports mode: 'replace' or 'append'
  */
-function apiUploadSolutionImage(activityId, imageFileObj, sessionToken) {
+function apiUploadSolutionImage(activityId, imageFileObj, modeOrToken, optionalToken) {
+  let mode = 'replace';
+  let sessionToken = '';
+  if (optionalToken) {
+    mode = modeOrToken || 'replace';
+    sessionToken = optionalToken;
+  } else {
+    sessionToken = modeOrToken || '';
+    mode = 'append';
+  }
+
   const auth = verifyAuth(sessionToken, ['Admin']);
   if (!auth.success) return auth;
 
@@ -2059,13 +2070,18 @@ function apiUploadSolutionImage(activityId, imageFileObj, sessionToken) {
     }
 
     if (foundRow > 0) {
-      const existingRaw = actSheet.getRange(foundRow, 9).getValue();
-      const currentImgs = parseSolutionImages(existingRaw);
+      let currentImgs = [];
+      if (mode === 'replace') {
+        currentImgs = uploadedUrls.slice();
+      } else {
+        const existingRaw = actSheet.getRange(foundRow, 9).getValue();
+        currentImgs = parseSolutionImages(existingRaw);
+        uploadedUrls.forEach(function(u) {
+          if (currentImgs.indexOf(u) === -1) currentImgs.push(u);
+        });
+      }
 
-      // Append newly uploaded images without duplicate
-      uploadedUrls.forEach(function(u) {
-        if (currentImgs.indexOf(u) === -1) currentImgs.push(u);
-      });
+      currentImgs = Array.from(new Set(currentImgs.filter(Boolean)));
 
       const valToSave = (currentImgs.length === 0) ? '' : (currentImgs.length === 1 ? currentImgs[0] : JSON.stringify(currentImgs));
       actSheet.getRange(foundRow, 9).setValue(valToSave);
@@ -2079,6 +2095,43 @@ function apiUploadSolutionImage(activityId, imageFileObj, sessionToken) {
         activityId: activityId, 
         solutionImages: currentImgs,
         solutionImageUrl: currentImgs[0] || ''
+      };
+    } else {
+      return { success: false, message: 'ไม่พบรหัสภารกิจ ' + activityId };
+    }
+  });
+}
+
+/**
+ * API: Clear All Solution Images from an Activity (Admin)
+ */
+function apiClearAllSolutionImages(activityId, sessionToken) {
+  const auth = verifyAuth(sessionToken, ['Admin']);
+  if (!auth.success) return auth;
+
+  return withLock(function() {
+    const ss = getSpreadsheet();
+    const actSheet = getOrCreateSheet(ss, SHEET_NAMES.ACTIVITIES);
+    const actData = actSheet.getDataRange().getValues();
+
+    let foundRow = -1;
+    for (let i = 1; i < actData.length; i++) {
+      if (actData[i][0] === activityId) {
+        foundRow = i + 1;
+        break;
+      }
+    }
+
+    if (foundRow > 0) {
+      actSheet.getRange(foundRow, 9).setValue('');
+      updateActivitySolutionImagesInCache(activityId, []);
+
+      return {
+        success: true,
+        message: 'ลบภาพเฉลยทั้งหมดเรียบร้อยแล้ว',
+        activityId: activityId,
+        solutionImages: [],
+        solutionImageUrl: ''
       };
     } else {
       return { success: false, message: 'ไม่พบรหัสภารกิจ ' + activityId };
