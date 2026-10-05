@@ -1728,11 +1728,37 @@ function apiSubmitAnswer(username, activityId, answerText, imageFileObj, session
     });
 
     try {
-      invalidateGlobalCache();
-      const freshShared = fetchSharedDataFromSheets();
-      syncToFirebase(freshShared);
+      // Direct Firebase update for this submission to avoid expensive full-sheet reloads
+      const subSafeKey = (String(username).trim().toLowerCase() + '___' + String(activityId).trim()).replace(/[^a-zA-Z0-9_-]/g, '_');
+      const newSubData = {
+        id: subId,
+        timestamp: timestamp,
+        username: username,
+        activityId: activityId,
+        category: targetAct.category,
+        carColor: userColor,
+        answerText: answerText || '',
+        imageUrl: uploadedImageUrl,
+        fileId: uploadedFileId,
+        status: status,
+        score: score,
+        judgeNotes: judgeNotes,
+        judgeUsername: status === 'passed' ? 'System' : ''
+      };
+      UrlFetchApp.fetch(FIREBASE_DATABASE_URL + '/live_rally_data/submissions/' + subSafeKey + '.json', {
+        method: 'put',
+        contentType: 'application/json',
+        payload: JSON.stringify(newSubData),
+        muteHttpExceptions: true
+      });
+      UrlFetchApp.fetch(FIREBASE_DATABASE_URL + '/live_rally_data/timestamp.json', {
+        method: 'put',
+        contentType: 'application/json',
+        payload: JSON.stringify(Date.now()),
+        muteHttpExceptions: true
+      });
     } catch (e) {
-      Logger.log('apiSubmitAnswer syncToFirebase error: ' + e);
+      Logger.log('apiSubmitAnswer direct sync error: ' + e);
     }
   }
 

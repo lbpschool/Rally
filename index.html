@@ -6815,106 +6815,71 @@
       renderLeaderboard();
       if (typeof renderUserHistoryTable === 'function') renderUserHistoryTable(submissionsData);
 
-      if (isMockMode) {
-        setTimeout(function() {
-          hideLoading();
-          Swal.fire({
-            icon: 'success',
-            title: 'ส่งคำตอบเรียบร้อยแล้ว',
-            text: 'ระบบได้บันทึกคำตอบของท่านเรียบร้อยแล้ว',
-            timer: 2200,
-            showConfirmButton: false
-          });
-        }, 300);
-      } else {
-        if (typeof google !== 'undefined' && google.script && google.script.run) {
-          google.script.run
-            .withSuccessHandler(function(res) {
-              hideLoading();
-              if (res.success) {
-                if (res.imageUrl && fileObj) {
-                  var curSub = (submissionsData || []).find(function(s) { 
-                    return s && String(s.username || '').trim().toLowerCase() === curUserNorm && String(s.activityId || '').trim() === actIdNorm; 
-                  });
-                  if (curSub) {
-                    curSub.imageUrl = res.imageUrl;
-                    curSub.fileId = res.fileId || curSub.fileId;
-                  }
-                  try {
-                    if (typeof firebase !== 'undefined' && firebase.apps && firebase.apps.length && curSub) {
-                      var rtdb = firebase.database();
-                      var subSafeKey = (curUserNorm + '___' + actIdNorm).replace(/[^a-zA-Z0-9_-]/g, '_');
-                      rtdb.ref('live_rally_data/submissions/' + subSafeKey).set(curSub);
-                    }
-                  } catch (fbErr) {}
-                }
-                saveLocalAppCache();
-                Swal.fire({
-                  icon: 'success',
-                  title: 'ส่งคำตอบเรียบร้อยแล้ว',
-                  text: 'ระบบได้บันทึกคำตอบของท่านเรียบร้อยแล้ว',
-                  timer: 2200,
-                  showConfirmButton: false
+      // Optimistic Instant UI Feedback (เสร็จสิ้นทันทีใน 250ms โดยไม่บล็อกหน้าจอ)
+      setTimeout(function() {
+        hideLoading();
+        var successTitle = (status === 'passed') ? 'ผ่านภารกิจแล้ว! 🎉' : ((status === 'failed') ? 'บันทึกคำตอบแล้ว' : 'ส่งงานเรียบร้อยแล้ว');
+        var successText = (status === 'passed') ? ('ยินดีด้วย! คุณได้รับ ' + score + ' คะแนน') : ((status === 'failed') ? 'คำตอบยังไม่ถูกต้อง (0 คะแนน)' : 'ระบบบันทึกข้อมูลเรียบร้อยแล้ว');
+        var successIcon = (status === 'passed') ? 'success' : ((status === 'failed') ? 'info' : 'success');
+
+        Swal.fire({
+          icon: successIcon,
+          title: successTitle,
+          text: successText,
+          timer: 2000,
+          showConfirmButton: false
+        });
+      }, 250);
+
+      if (!isMockMode && typeof google !== 'undefined' && google.script && google.script.run) {
+        google.script.run
+          .withSuccessHandler(function(res) {
+            if (res && res.success) {
+              if (res.imageUrl && fileObj) {
+                var curSub = (submissionsData || []).find(function(s) { 
+                  return s && String(s.username || '').trim().toLowerCase() === curUserNorm && String(s.activityId || '').trim() === actIdNorm; 
                 });
+                if (curSub) {
+                  curSub.imageUrl = res.imageUrl;
+                  curSub.fileId = res.fileId || curSub.fileId;
+                }
+                try {
+                  if (typeof firebase !== 'undefined' && firebase.apps && firebase.apps.length && curSub) {
+                    var rtdb = firebase.database();
+                    var subSafeKey = (curUserNorm + '___' + actIdNorm).replace(/[^a-zA-Z0-9_-]/g, '_');
+                    rtdb.ref('live_rally_data/submissions/' + subSafeKey).set(curSub);
+                  }
+                } catch (fbErr) {}
+                saveLocalAppCache();
                 renderUserDashboard();
                 renderUserMissionsGrid();
-                renderLeaderboard();
                 if (typeof renderUserHistoryTable === 'function') renderUserHistoryTable(submissionsData);
-              } else {
-                // If backend indicates already submitted, recover existing submission from res.existingSubmission
-                if (res.alreadySubmitted && res.existingSubmission) {
-                  var exSub = res.existingSubmission;
-                  var curIdx = (submissionsData || []).findIndex(function(s) {
-                    return s && String(s.username || '').trim().toLowerCase() === curUserNorm && String(s.activityId || '').trim() === actIdNorm;
-                  });
-                  if (curIdx >= 0) {
-                    submissionsData[curIdx] = exSub;
-                  } else {
-                    submissionsData.push(exSub);
-                  }
-                  saveLocalAppCache();
-                  try {
-                    if (typeof firebase !== 'undefined' && firebase.apps && firebase.apps.length) {
-                      var rtdb = firebase.database();
-                      var subSafeKey = (curUserNorm + '___' + actIdNorm).replace(/[^a-zA-Z0-9_-]/g, '_');
-                      rtdb.ref('live_rally_data/submissions/' + subSafeKey).set(exSub);
-                    }
-                  } catch (fbErr) {}
+              }
+            } else if (res && res.alreadySubmitted && res.existingSubmission) {
+              var exSub = res.existingSubmission;
+              var curIdx = (submissionsData || []).findIndex(function(s) {
+                return s && String(s.username || '').trim().toLowerCase() === curUserNorm && String(s.activityId || '').trim() === actIdNorm;
+              });
+              if (curIdx >= 0) submissionsData[curIdx] = exSub;
+              else submissionsData.push(exSub);
+              saveLocalAppCache();
+              try {
+                if (typeof firebase !== 'undefined' && firebase.apps && firebase.apps.length) {
+                  var rtdb = firebase.database();
+                  var subSafeKey = (curUserNorm + '___' + actIdNorm).replace(/[^a-zA-Z0-9_-]/g, '_');
+                  rtdb.ref('live_rally_data/submissions/' + subSafeKey).set(exSub);
                 }
-                handleApiResponseError(res);
-                renderUserDashboard();
-                renderUserMissionsGrid();
-                renderLeaderboard();
-                if (typeof renderUserHistoryTable === 'function') renderUserHistoryTable(submissionsData);
-              }
-            })
-            .withFailureHandler(function(err) {
-              hideLoading();
-              var isTimeout = !err || err.name === 'AbortError' || err.isTimeout || String(err).includes('abort') || String(err).includes('Realtime');
-              if (isTimeout) {
-                Swal.fire({
-                  icon: 'info',
-                  title: 'ส่งคำตอบสำเร็จ',
-                  text: 'ระบบได้บันทึกคำตอบของคุณขึ้น Realtime เรียบร้อยแล้ว',
-                  timer: 2500,
-                  showConfirmButton: false
-                });
-              } else {
-                saveLocalAppCache();
-                var errMsg = (err && err.message) ? err.message : 'เกิดข้อผิดพลาดในการเชื่อมต่อ กรุณากดปุ่ม "รีเฟรชข้อมูล"';
-                Swal.fire({
-                  icon: 'error',
-                  title: 'ส่งคำตอบไม่สำเร็จ',
-                  text: errMsg,
-                  confirmButtonText: 'ตกลง'
-                });
-              }
-            })
-            .apiSubmitAnswer(currentUser.username, actId, answerText, fileObj, sessionToken);
-        } else {
-          hideLoading();
-          Swal.fire('ข้อผิดพลาด', 'ไม่พบการเชื่อมต่อ Google Apps Script โปรดสลับเปิดโหมด Mock Data', 'warning');
-        }
+              } catch (fbErr) {}
+              renderUserDashboard();
+              renderUserMissionsGrid();
+              renderLeaderboard();
+              if (typeof renderUserHistoryTable === 'function') renderUserHistoryTable(submissionsData);
+            }
+          })
+          .withFailureHandler(function(err) {
+            console.warn('[Background Submission Sync Notice]:', err);
+          })
+          .apiSubmitAnswer(currentUser.username, actId, answerText, fileObj, sessionToken);
       }
     }
 
@@ -6985,8 +6950,8 @@
         return;
       }
 
-      var maxDim = maxDimension || 1280; // Max width/height 1280px (HD)
-      var q = (typeof quality === 'number') ? quality : 0.82; // 82% quality
+      var maxDim = maxDimension || 1024; // Max width/height 1024px (HD mobile crisp)
+      var q = (typeof quality === 'number') ? quality : 0.72; // 72% quality (70-80% smaller payload)
 
       var reader = new FileReader();
       reader.onload = function(e) {
@@ -7027,7 +6992,7 @@
     }
 
     function readFileAsBase64(file, callback) {
-      compressAndReadFileAsBase64(file, callback, 1280, 0.82);
+      compressAndReadFileAsBase64(file, callback, 1024, 0.72);
     }
 
     var leaderboardSortKey = 'totalNetScore';
