@@ -1665,10 +1665,29 @@ function apiSubmitAnswer(username, activityId, answerText, imageFileObj, session
   const result = withLock(function() {
     const subSheet = getOrCreateSheet(ss, SHEET_NAMES.SUBMISSIONS);
     const subData = subSheet.getDataRange().getValues();
+    const uNorm = String(username || '').trim().toLowerCase();
+    const aNorm = String(activityId || '').trim();
+
     for (let i = 1; i < subData.length; i++) {
-      if (subData[i][2] === username && subData[i][3] === activityId) {
+      if (String(subData[i][2] || '').trim().toLowerCase() === uNorm && String(subData[i][3] || '').trim() === aNorm) {
         return {
           success: false,
+          alreadySubmitted: true,
+          existingSubmission: {
+            id: String(subData[i][0] || ''),
+            timestamp: String(subData[i][1] || ''),
+            username: String(subData[i][2] || ''),
+            activityId: String(subData[i][3] || ''),
+            category: String(subData[i][4] || ''),
+            carColor: String(subData[i][5] || ''),
+            answerText: String(subData[i][6] || ''),
+            imageUrl: String(subData[i][7] || ''),
+            fileId: String(subData[i][8] || ''),
+            status: String(subData[i][9] || 'pending'),
+            score: Number(subData[i][10]) || 0,
+            judgeNotes: String(subData[i][11] || ''),
+            judgeUsername: String(subData[i][12] || '')
+          },
           message: 'ท่านได้ส่งคำตอบกิจกรรมนี้เรียบร้อยแล้ว (ระบบอนุญาตให้ส่งได้เพียง 1 ครั้ง)'
         };
       }
@@ -1703,6 +1722,14 @@ function apiSubmitAnswer(username, activityId, answerText, imageFileObj, session
       judgeNotes: judgeNotes,
       judgeUsername: status === 'passed' ? 'System' : ''
     });
+
+    try {
+      invalidateGlobalCache();
+      const freshShared = fetchSharedDataFromSheets();
+      syncToFirebase(freshShared);
+    } catch (e) {
+      Logger.log('apiSubmitAnswer syncToFirebase error: ' + e);
+    }
   }
 
   return result;

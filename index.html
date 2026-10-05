@@ -2562,10 +2562,10 @@
     // Instant Local App Cache (Stale-While-Revalidate for 0ms First Paint)
     function saveLocalAppCache() {
       try {
-        if (usersData && usersData.length) safeSetStorage('rally_cache_users', JSON.stringify(usersData));
-        if (activitiesData && activitiesData.length) safeSetStorage('rally_cache_activities', JSON.stringify(activitiesData));
-        if (submissionsData && submissionsData.length) safeSetStorage('rally_cache_submissions', JSON.stringify(submissionsData));
-        if (votesData && votesData.length) safeSetStorage('rally_cache_votes', JSON.stringify(votesData));
+        if (Array.isArray(usersData)) safeSetStorage('rally_cache_users', JSON.stringify(usersData));
+        if (Array.isArray(activitiesData)) safeSetStorage('rally_cache_activities', JSON.stringify(activitiesData));
+        if (Array.isArray(submissionsData)) safeSetStorage('rally_cache_submissions', JSON.stringify(submissionsData));
+        if (Array.isArray(votesData)) safeSetStorage('rally_cache_votes', JSON.stringify(votesData));
       } catch (e) {
         console.warn('[Cache] Error saving local cache:', e);
       }
@@ -2623,8 +2623,16 @@
 
     // Submissions Deduplication & Integrity Helper
     function setSubmissionsDataClean(rawList) {
+      var existingMySubs = [];
+      if (currentUser && Array.isArray(submissionsData)) {
+        var myU = String(currentUser.username || '').trim().toLowerCase();
+        existingMySubs = submissionsData.filter(function(s) {
+          return s && String(s.username || '').trim().toLowerCase() === myU;
+        });
+      }
+
       if (!Array.isArray(rawList)) {
-        submissionsData = [];
+        submissionsData = existingMySubs;
         return;
       }
       var map = {};
@@ -2641,6 +2649,17 @@
           map[s.id || ('temp_' + Math.random())] = s;
         }
       });
+
+      // Retain currentUser's submitted answer if not yet included in incoming rawList (protects against refresh during GAS sheet writing)
+      existingMySubs.forEach(function(mySub) {
+        var u = String(mySub.username || '').trim().toLowerCase();
+        var a = String(mySub.activityId || '').trim();
+        var k = u + '___' + a;
+        if (k && !map[k]) {
+          map[k] = mySub;
+        }
+      });
+
       submissionsData = Object.values(map);
     }
     window.setSubmissionsDataClean = setSubmissionsDataClean;
@@ -5198,7 +5217,10 @@
 
       var rcDone = 0, baseDone = 0, quizDone = 0;
       if (currentUser && currentUser.role === 'User') {
-        var userSubs = (submissionsData || []).filter(function(s) { return s && s.username === currentUser.username; });
+        var myUserLower = String(currentUser.username || '').trim().toLowerCase();
+        var userSubs = (submissionsData || []).filter(function(s) { 
+          return s && String(s.username || '').trim().toLowerCase() === myUserLower; 
+        });
         var userRcMap = {}, userBaseMap = {}, userQuizMap = {};
         userSubs.forEach(function(s) {
           var act = validActs.find(function(a) { return a.id === s.activityId; });
@@ -5759,26 +5781,29 @@
 
       container.innerHTML = filtered.map(function(act) {
         if (!act || !act.id) return '';
-        var sub = (submissionsData || []).find(function(s) { return s && s.username === currentUser.username && s.activityId === act.id; });
+        var myUserNorm = String((currentUser && currentUser.username) || '').trim().toLowerCase();
+        var actIdNorm = String(act.id || '').trim();
+        var sub = (submissionsData || []).find(function(s) { 
+          return s && String(s.username || '').trim().toLowerCase() === myUserNorm && String(s.activityId || '').trim() === actIdNorm; 
+        });
         
+        var shouldHide = isScoresHidden && (currentUser && currentUser.role !== 'Admin');
+
         var statusBadge = '';
         if (!currentUser || currentUser.role !== 'Admin') {
-          statusBadge = '<span class="px-3 py-1 rounded-full text-xs sm:text-sm font-bold bg-slate-100 text-slate-600 border border-slate-200">ยังไม่ส่งงาน</span>';
-          if (sub) {
-            if (sub.status === 'passed') {
-              if (currentUser && currentUser.role === 'User') {
-                statusBadge = '';
-              } else {
-                statusBadge = '<span class="px-3 py-1 rounded-full text-xs sm:text-sm font-bold bg-emerald-100 text-emerald-700 border border-emerald-200"><i class="fa-solid fa-check mr-1"></i>ผ่าน</span>';
-              }
-            } else if (sub.status === 'failed') {
-              if (currentUser && currentUser.role === 'User') {
-                statusBadge = '';
-              } else {
-                statusBadge = '<span class="px-3 py-1 rounded-full text-xs sm:text-sm font-bold bg-rose-100 text-rose-700 border border-rose-200"><i class="fa-solid fa-xmark mr-1"></i>ไม่ผ่าน</span>';
-              }
+          if (!sub) {
+            statusBadge = '<span class="px-3 py-1 rounded-full text-xs sm:text-sm font-bold bg-slate-100 text-slate-600 border border-slate-200">ยังไม่ส่งงาน</span>';
+          } else {
+            if (shouldHide) {
+              statusBadge = '<span class="px-3 py-1 rounded-full text-xs sm:text-sm font-bold bg-blue-100 text-blue-700 border border-blue-200"><i class="fa-solid fa-circle-check mr-1"></i>ส่งคำตอบแล้ว</span>';
             } else {
-              statusBadge = '<span class="px-3 py-1 rounded-full text-xs sm:text-sm font-bold bg-amber-100 text-amber-800 border border-amber-200"><i class="fa-solid fa-hourglass-half mr-1"></i>รอตรวจคะแนน</span>';
+              if (sub.status === 'passed') {
+                statusBadge = '<span class="px-3 py-1 rounded-full text-xs sm:text-sm font-bold bg-emerald-100 text-emerald-700 border border-emerald-200"><i class="fa-solid fa-check mr-1"></i>ผ่าน</span>';
+              } else if (sub.status === 'failed') {
+                statusBadge = '<span class="px-3 py-1 rounded-full text-xs sm:text-sm font-bold bg-rose-100 text-rose-700 border border-rose-200"><i class="fa-solid fa-xmark mr-1"></i>ไม่ผ่าน</span>';
+              } else {
+                statusBadge = '<span class="px-3 py-1 rounded-full text-xs sm:text-sm font-bold bg-amber-100 text-amber-800 border border-amber-200"><i class="fa-solid fa-hourglass-half mr-1"></i>รอตรวจคะแนน</span>';
+              }
             }
           }
         }
@@ -6096,9 +6121,12 @@
         userScoreHeader +
         '</tr>';
 
-      var displaySubmissions = submissions;
-      if (isUser) {
-        displaySubmissions = submissions.filter(function(s) { return s.username === currentUser.username; });
+      var displaySubmissions = submissions || [];
+      if (isUser && currentUser) {
+        var myUserLower = String(currentUser.username || '').trim().toLowerCase();
+        displaySubmissions = (submissions || []).filter(function(s) { 
+          return s && String(s.username || '').trim().toLowerCase() === myUserLower; 
+        });
       }
 
       if (displaySubmissions.length === 0) {
@@ -6107,8 +6135,8 @@
       }
 
       tbody.innerHTML = displaySubmissions.map(function(s) {
-        var act = (activitiesData || []).find(function(a) { return a && a.id === s.activityId; }) || {};
-        var userObj = (usersData || []).find(function(u) { return u && u.username === s.username; }) || {};
+        var act = (activitiesData || []).find(function(a) { return a && String(a.id || '').trim() === String(s.activityId || '').trim(); }) || {};
+        var userObj = (usersData || []).find(function(u) { return u && String(u.username || '').trim().toLowerCase() === String(s.username || '').trim().toLowerCase(); }) || {};
 
         var resultTag = '';
         var scoreTag = '';
@@ -6486,7 +6514,11 @@
         notes = 'ส่งคำตอบแล้ว รอการตรวจจากกรรมการ';
       }
 
-      var existingIndex = submissionsData.findIndex(function(s) { return s.username === currentUser.username && s.activityId === actId; });
+      var curUserNorm = String((currentUser && currentUser.username) || '').trim().toLowerCase();
+      var actIdNorm = String(actId || '').trim();
+      var existingIndex = (submissionsData || []).findIndex(function(s) { 
+        return s && String(s.username || '').trim().toLowerCase() === curUserNorm && String(s.activityId || '').trim() === actIdNorm; 
+      });
       var newSub = {
         id: existingIndex >= 0 ? submissionsData[existingIndex].id : ('SUB-' + Date.now()),
         timestamp: new Date().toISOString(),
@@ -6505,6 +6537,20 @@
 
       if (existingIndex >= 0) submissionsData[existingIndex] = newSub;
       else submissionsData.push(newSub);
+
+      saveLocalAppCache();
+
+      // Immediate direct write to Firebase Realtime Database
+      try {
+        if (typeof firebase !== 'undefined' && firebase.apps && firebase.apps.length) {
+          var rtdb = firebase.database();
+          var subSafeKey = (curUserNorm + '___' + actIdNorm).replace(/[^a-zA-Z0-9_-]/g, '_');
+          rtdb.ref('live_rally_data/submissions/' + subSafeKey).set(newSub);
+          rtdb.ref('live_rally_data/timestamp').set(Date.now());
+        }
+      } catch (fbErr) {
+        console.warn('[Firebase] Immediate direct submission write notice:', fbErr);
+      }
 
       renderUserDashboard();
       renderUserMissionsGrid();
@@ -6527,12 +6573,22 @@
               hideLoading();
               if (res.success) {
                 if (res.imageUrl && fileObj) {
-                  var curSub = (submissionsData || []).find(function(s) { return s && s.username === currentUser.username && s.activityId === actId; });
+                  var curSub = (submissionsData || []).find(function(s) { 
+                    return s && String(s.username || '').trim().toLowerCase() === curUserNorm && String(s.activityId || '').trim() === actIdNorm; 
+                  });
                   if (curSub) {
                     curSub.imageUrl = res.imageUrl;
                     curSub.fileId = res.fileId || curSub.fileId;
                   }
+                  try {
+                    if (typeof firebase !== 'undefined' && firebase.apps && firebase.apps.length && curSub) {
+                      var rtdb = firebase.database();
+                      var subSafeKey = (curUserNorm + '___' + actIdNorm).replace(/[^a-zA-Z0-9_-]/g, '_');
+                      rtdb.ref('live_rally_data/submissions/' + subSafeKey).set(curSub);
+                    }
+                  } catch (fbErr) {}
                 }
+                saveLocalAppCache();
                 Swal.fire({
                   icon: 'success',
                   title: 'ส่งคำตอบเรียบร้อยแล้ว',
@@ -6540,9 +6596,29 @@
                   timer: 2200,
                   showConfirmButton: false
                 });
-                // ไม่ต้องสั่ง loadAppData() ทั้งระบบซ้ำ เพราะหน้าเว็บทำการอัปเดตสถานะและคะแนนในเครื่องทันทีแล้ว!
+                renderUserDashboard();
+                renderUserMissionsGrid();
               } else {
-                // หาก backend แจ้งว่าเคยส่งแล้วหรือมี error
+                // If backend indicates already submitted, recover existing submission from res.existingSubmission
+                if (res.alreadySubmitted && res.existingSubmission) {
+                  var exSub = res.existingSubmission;
+                  var curIdx = (submissionsData || []).findIndex(function(s) {
+                    return s && String(s.username || '').trim().toLowerCase() === curUserNorm && String(s.activityId || '').trim() === actIdNorm;
+                  });
+                  if (curIdx >= 0) {
+                    submissionsData[curIdx] = exSub;
+                  } else {
+                    submissionsData.push(exSub);
+                  }
+                  saveLocalAppCache();
+                  try {
+                    if (typeof firebase !== 'undefined' && firebase.apps && firebase.apps.length) {
+                      var rtdb = firebase.database();
+                      var subSafeKey = (curUserNorm + '___' + actIdNorm).replace(/[^a-zA-Z0-9_-]/g, '_');
+                      rtdb.ref('live_rally_data/submissions/' + subSafeKey).set(exSub);
+                    }
+                  } catch (fbErr) {}
+                }
                 handleApiResponseError(res);
                 renderUserDashboard();
                 renderUserMissionsGrid();
@@ -6560,9 +6636,8 @@
                   showConfirmButton: false
                 });
               } else {
-                // หากส่งไม่สำเร็จเนื่องจากเน็ตหลุด ให้ดึงข้อมูลล่าสุดจากเซิร์ฟเวอร์เพื่อคืนค่าฟอร์ม (ผู้เล่นจะได้กดส่งใหม่ได้ทันที)
-                loadAppData(true);
-                var errMsg = (err && err.message) ? err.message : 'อินเตอร์เน็ตของคุณขาดหาย กรุณาส่งซ้ำอีกครั้ง หรือกดปุ่ม "รีเฟรชข้อมูล"';
+                saveLocalAppCache();
+                var errMsg = (err && err.message) ? err.message : 'เกิดข้อผิดพลาดในการเชื่อมต่อ กรุณากดปุ่ม "รีเฟรชข้อมูล"';
                 Swal.fire({
                   icon: 'error',
                   title: 'ส่งคำตอบไม่สำเร็จ',
@@ -6584,8 +6659,10 @@
       if (!ensureAuthenticated()) return;
 
       // ตรวจสอบว่าเคยส่งกิจกรรมนี้ไปแล้วหรือไม่ (ล็อคส่งได้เพียง 1 ครั้ง!)
-      var alreadySubmitted = submissionsData.some(function(s) {
-        return s.username === currentUser.username && s.activityId === actId;
+      var curUserNorm = String((currentUser && currentUser.username) || '').trim().toLowerCase();
+      var actIdNorm = String(actId || '').trim();
+      var alreadySubmitted = (submissionsData || []).some(function(s) {
+        return s && String(s.username || '').trim().toLowerCase() === curUserNorm && String(s.activityId || '').trim() === actIdNorm;
       });
       if (alreadySubmitted) {
         Swal.fire('แจ้งเตือน', 'ท่านได้ส่งคำตอบกิจกรรมนี้เรียบร้อยแล้ว (ระบบอนุญาตให้ส่งได้เพียง 1 ครั้ง)', 'info');
