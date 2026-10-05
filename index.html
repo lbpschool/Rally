@@ -2388,8 +2388,10 @@
             apiSaveActivity: function(activityData, token) {
               callFetch('saveActivity', { activityData: activityData, sessionToken: token || sessionToken });
             },
-            apiUploadSolutionImage: function(activityId, imageFileObj, token) {
-              callFetch('uploadSolutionImage', { activityId: activityId, imageFileObj: imageFileObj, sessionToken: token || sessionToken });
+            apiUploadSolutionImage: function(activityId, imageFileObj, mode, token) {
+              var targetMode = (typeof mode === 'string' && (mode === 'replace' || mode === 'append')) ? mode : 'replace';
+              var sessionTok = (typeof mode === 'string' && mode !== 'replace' && mode !== 'append') ? mode : (token || sessionToken);
+              callFetch('uploadSolutionImage', { activityId: activityId, imageFileObj: imageFileObj, mode: targetMode, sessionToken: sessionTok });
             },
             apiDeleteSolutionImage: function(activityId, imageUrl, token) {
               callFetch('deleteSolutionImage', { activityId: activityId, imageUrl: imageUrl, sessionToken: token || sessionToken });

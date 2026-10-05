@@ -182,7 +182,7 @@ function handleApiRequest(action, payload) {
       result = uploadFileToDrive(payload.base64Data, payload.fileName, payload.mimeType);
       break;
     case 'uploadSolutionImage':
-      result = apiUploadSolutionImage(payload.activityId, payload.imageFileObj || payload.imageFiles, token);
+      result = apiUploadSolutionImage(payload.activityId, payload.imageFileObj || payload.imageFiles, payload.mode || 'replace', token);
       break;
     case 'deleteSolutionImage':
       result = apiDeleteSolutionImage(payload.activityId, payload.imageUrl, token);
@@ -2023,9 +2023,12 @@ function apiUploadSolutionImage(activityId, imageFileObj, modeOrToken, optionalT
   if (optionalToken) {
     mode = modeOrToken || 'replace';
     sessionToken = optionalToken;
+  } else if (modeOrToken === 'replace' || modeOrToken === 'append') {
+    mode = modeOrToken;
+    sessionToken = '';
   } else {
     sessionToken = modeOrToken || '';
-    mode = 'append';
+    mode = 'replace';
   }
 
   const auth = verifyAuth(sessionToken, ['Admin']);
