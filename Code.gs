@@ -410,17 +410,12 @@ function apiMigrateSheetsToFirebase() {
       }
     }
 
-    // 2. Activities
-    const activities = fetchActivitiesFromSheet(ss) || [];
-
-    // 3. Submissions
-    const submissions = fetchSubmissionsFromSheet(ss) || [];
-
-    // 4. Settings
-    const settings = getSettingsMap(ss) || {};
-
-    // 5. Votes
-    const votes = fetchVotesFromSheet(ss) || [];
+    // 2. Fetch all data using proven fetchSharedDataFromSheets
+    const shared = fetchSharedDataFromSheets() || {};
+    const activities = shared.activities || [];
+    const submissions = shared.submissions || [];
+    const settings = shared.settings || {};
+    const votes = shared.votes || [];
 
     // Push full payload to Firebase RTDB
     const payload = JSON.stringify({
