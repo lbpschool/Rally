@@ -382,7 +382,7 @@
               <i class="fa-solid fa-users"></i>
             </span>
             <div>
-              <div class="text-[10px] text-purple-300 font-bold uppercase tracking-wider">ทีมผู้เข้าแข่งขัน</div>
+              <div id="imageModalRoleLabel" class="text-[10px] text-purple-300 font-bold uppercase tracking-wider">ทีมผู้เข้าแข่งขัน</div>
               <h4 id="imageModalTeamName" class="text-sm sm:text-base font-black text-white leading-tight">ชื่อทีม</h4>
             </div>
           </div>
@@ -1529,7 +1529,7 @@
 
       <!-- 2. รูปรถ/รูปทีมตรงกลาง (สัดส่วนจริง ใหญ่จุใจเต็มตา + ไม่มีพื้นหลังทองหนา) -->
       <div class="relative z-10 w-full max-w-3xl lg:max-w-4xl flex items-center justify-center mb-2.5 sm:mb-3 shrink-0">
-        <div class="relative group cursor-pointer overflow-hidden rounded-2xl sm:rounded-3xl shadow-2xl border border-slate-200/90 bg-slate-900/5 flex items-center justify-center p-1" onclick="openImageModal(document.getElementById('celebrationTeamImg').src, document.getElementById('celebrationTeamName').innerText)">
+        <div class="relative group cursor-pointer overflow-hidden rounded-2xl sm:rounded-3xl shadow-2xl border border-slate-200/90 bg-slate-900/5 flex items-center justify-center p-1" onclick="openImageModal(document.getElementById('celebrationTeamImg').src, document.getElementById('celebrationTeamName').innerText, document.getElementById('celebrationTeamImg').dataset.username)">
           <img id="celebrationTeamImg" src="" class="max-h-52 sm:max-h-64 md:max-h-72 lg:max-h-80 w-auto max-w-full object-contain rounded-xl sm:rounded-2xl group-hover:scale-105 transition-transform duration-300" alt="Team Photo">
           <div class="absolute inset-0 bg-black/25 opacity-0 group-hover:opacity-100 transition-opacity rounded-xl sm:rounded-2xl flex items-center justify-center">
             <span class="px-4 py-2 rounded-xl bg-black/60 text-white text-xs sm:text-sm font-bold flex items-center gap-2 shadow-lg backdrop-blur-xs">
@@ -3098,11 +3098,19 @@
     var currentGalleryIndex = 0;
     var currentGalleryCaption = '';
     var currentGalleryItems = [];
+    var currentGalleryUserOrMembers = null;
 
     function renderImageModalDetails(userOrMembers) {
+      if (typeof userOrMembers !== 'undefined') {
+        currentGalleryUserOrMembers = userOrMembers;
+      } else {
+        userOrMembers = currentGalleryUserOrMembers;
+      }
+
       var capEl = document.getElementById('imageModalCaption');
       var cardEl = document.getElementById('imageModalMembersCard');
       var teamNameEl = document.getElementById('imageModalTeamName');
+      var roleLabelEl = document.getElementById('imageModalRoleLabel');
       var countBadgeEl = document.getElementById('imageModalMemberCountBadge');
       var listEl = document.getElementById('imageModalMembersList');
       var counterEl = document.getElementById('imageModalGalleryCounter');
@@ -3138,23 +3146,57 @@
       var user = null;
       var members = [];
 
-      if (userOrMembers && typeof userOrMembers === 'object') {
-        if (Array.isArray(userOrMembers)) {
-          members = userOrMembers;
-        } else {
-          user = userOrMembers;
-          if (user.members && Array.isArray(user.members)) members = user.members;
+      // Check userOrMembers parameter first
+      if (userOrMembers) {
+        if (typeof userOrMembers === 'string' && typeof usersData !== 'undefined' && Array.isArray(usersData)) {
+          var targetStr = userOrMembers.trim().toLowerCase();
+          user = usersData.find(function(u) {
+            if (!u) return false;
+            return (u.username && u.username.trim().toLowerCase() === targetStr) ||
+                   (u.name && u.name.trim().toLowerCase() === targetStr) ||
+                   (u.carCode && u.carCode.trim().toLowerCase() === targetStr);
+          });
+          if (user && user.members && Array.isArray(user.members)) {
+            members = user.members;
+          }
+        } else if (typeof userOrMembers === 'object') {
+          if (Array.isArray(userOrMembers)) {
+            members = userOrMembers;
+          } else {
+            user = userOrMembers;
+            if (user.members && Array.isArray(user.members)) {
+              members = user.members;
+            }
+          }
         }
       }
 
+      // If user not yet resolved from userOrMembers, attempt matching against usersData
       if (!user && (!members || members.length === 0) && typeof usersData !== 'undefined' && Array.isArray(usersData)) {
-        user = usersData.find(function(u) {
-          if (u.role !== 'User' && u.role !== 'Sub-Admin') return false;
-          if (activeSrc && u.profileUrl && u.profileUrl.trim() === activeSrc.trim()) return true;
-          if (caption && u.name && u.name.trim().toLowerCase() === caption.trim().toLowerCase()) return true;
-          if (caption && u.username && u.username.trim().toLowerCase() === caption.trim().toLowerCase()) return true;
-          return false;
-        });
+        // Priority 1: Match by caption vs exact name, username, or carCode
+        if (caption) {
+          var capTrim = caption.trim().toLowerCase();
+          user = usersData.find(function(u) {
+            if (!u || (u.role !== 'User' && u.role !== 'Sub-Admin')) return false;
+            return (u.name && u.name.trim().toLowerCase() === capTrim) ||
+                   (u.username && u.username.trim().toLowerCase() === capTrim) ||
+                   (u.carCode && u.carCode.trim().toLowerCase() === capTrim);
+          });
+        }
+
+        // Priority 2: Match by profileUrl ONLY IF profileUrl is unique to exactly ONE user
+        // (prevents default placeholder images shared across accounts from falsely returning ref1)
+        if (!user && activeSrc) {
+          var srcTrim = activeSrc.trim();
+          var matchedByUrl = usersData.filter(function(u) {
+            if (!u || (u.role !== 'User' && u.role !== 'Sub-Admin')) return false;
+            return u.profileUrl && u.profileUrl.trim() === srcTrim;
+          });
+          if (matchedByUrl.length === 1) {
+            user = matchedByUrl[0];
+          }
+        }
+
         if (user && user.members && Array.isArray(user.members)) {
           members = user.members;
         }
@@ -3167,9 +3209,10 @@
         cardEl.style.display = 'block';
 
         var isJudge = user && user.role === 'Sub-Admin';
-        var defaultTitle = isJudge ? 'กรรมการประจำฐาน' : 'ทีมผู้เข้าแข่งขัน';
-        var teamName = (user && user.name) ? user.name : (caption || defaultTitle);
+        var defaultRoleTitle = isJudge ? 'กรรมการประจำฐาน' : 'ทีมผู้เข้าแข่งขัน';
+        var teamName = (user && user.name) ? user.name : (caption || defaultRoleTitle);
         if (teamNameEl) teamNameEl.innerText = teamName;
+        if (roleLabelEl) roleLabelEl.innerText = defaultRoleTitle;
 
         if (countBadgeEl) {
           var unit = isJudge ? ' ท่าน' : ' คน';
@@ -3220,6 +3263,7 @@
       currentGalleryIndex = (typeof galleryIndex === 'number' && galleryIndex >= 0 && galleryIndex < currentGalleryImages.length) ? galleryIndex : 0;
       currentGalleryCaption = caption || '';
       currentGalleryItems = (Array.isArray(galleryItems) && galleryItems.length > 0) ? galleryItems : [];
+      currentGalleryUserOrMembers = userOrMembers || null;
 
       var activeSrc = currentGalleryImages[currentGalleryIndex] || src;
       var imgEl = document.getElementById('imageModalSrc');
@@ -3288,7 +3332,7 @@
       }
       resetImageModalZoom(false);
 
-      renderImageModalDetails();
+      renderImageModalDetails(currentGalleryUserOrMembers);
     }
     window.navigateImageModalGallery = navigateImageModalGallery;
 
@@ -5304,7 +5348,7 @@
           return '<div class="rounded-3xl bg-white border border-purple-200/80 shadow-md shadow-purple-100/40 p-4 flex flex-col justify-between relative overflow-hidden text-center hover:shadow-xl transition-all duration-300 group">' +
             judgeBadge +
             '<div class="flex flex-col items-center w-full">' +
-            '<div class="w-full h-36 sm:h-40 rounded-2xl overflow-hidden shadow-sm border border-purple-100 mb-3 relative group cursor-pointer" onclick="openImageModal(\'' + escapeHTML(item.user.profileUrl) + '\', \'' + escapeHTML(item.user.name) + '\')">' +
+            '<div class="w-full h-36 sm:h-40 rounded-2xl overflow-hidden shadow-sm border border-purple-100 mb-3 relative group cursor-pointer" onclick="openImageModal(\'' + escapeHTML(item.user.profileUrl) + '\', \'' + escapeHTML(item.user.name) + '\', \'' + escapeHTML(item.user.username) + '\')">' +
             '<img src="' + escapeHTML(item.user.profileUrl) + '" class="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-300" alt="Judge Picture">' +
             '<div class="absolute inset-0 bg-black/25 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">' +
             '<i class="fa-solid fa-magnifying-glass-plus text-white text-xl"></i>' +
@@ -5355,7 +5399,7 @@
           return '<div class="rounded-3xl bg-white border border-slate-200/90 shadow-md shadow-slate-200/40 p-4 flex flex-col justify-between relative overflow-hidden text-center hover:shadow-xl transition-all duration-300 group">' +
             '<div class="absolute top-3 left-3 z-10 px-2.5 py-1 rounded-full bg-gradient-to-r from-amber-400 to-orange-500 text-white font-black text-xs flex items-center justify-center shadow-md border-2 border-white">' + rankBadgeText + '</div>' +
             '<div class="flex flex-col items-center w-full">' +
-            '<div class="w-full h-36 sm:h-40 rounded-2xl overflow-hidden shadow-sm border border-slate-100 mb-3 relative group cursor-pointer" onclick="openImageModal(\'' + escapeHTML(item.user.profileUrl) + '\', \'' + escapeHTML(item.user.name) + '\')">' +
+            '<div class="w-full h-36 sm:h-40 rounded-2xl overflow-hidden shadow-sm border border-slate-100 mb-3 relative group cursor-pointer" onclick="openImageModal(\'' + escapeHTML(item.user.profileUrl) + '\', \'' + escapeHTML(item.user.name) + '\', \'' + escapeHTML(item.user.username) + '\')">' +
             '<img src="' + escapeHTML(item.user.profileUrl) + '" class="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-300" alt="Car Picture">' +
             '<div class="absolute inset-0 bg-black/25 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">' +
             '<i class="fa-solid fa-magnifying-glass-plus text-white text-xl"></i>' +
@@ -6822,7 +6866,7 @@
           '<!-- Name (USERNAME) Stacked Below Car Photo (Rectangular Landscape) -->' +
           '<td class="py-2.5 px-1.5 sm:px-2 align-middle text-center">' +
             '<div class="flex flex-col items-center justify-center gap-1 py-1 text-center min-w-[85px] sm:min-w-[105px] mx-auto">' +
-              '<div class="w-14 h-9 sm:w-18 sm:h-11 rounded-xl overflow-hidden shadow-xs border border-purple-200 cursor-pointer relative group shrink-0" onclick="openImageModal(\'' + escapeHTML(item.user.profileUrl) + '\', \'' + escapeHTML(item.user.name) + '\')">' +
+              '<div class="w-14 h-9 sm:w-18 sm:h-11 rounded-xl overflow-hidden shadow-xs border border-purple-200 cursor-pointer relative group shrink-0" onclick="openImageModal(\'' + escapeHTML(item.user.profileUrl) + '\', \'' + escapeHTML(item.user.name) + '\', \'' + escapeHTML(item.user.username) + '\')">' +
                 '<img src="' + escapeHTML(item.user.profileUrl) + '" class="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-200" alt="Car Picture">' +
               '</div>' +
               '<div class="text-center leading-tight">' +
@@ -7204,7 +7248,7 @@
         return '<div class="glass-card p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 border border-slate-100 shadow-sm">' +
           '<div class="flex-1">' +
           '<div class="flex items-center gap-3.5">' +
-          '<img src="' + escapeHTML(comp.profileUrl) + '" onclick="openImageModal(\'' + escapeHTML(comp.profileUrl) + '\', \'' + escapeHTML(comp.name) + '\')" class="w-12 h-12 rounded-2xl object-cover border-2 border-purple-100 cursor-pointer hover:scale-105 transition-transform" alt="Car">' +
+          '<img src="' + escapeHTML(comp.profileUrl) + '" onclick="openImageModal(\'' + escapeHTML(comp.profileUrl) + '\', \'' + escapeHTML(comp.name) + '\', \'' + escapeHTML(comp.username) + '\')" class="w-12 h-12 rounded-2xl object-cover border-2 border-purple-100 cursor-pointer hover:scale-105 transition-transform" alt="Car">' +
           '<div>' +
           '<div class="flex items-center gap-2">' +
           '<h4 class="text-sm font-bold text-slate-800">' + escapeHTML(comp.name) + '</h4>' +
@@ -8709,7 +8753,7 @@
           : '';
 
         return '<tr class="hover:bg-slate-50 transition-colors border-b border-slate-100">' +
-          '<td class="py-2.5 px-3.5 whitespace-nowrap"><div class="relative group cursor-pointer" onclick="openImageModal(\'' + escapeHTML(u.profileUrl) + '\', \'' + escapeHTML(u.name) + '\')">' +
+          '<td class="py-2.5 px-3.5 whitespace-nowrap"><div class="relative group cursor-pointer" onclick="openImageModal(\'' + escapeHTML(u.profileUrl) + '\', \'' + escapeHTML(u.name) + '\', \'' + escapeHTML(u.username) + '\')">' +
           '<img src="' + escapeHTML(u.profileUrl) + '" class="w-10 h-10 sm:w-11 sm:h-11 rounded-xl object-cover object-center border-2 border-purple-100 shadow-sm group-hover:scale-105 transition-transform" alt="Avatar">' +
           '</div></td>' +
           '<td class="py-2.5 px-3.5 font-mono text-purple-700 font-semibold text-xs whitespace-nowrap">' + escapeHTML(u.username) + '</td>' +
@@ -9715,7 +9759,7 @@
         return '<tr class="hover:bg-purple-50/30 transition-colors border-b border-slate-100">' +
           '<td class="py-2.5 px-3.5 whitespace-nowrap">' +
             '<div class="flex items-center gap-2.5">' +
-              '<img src="' + escapeHTML(comp.profileUrl) + '" class="w-8 h-8 rounded-lg object-cover border border-purple-200 shadow-sm cursor-pointer hover:scale-105 transition-transform shrink-0" onclick="openImageModal(\'' + escapeHTML(comp.profileUrl) + '\', \'' + escapeHTML(comp.name) + '\')">' +
+              '<img src="' + escapeHTML(comp.profileUrl) + '" class="w-8 h-8 rounded-lg object-cover border border-purple-200 shadow-sm cursor-pointer hover:scale-105 transition-transform shrink-0" onclick="openImageModal(\'' + escapeHTML(comp.profileUrl) + '\', \'' + escapeHTML(comp.name) + '\', \'' + escapeHTML(comp.username) + '\')">' +
               '<div>' +
                 '<p class="font-bold text-slate-800 text-xs line-clamp-1">' + escapeHTML(comp.name) + '</p>' +
                 '<p class="text-[11px] text-purple-600 font-mono">(' + escapeHTML(comp.carCode || comp.username) + ')</p>' +
@@ -10809,7 +10853,7 @@
             return '<div class="glass-card p-5 rounded-3xl border-2 ' + podiumGradients[idx] + ' flex flex-col justify-between relative shadow-lg text-center group">' +
               '<div class="absolute top-4 left-4 z-10">' + medalIcons[idx] + '</div>' +
               '<div class="flex flex-col items-center w-full">' +
-                '<div class="w-full h-36 sm:h-40 rounded-2xl overflow-hidden shadow-sm border border-slate-100 mb-3 relative group cursor-pointer" onclick="openImageModal(\'' + escapeHTML(t.user.profileUrl) + '\', \'' + escapeHTML(t.user.name) + '\')">' +
+                '<div class="w-full h-36 sm:h-40 rounded-2xl overflow-hidden shadow-sm border border-slate-100 mb-3 relative group cursor-pointer" onclick="openImageModal(\'' + escapeHTML(t.user.profileUrl) + '\', \'' + escapeHTML(t.user.name) + '\', \'' + escapeHTML(t.user.username) + '\')">' +
                   '<img src="' + escapeHTML(t.user.profileUrl) + '" class="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-300" alt="Team Picture">' +
                   '<div class="absolute inset-0 bg-black/25 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">' +
                     '<i class="fa-solid fa-magnifying-glass-plus text-white text-xl"></i>' +
@@ -10922,7 +10966,7 @@
               '<td class="py-2.5 px-2 sm:px-3 text-center ' + firstCellBorderClass + '">' + rankBadge + '</td>' +
               '<td class="py-2.5 px-2 sm:px-3">' +
                 '<div class="flex items-center gap-2.5 sm:gap-3">' +
-                  '<div class="w-12 h-9 sm:w-14 sm:h-10 rounded-xl overflow-hidden shadow-xs border border-purple-200 shrink-0 relative group cursor-pointer" onclick="openImageModal(\'' + escapeHTML(item.user.profileUrl) + '\', \'' + escapeHTML(item.user.name) + '\')">' +
+                  '<div class="w-12 h-9 sm:w-14 sm:h-10 rounded-xl overflow-hidden shadow-xs border border-purple-200 shrink-0 relative group cursor-pointer" onclick="openImageModal(\'' + escapeHTML(item.user.profileUrl) + '\', \'' + escapeHTML(item.user.name) + '\', \'' + escapeHTML(item.user.username) + '\')">' +
                     '<img src="' + escapeHTML(item.user.profileUrl) + '" class="w-full h-full object-cover object-center group-hover:scale-110 transition-transform duration-300" alt="Car">' +
                     '<div class="absolute inset-0 bg-black/25 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">' +
                       '<i class="fa-solid fa-magnifying-glass text-white text-xs"></i>' +
@@ -11122,7 +11166,7 @@
               '</span>' +
             '</div>' +
             '<div class="flex flex-col items-center w-full">' +
-              '<div class="w-full h-52 sm:h-64 rounded-2xl overflow-hidden shadow-md border-2 border-amber-300 mb-4 relative group cursor-pointer" onclick="openImageModal(\'' + escapeHTML(t1.user.profileUrl) + '\', \'' + escapeHTML(t1.user.name) + '\')">' +
+              '<div class="w-full h-52 sm:h-64 rounded-2xl overflow-hidden shadow-md border-2 border-amber-300 mb-4 relative group cursor-pointer" onclick="openImageModal(\'' + escapeHTML(t1.user.profileUrl) + '\', \'' + escapeHTML(t1.user.name) + '\', \'' + escapeHTML(t1.user.username) + '\')">' +
                 '<img src="' + escapeHTML(t1.user.profileUrl) + '" class="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-300" alt="Team Picture">' +
                 '<div class="absolute inset-0 bg-black/25 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">' +
                   '<i class="fa-solid fa-magnifying-glass-plus text-white text-2xl"></i>' +
@@ -11199,7 +11243,7 @@
           return '<div class="glass-card p-6 rounded-3xl border-2 ' + podiumGradients[rank] + ' flex flex-col justify-between relative shadow-lg text-center group animate-fade-in">' +
             '<div class="absolute top-4 left-4 z-10">' + medalIcons[rank] + '</div>' +
             '<div class="flex flex-col items-center w-full mt-3 sm:mt-2">' +
-              '<div class="w-full h-40 sm:h-44 rounded-2xl overflow-hidden shadow-sm border border-slate-100 mb-3 relative group cursor-pointer" onclick="openImageModal(\'' + escapeHTML(t.user.profileUrl) + '\', \'' + escapeHTML(t.user.name) + '\')">' +
+              '<div class="w-full h-40 sm:h-44 rounded-2xl overflow-hidden shadow-sm border border-slate-100 mb-3 relative group cursor-pointer" onclick="openImageModal(\'' + escapeHTML(t.user.profileUrl) + '\', \'' + escapeHTML(t.user.name) + '\', \'' + escapeHTML(t.user.username) + '\')">' +
                 '<img src="' + escapeHTML(t.user.profileUrl) + '" class="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-300" alt="Team Picture">' +
                 '<div class="absolute inset-0 bg-black/25 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">' +
                   '<i class="fa-solid fa-magnifying-glass-plus text-white text-xl"></i>' +
@@ -11287,7 +11331,7 @@
               '</button>' +
             '</div>' +
             '<div class="flex flex-col items-center w-full mt-3 sm:mt-2">' +
-              '<div class="w-full h-40 sm:h-44 rounded-2xl overflow-hidden shadow-sm border border-purple-100 mb-3 relative group cursor-pointer" onclick="openImageModal(\'' + escapeHTML(targetBooby.user.profileUrl) + '\', \'' + escapeHTML(targetBooby.user.name) + '\')">' +
+              '<div class="w-full h-40 sm:h-44 rounded-2xl overflow-hidden shadow-sm border border-purple-100 mb-3 relative group cursor-pointer" onclick="openImageModal(\'' + escapeHTML(targetBooby.user.profileUrl) + '\', \'' + escapeHTML(targetBooby.user.name) + '\', \'' + escapeHTML(targetBooby.user.username) + '\')">' +
                 '<img src="' + escapeHTML(targetBooby.user.profileUrl) + '" class="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-300" alt="Team Photo">' +
                 '<div class="absolute inset-0 bg-black/25 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">' +
                   '<i class="fa-solid fa-magnifying-glass-plus text-white text-xl"></i>' +
@@ -11451,7 +11495,7 @@
           return '<div class="glass-card p-6 rounded-3xl border-2 ' + podiumGradients[idx] + ' flex flex-col justify-between relative shadow-lg text-center group">' +
             '<div class="absolute top-4 left-4 z-10">' + medalIcons[idx] + '</div>' +
             '<div class="flex flex-col items-center w-full">' +
-              '<div class="w-full h-40 sm:h-44 rounded-2xl overflow-hidden shadow-sm border border-slate-100 mb-3 relative group cursor-pointer" onclick="openImageModal(\'' + escapeHTML(t.user.profileUrl) + '\', \'' + escapeHTML(t.user.name) + '\')">' +
+              '<div class="w-full h-40 sm:h-44 rounded-2xl overflow-hidden shadow-sm border border-slate-100 mb-3 relative group cursor-pointer" onclick="openImageModal(\'' + escapeHTML(t.user.profileUrl) + '\', \'' + escapeHTML(t.user.name) + '\', \'' + escapeHTML(t.user.username) + '\')">' +
                 '<img src="' + escapeHTML(t.user.profileUrl) + '" class="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-300" alt="Team Picture">' +
                 '<div class="absolute inset-0 bg-black/25 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">' +
                   '<i class="fa-solid fa-magnifying-glass-plus text-white text-xl"></i>' +
@@ -12072,6 +12116,7 @@
       var teamImg = document.getElementById('celebrationTeamImg');
       if (teamImg) {
         teamImg.src = targetItem.user.profileUrl || 'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&w=400&q=80';
+        teamImg.dataset.username = targetItem.user.username || '';
       }
 
       // Set Team Name ONLY (STRICTLY NO CAR CODE, NO CAR COLOR as requested!)
@@ -12264,6 +12309,7 @@
       var teamImg = document.getElementById('celebrationTeamImg');
       if (teamImg) {
         teamImg.src = targetItem.user.profileUrl || 'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&w=400&q=80';
+        teamImg.dataset.username = targetItem.user.username || '';
       }
 
       // STRICTLY NO CAR CODE, NO COLOR!
@@ -12393,6 +12439,7 @@
       var teamImg = document.getElementById('celebrationTeamImg');
       if (teamImg) {
         teamImg.src = targetItem.user.profileUrl || 'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&w=400&q=80';
+        teamImg.dataset.username = targetItem.user.username || '';
       }
 
       // Set Team Name ONLY (NO CAR CODE, NO CAR COLOR as requested!)
