@@ -417,27 +417,18 @@ function apiMigrateSheetsToFirebase() {
     const settings = shared.settings || {};
     const votes = shared.votes || [];
 
-    // Push full payload to Firebase RTDB
-    const payload = JSON.stringify({
-      users: users,
-      auth_credentials: authCredentials,
-      activities: activities,
-      submissions: submissions,
-      settings: settings,
-      votes: votes,
-      timestamp: Date.now()
-    });
-
-    UrlFetchApp.fetch(FIREBASE_DATABASE_URL + '/live_rally_data.json', {
-      method: 'patch',
-      contentType: 'application/json',
-      payload: payload,
-      muteHttpExceptions: true
-    });
-
     return {
       success: true,
-      message: 'Migration to Firebase completed successfully!',
+      message: 'ดึงข้อมูลจาก Google Sheets สำเร็จเรียบร้อย!',
+      payload: {
+        users: users,
+        auth_credentials: authCredentials,
+        activities: activities,
+        submissions: submissions,
+        settings: settings,
+        votes: votes,
+        timestamp: Date.now()
+      },
       usersCount: users.length,
       activitiesCount: activities.length,
       submissionsCount: submissions.length,

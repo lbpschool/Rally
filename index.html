@@ -10963,16 +10963,32 @@
       }).then(function(res) {
         if (res.isConfirmed) {
           showLoading('กำลังดึงข้อมูลจาก Google Sheets และซิงค์ลง Firebase...');
+
+          function handlePayloadSave(resp) {
+            if (resp && resp.success && resp.payload) {
+              if (typeof firebase !== 'undefined' && firebase.apps && firebase.apps.length) {
+                var rtdb = firebase.database();
+                rtdb.ref('live_rally_data').update(resp.payload, function(err) {
+                  hideLoading();
+                  if (err) {
+                    Swal.fire('ข้อผิดพลาด', 'บันทึกลง Firebase ไม่สำเร็จ: ' + err.message, 'error');
+                  } else {
+                    Swal.fire('ซิงค์ข้อมูลสำเร็จ', 'อัปเดตข้อมูลผู้ใช้และรหัสผ่านทั้งหมด ' + (resp.usersCount || 0) + ' บัญชี ลง Firebase เรียบร้อยแล้ว!', 'success');
+                  }
+                });
+              } else {
+                hideLoading();
+                Swal.fire('ซิงค์ข้อมูลสำเร็จ', 'ดึงข้อมูลเรียบร้อยแล้ว', 'success');
+              }
+            } else {
+              hideLoading();
+              Swal.fire('แจ้งเตือน', (resp && resp.message) || 'ซิงค์ข้อมูลไม่สำเร็จ', 'warning');
+            }
+          }
+
           if (typeof google !== 'undefined' && google.script && google.script.run) {
             google.script.run
-              .withSuccessHandler(function(resp) {
-                hideLoading();
-                if (resp && resp.success) {
-                  Swal.fire('ซิงค์ข้อมูลสำเร็จ', 'อัปเดตข้อมูลและรหัสผ่านทั้งหมดลง Firebase เรียบร้อยแล้ว!', 'success');
-                } else {
-                  Swal.fire('แจ้งเตือน', (resp && resp.message) || 'ซิงค์ข้อมูลไม่สำเร็จ', 'warning');
-                }
-              })
+              .withSuccessHandler(handlePayloadSave)
               .withFailureHandler(function(err) {
                 hideLoading();
                 Swal.fire('เกิดข้อผิดพลาด', String(err && err.message ? err.message : err), 'error');
@@ -10984,14 +11000,7 @@
               body: JSON.stringify({ action: 'migrateSheetsToFirebase', payload: { sessionToken: sessionToken } })
             })
             .then(function(r) { return r.json(); })
-            .then(function(resp) {
-              hideLoading();
-              if (resp && resp.success) {
-                Swal.fire('ซิงค์ข้อมูลสำเร็จ', 'อัปเดตข้อมูลและรหัสผ่านทั้งหมดลง Firebase เรียบร้อยแล้ว!', 'success');
-              } else {
-                Swal.fire('แจ้งเตือน', (resp && resp.message) || 'ซิงค์ข้อมูลไม่สำเร็จ', 'warning');
-              }
-            })
+            .then(handlePayloadSave)
             .catch(function(err) {
               hideLoading();
               Swal.fire('เกิดข้อผิดพลาด', String(err && err.message ? err.message : err), 'error');
