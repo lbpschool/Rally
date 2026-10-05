@@ -435,8 +435,8 @@ function apiMigrateSheetsToFirebase() {
       timestamp: Date.now()
     };
   } catch (err) {
-    Logger.log('apiMigrateSheetsToFirebase error: ' + err);
-    return { success: false, message: String(err) };
+    Logger.log('apiMigrateSheetsToFirebase error: ' + err + ' stack: ' + err.stack);
+    return { success: false, message: String(err), stack: err.stack };
   }
 }
 
