@@ -791,7 +791,7 @@
               </div>
             </div>
             <button onclick="scrollToLatestHistory()" class="px-3.5 py-2 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:opacity-95 text-white text-xs font-extrabold flex items-center gap-2 transition-all shadow-md shrink-0 cursor-pointer">
-              <i class="fa-solid fa-arrow-down"></i> เลื่อนลงดูล่าสุด
+              <i class="fa-solid fa-arrow-up"></i> กลับขึ้นบนสุด (ล่าสุด)
             </button>
           </div>
 
@@ -807,6 +807,50 @@
               <i class="fa-solid fa-rotate text-amber-700"></i>
               <span>ตรวจคำตอบ AUTO ใหม่อัตโนมัติ (Re-grade)</span>
             </button>
+          </div>
+
+          <!-- Admin Filter & Search Toolbar (Real-time monitoring across all cars) -->
+          <div id="adminHistoryFilterToolbar" style="display: none;" class="glass-card p-3 sm:p-4 rounded-2xl border border-slate-100 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-3 text-xs">
+            <div class="flex items-center gap-2 flex-wrap flex-1">
+              <!-- Car Filter -->
+              <div class="flex items-center gap-1.5 min-w-[200px]">
+                <span class="font-bold text-slate-600 whitespace-nowrap"><i class="fa-solid fa-car text-indigo-500 mr-1"></i>เลือกรถ:</span>
+                <select id="adminHistoryCarFilter" onchange="renderUserHistoryTable(submissionsData)" class="w-full px-3 py-2 rounded-xl bg-white border border-slate-200 text-slate-800 font-bold outline-none focus:border-indigo-500 shadow-xs cursor-pointer">
+                  <option value="ALL">🚗 รถทุกคัน (แสดงทั้งหมด)</option>
+                </select>
+              </div>
+
+              <!-- Category Filter -->
+              <div class="flex items-center gap-1.5">
+                <span class="font-bold text-slate-600 whitespace-nowrap"><i class="fa-solid fa-layer-group text-purple-500 mr-1"></i>หมวด:</span>
+                <select id="adminHistoryCatFilter" onchange="renderUserHistoryTable(submissionsData)" class="px-3 py-2 rounded-xl bg-white border border-slate-200 text-slate-800 font-bold outline-none focus:border-purple-500 shadow-xs cursor-pointer">
+                  <option value="ALL">📂 ทุกหมวด</option>
+                  <option value="RC">จุด RC</option>
+                  <option value="Base">กิจกรรมฐาน</option>
+                  <option value="Quiz">เกมส์คำถาม</option>
+                </select>
+              </div>
+
+              <!-- Status Filter -->
+              <div class="flex items-center gap-1.5">
+                <span class="font-bold text-slate-600 whitespace-nowrap"><i class="fa-solid fa-circle-check text-emerald-500 mr-1"></i>สถานะ:</span>
+                <select id="adminHistoryStatusFilter" onchange="renderUserHistoryTable(submissionsData)" class="px-3 py-2 rounded-xl bg-white border border-slate-200 text-slate-800 font-bold outline-none focus:border-emerald-500 shadow-xs cursor-pointer">
+                  <option value="ALL">📌 ทุกสถานะ</option>
+                  <option value="passed">✅ ผ่าน / ตรวจแล้ว</option>
+                  <option value="pending">⏳ รอตรวจคะแนน</option>
+                  <option value="failed">❌ ไม่ผ่าน</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Search input & summary badge -->
+            <div class="flex items-center gap-2">
+              <div class="relative w-full sm:w-64">
+                <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                <input type="text" id="adminHistorySearchInput" oninput="renderUserHistoryTable(submissionsData)" placeholder="ค้นหาภารกิจ / ทีม / คำตอบ..." class="w-full pl-8 pr-3 py-2 rounded-xl bg-white border border-slate-200 text-slate-800 font-medium outline-none focus:border-indigo-500 text-xs shadow-xs">
+              </div>
+              <span id="adminHistoryCountBadge" class="px-3 py-2 rounded-xl bg-indigo-50 text-indigo-700 font-extrabold border border-indigo-200 whitespace-nowrap shadow-xs">0 รายการ</span>
+            </div>
           </div>
 
           <!-- Submissions Log Table -->
@@ -6030,6 +6074,12 @@
           return false;
         });
 
+        subAdminSubs.sort(function(a, b) {
+          var timeA = a && a.timestamp ? new Date(a.timestamp).getTime() : 0;
+          var timeB = b && b.timestamp ? new Date(b.timestamp).getTime() : 0;
+          return timeB - timeA;
+        });
+
         if (subAdminSubs.length === 0) {
           tbody.innerHTML = '<tr><td colspan="4" class="py-6 text-center text-slate-400">ยังไม่มีประวัติการให้คะแนนของคุณในระบบ</td></tr>';
           return;
@@ -6073,6 +6123,12 @@
           return s && (s.category === 'Base' || s.category === 'Quiz') && (s.status === 'passed' || s.status === 'failed');
         });
 
+        allJudgeGradingSubs.sort(function(a, b) {
+          var timeA = a && a.timestamp ? new Date(a.timestamp).getTime() : 0;
+          var timeB = b && b.timestamp ? new Date(b.timestamp).getTime() : 0;
+          return timeB - timeA;
+        });
+
         if (allJudgeGradingSubs.length === 0) {
           tbody.innerHTML = '<tr><td colspan="5" class="py-6 text-center text-slate-400">ยังไม่มีประวัติการให้คะแนนของกรรมการในระบบ</td></tr>';
           return;
@@ -6080,8 +6136,8 @@
 
         tbody.innerHTML = allJudgeGradingSubs.map(function(s) {
           var act = (activitiesData || []).find(function(a) { return a && a.id === s.activityId; }) || {};
-          var userObj = usersData.find(function(u) { return u.username === s.username; }) || {};
-          var judgeObj = usersData.find(function(u) { return u.username === s.judgeUsername; }) || {};
+          var userObj = (usersData || []).find(function(u) { return u && u.username === s.username; }) || {};
+          var judgeObj = (usersData || []).find(function(u) { return u && u.username === s.judgeUsername; }) || {};
           var judgeName = judgeObj.name || s.judgeUsername || 'กรรมการ';
           var timeStr = s.timestamp ? new Date(s.timestamp).toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' }) : '-';
           var teamName = userObj.name || s.username;
@@ -6121,22 +6177,104 @@
         userScoreHeader +
         '</tr>';
 
-      var displaySubmissions = submissions || [];
-      if (isUser && currentUser) {
-        var myUserLower = String(currentUser.username || '').trim().toLowerCase();
-        displaySubmissions = (submissions || []).filter(function(s) { 
-          return s && String(s.username || '').trim().toLowerCase() === myUserLower; 
-        });
+      var adminFilterToolbar = document.getElementById('adminHistoryFilterToolbar');
+      if (adminFilterToolbar) {
+        adminFilterToolbar.style.display = (isAdmin && activeAdminHistoryTab === 'userSubmissions') ? 'flex' : 'none';
       }
 
+      var displaySubmissions = (submissions || []).slice();
+
+      if (isUser && currentUser) {
+        // Player: STRICTLY show only own car's submissions
+        var myUserLower = String(currentUser.username || '').trim().toLowerCase();
+        displaySubmissions = displaySubmissions.filter(function(s) { 
+          return s && String(s.username || '').trim().toLowerCase() === myUserLower; 
+        });
+      } else if (isAdmin) {
+        // Admin: Show submissions for ALL cars, with optional filters
+        var carFilterEl = document.getElementById('adminHistoryCarFilter');
+        var catFilterEl = document.getElementById('adminHistoryCatFilter');
+        var statusFilterEl = document.getElementById('adminHistoryStatusFilter');
+        var searchInputEl = document.getElementById('adminHistorySearchInput');
+
+        if (carFilterEl) {
+          var comps = (usersData || []).filter(function(u) { return u && u.role === 'User'; });
+          comps.sort(function(a, b) {
+            var codeA = String(a.carCode || a.username || '').toLowerCase();
+            var codeB = String(b.carCode || b.username || '').toLowerCase();
+            return codeA.localeCompare(codeB, undefined, { numeric: true, sensitivity: 'base' });
+          });
+          var curVal = carFilterEl.value || 'ALL';
+          var optionsHTML = '<option value="ALL">🚗 รถทุกคัน (แสดงทั้งหมด)</option>';
+          comps.forEach(function(comp) {
+            var colorThai = getCarColorThaiName(comp.carColor || '');
+            var colorTxt = colorThai ? (' [สี' + colorThai + ']') : '';
+            var label = (comp.carCode ? '[' + escapeHTML(comp.carCode) + '] ' : '') + escapeHTML(comp.name || comp.username) + colorTxt;
+            var sel = (comp.username === curVal) ? ' selected' : '';
+            optionsHTML += '<option value="' + escapeHTML(comp.username) + '"' + sel + '>' + label + '</option>';
+          });
+          carFilterEl.innerHTML = optionsHTML;
+        }
+
+        var selectedCar = carFilterEl ? carFilterEl.value : 'ALL';
+        var selectedCat = catFilterEl ? catFilterEl.value : 'ALL';
+        var selectedStatus = statusFilterEl ? statusFilterEl.value : 'ALL';
+        var searchKeyword = searchInputEl ? String(searchInputEl.value || '').trim().toLowerCase() : '';
+
+        if (selectedCar && selectedCar !== 'ALL') {
+          var selCarNorm = selectedCar.toLowerCase();
+          displaySubmissions = displaySubmissions.filter(function(s) {
+            return s && String(s.username || '').trim().toLowerCase() === selCarNorm;
+          });
+        }
+        if (selectedCat && selectedCat !== 'ALL') {
+          displaySubmissions = displaySubmissions.filter(function(s) {
+            return s && String(s.category || '').toUpperCase() === selectedCat.toUpperCase();
+          });
+        }
+        if (selectedStatus && selectedStatus !== 'ALL') {
+          displaySubmissions = displaySubmissions.filter(function(s) {
+            var st = s ? (s.status || 'pending') : '';
+            return st === selectedStatus;
+          });
+        }
+        if (searchKeyword) {
+          displaySubmissions = displaySubmissions.filter(function(s) {
+            if (!s) return false;
+            var uObj = (usersData || []).find(function(u) { return u && String(u.username || '').toLowerCase() === String(s.username || '').toLowerCase(); }) || {};
+            var aObj = (activitiesData || []).find(function(a) { return a && String(a.id || '').trim() === String(s.activityId || '').trim(); }) || {};
+            var combined = (String(s.username || '') + ' ' + String(uObj.name || '') + ' ' + String(uObj.carCode || '') + ' ' + String(aObj.title || '') + ' ' + String(s.answerText || '')).toLowerCase();
+            return combined.indexOf(searchKeyword) !== -1;
+          });
+        }
+
+        var countBadge = document.getElementById('adminHistoryCountBadge');
+        if (countBadge) {
+          countBadge.innerText = displaySubmissions.length + ' รายการ';
+        }
+      }
+
+      // Sort newest first (เรียงตามเวลาล่าสุดขึ้นก่อนเสมอ)
+      displaySubmissions.sort(function(a, b) {
+        var timeA = a && a.timestamp ? new Date(a.timestamp).getTime() : 0;
+        var timeB = b && b.timestamp ? new Date(b.timestamp).getTime() : 0;
+        return timeB - timeA;
+      });
+
       if (displaySubmissions.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" class="py-6 text-center text-slate-400">ยังไม่มีประวัติการส่งคำตอบของคุณในระบบ</td></tr>';
+        var emptyMsg = isUser ? 'ยังไม่มีประวัติการส่งคำตอบของคุณในระบบ' : 'ไม่พบประวัติการส่งคำตอบตามเงื่อนไขที่เลือก';
+        tbody.innerHTML = '<tr><td colspan="6" class="py-6 text-center text-slate-400 font-medium">' + emptyMsg + '</td></tr>';
         return;
       }
 
       tbody.innerHTML = displaySubmissions.map(function(s) {
         var act = (activitiesData || []).find(function(a) { return a && String(a.id || '').trim() === String(s.activityId || '').trim(); }) || {};
         var userObj = (usersData || []).find(function(u) { return u && String(u.username || '').trim().toLowerCase() === String(s.username || '').trim().toLowerCase(); }) || {};
+        var teamName = userObj.name || s.username || 'ผู้แข่งขัน';
+        var carCode = userObj.carCode || '-';
+        var carColor = userObj.carColor || s.carColor || '';
+        var colorStyle = getCarColorStyle(carColor);
+        var colorThai = getCarColorThaiName(carColor);
 
         var resultTag = '';
         var scoreTag = '';
@@ -6173,27 +6311,39 @@
         else if (s.category === 'RC') catBadge = '<span class="px-2 py-0.5 rounded-md text-[10px] font-semibold bg-blue-500 text-white whitespace-nowrap">RC</span>';
         else if (s.category === 'Quiz') catBadge = '<span class="px-2 py-0.5 rounded-md text-[10px] font-semibold bg-emerald-500 text-white whitespace-nowrap">เกมส์คำถาม</span>';
 
-        var userBadge = '<span class="px-2 py-0.5 rounded-md text-[10px] font-semibold bg-blue-500 text-white mr-1.5 whitespace-nowrap">' + escapeHTML(userObj.name || userObj.username || s.username) + '</span>';
+        var userBadge = '';
+        if (isAdmin) {
+          userBadge = '<div class="inline-flex items-center gap-1.5 flex-wrap mr-2 mb-1 sm:mb-0">' +
+            '<span class="px-2 py-0.5 rounded-lg text-[10px] font-bold bg-indigo-600 text-white whitespace-nowrap shadow-xs">' + escapeHTML(teamName) + '</span>' +
+            '<span class="text-[10px] font-mono font-bold text-purple-700 bg-purple-50 px-1.5 py-0.5 rounded-md border border-purple-200">(' + escapeHTML(carCode) + ')</span>' +
+            (carColor ? '<span class="px-2 py-0.5 rounded-full text-[9px] font-bold ' + colorStyle + '">' + escapeHTML(colorThai) + '</span>' : '') +
+            '</div>';
+        } else {
+          userBadge = '<span class="px-2 py-0.5 rounded-md text-[10px] font-semibold bg-blue-500 text-white mr-1.5 whitespace-nowrap">' + escapeHTML(teamName) + '</span>';
+        }
 
         var timeStr = s.timestamp ? new Date(s.timestamp).toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' }) : '-';
+        var itemAge = Date.now() - (s.timestamp ? new Date(s.timestamp).getTime() : 0);
+        var isRecentNew = (isAdmin && itemAge >= 0 && itemAge < 15000);
+        var rowBgClass = isRecentNew ? 'bg-emerald-50/80 border-l-4 border-l-emerald-500' : 'hover:bg-slate-50/80';
 
-        return '<tr class="hover:bg-slate-50/80 transition-colors">' +
-          '<td class="py-3 px-3.5 text-slate-400 font-mono text-[11px] whitespace-nowrap">' + timeStr + '</td>' +
-          '<td class="py-3 px-3.5 font-medium text-slate-800 whitespace-nowrap">' + userBadge + escapeHTML(act.title || s.activityId) + '</td>' +
+        return '<tr class="' + rowBgClass + ' transition-colors border-b border-slate-100/80">' +
+          '<td class="py-3 px-3.5 text-slate-500 font-mono text-[11px] whitespace-nowrap">' + timeStr + '</td>' +
+          '<td class="py-3 px-3.5 font-medium text-slate-800 whitespace-nowrap">' + userBadge + '<span class="font-bold text-slate-900">' + escapeHTML(act.title || s.activityId) + '</span></td>' +
           '<td class="py-3 px-3.5 whitespace-nowrap">' + catBadge + '</td>' +
-          '<td class="py-3 px-3.5 text-slate-600 max-w-xs truncate">' + (s.answerText ? escapeHTML(s.answerText) : (s.imageUrl ? '<button onclick="openImageModal(\'' + escapeHTML(s.imageUrl) + '\',\'รูปคำตอบ\')" class="text-purple-600 underline font-medium whitespace-nowrap"><i class="fa-solid fa-image"></i> รูปภาพส่งเข้าระบบ</button>' : '-')) + '</td>' +
+          '<td class="py-3 px-3.5 text-slate-600 max-w-xs truncate">' + (s.answerText ? escapeHTML(s.answerText) : (s.imageUrl ? '<button onclick="openImageModal(\'' + escapeHTML(s.imageUrl) + '\',\'รูปคำตอบ\')" class="text-purple-600 underline font-medium whitespace-nowrap cursor-pointer"><i class="fa-solid fa-image"></i> รูปภาพส่งเข้าระบบ</button>' : '-')) + '</td>' +
           '<td class="py-3 px-3.5 whitespace-nowrap">' + resultTag + '</td>' +
           '<td class="py-3 px-3.5 text-right font-bold text-slate-800 whitespace-nowrap">' + scoreTag + '</td>' +
           '</tr>';
       }).join('');
     }
 
-        function scrollToLatestHistory() {
+    function scrollToLatestHistory() {
       var mainEl = document.querySelector('main');
       if (mainEl) {
-        mainEl.scrollTo({ top: mainEl.scrollHeight, behavior: 'smooth' });
+        mainEl.scrollTo({ top: 0, behavior: 'smooth' });
       } else {
-        window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+        window.scrollTo({ top: 0, behavior: 'smooth' });
       }
     }
 
@@ -7399,8 +7549,10 @@
 
       // Ensure data is clean and deduplicated
       setSubmissionsDataClean(submissionsData);
+      saveLocalAppCache();
 
       // Instant Optimistic UI Update across screens
+      if (typeof renderUserHistoryTable === 'function') renderUserHistoryTable(submissionsData);
       renderGradingList();
       renderUserDashboard();
       renderLeaderboard();
@@ -7707,6 +7859,7 @@
 
       // Deduplicate and clean data
       setSubmissionsDataClean(submissionsData);
+      saveLocalAppCache();
 
       // Close modal
       closeQuickGradeModal();

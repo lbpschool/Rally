@@ -381,7 +381,10 @@ function setCachedSharedData(data, shouldSyncFirebase) {
 
 function updateCachedSubmissionGrade(submissionId, username, activityId, score, judgeNotes, judgeUsername, status) {
   try {
-    const shared = getCachedSharedData();
+    let shared = getCachedSharedData();
+    if (!shared || !shared.submissions) {
+      shared = fetchSharedDataFromSheets();
+    }
     if (!shared || !shared.submissions) return;
     const uNorm = String(username || '').trim().toLowerCase();
     const aNorm = String(activityId || '').trim();
@@ -420,6 +423,7 @@ function updateCachedSubmissionGrade(submissionId, username, activityId, score, 
       });
     }
     setCachedSharedData(shared);
+    syncToFirebase(shared);
   } catch (e) {
     Logger.log('updateCachedSubmissionGrade error: ' + e);
   }
