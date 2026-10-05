@@ -190,6 +190,9 @@ function handleApiRequest(action, payload) {
     case 'regradeAutoSubmissions':
       result = apiRegradeAutoSubmissions(token);
       break;
+    case 'migrateSheetsToFirebase':
+      result = apiMigrateSheetsToFirebase();
+      break;
     default:
       result = { success: false, message: 'Unknown API action: ' + action };
       break;
@@ -342,6 +345,112 @@ function syncSettingsToFirebase(settings) {
     });
   } catch (e) {
     Logger.log('syncSettingsToFirebase error: ' + e);
+  }
+}
+
+/**
+ * Full Deep Migration & Sync from Google Sheets to Firebase Realtime Database
+ * Reads Users (including passwords/PINs), Activities, Submissions, Settings, Votes
+ * and creates /live_rally_data/auth_credentials for 100% instant client-side Firebase authentication!
+ */
+function apiMigrateSheetsToFirebase() {
+  try {
+    const ss = getSpreadsheet();
+
+    // 1. Users & Auth Credentials
+    const usersSheet = getOrCreateSheet(ss, SHEET_NAMES.USERS);
+    const usersRaw = usersSheet.getDataRange().getValues();
+    const users = [];
+    const authCredentials = {};
+    for (let i = 1; i < usersRaw.length; i++) {
+      const row = usersRaw[i];
+      const rawUsername = String(row[0] || '').trim();
+      if (!rawUsername) continue;
+      const rawPassword = String(row[1] || '').trim();
+      const uName = String(row[2] || '').trim();
+      const uRole = String(row[3] || 'User').trim();
+      const uCarCode = String(row[4] || '').trim();
+      const uCarColor = (uRole === 'User') ? String(row[5] || '').trim() : '';
+      const uProfile = String(row[6] || '').trim();
+      const uBonus = Number(row[7]) || 0;
+      let membersList = [];
+      try {
+        membersList = JSON.parse(row[8] || '[]');
+      } catch (e) {
+        if (row[8]) membersList = String(row[8]).split(',').map(function(s) { return s.trim(); }).filter(Boolean);
+      }
+
+      const userObj = {
+        username: rawUsername,
+        name: uName,
+        role: uRole,
+        carCode: uCarCode,
+        carColor: uCarColor,
+        profileUrl: uProfile,
+        bonusPoints: uBonus,
+        members: membersList
+      };
+      users.push(userObj);
+
+      const credObj = {
+        username: rawUsername,
+        pin: rawPassword,
+        name: uName,
+        role: uRole,
+        carCode: uCarCode,
+        carColor: uCarColor,
+        profileUrl: uProfile,
+        bonusPoints: uBonus,
+        members: membersList
+      };
+
+      authCredentials[rawUsername.toLowerCase()] = credObj;
+      if (uCarCode) {
+        authCredentials[uCarCode.toLowerCase()] = credObj;
+      }
+    }
+
+    // 2. Activities
+    const activities = fetchActivitiesFromSheet(ss) || [];
+
+    // 3. Submissions
+    const submissions = fetchSubmissionsFromSheet(ss) || [];
+
+    // 4. Settings
+    const settings = getSettingsMap(ss) || {};
+
+    // 5. Votes
+    const votes = fetchVotesFromSheet(ss) || [];
+
+    // Push full payload to Firebase RTDB
+    const payload = JSON.stringify({
+      users: users,
+      auth_credentials: authCredentials,
+      activities: activities,
+      submissions: submissions,
+      settings: settings,
+      votes: votes,
+      timestamp: Date.now()
+    });
+
+    UrlFetchApp.fetch(FIREBASE_DATABASE_URL + '/live_rally_data.json', {
+      method: 'patch',
+      contentType: 'application/json',
+      payload: payload,
+      muteHttpExceptions: true
+    });
+
+    return {
+      success: true,
+      message: 'Migration to Firebase completed successfully!',
+      usersCount: users.length,
+      activitiesCount: activities.length,
+      submissionsCount: submissions.length,
+      timestamp: Date.now()
+    };
+  } catch (err) {
+    Logger.log('apiMigrateSheetsToFirebase error: ' + err);
+    return { success: false, message: String(err) };
   }
 }
 
@@ -2337,12 +2446,51 @@ function apiSaveUser(userData, sessionToken) {
       usersSheet.appendRow(rowContent);
     }
 
-    return { success: true, message: 'บันทึกข้อมูลผู้ใช้งานเรียบร้อยแล้ว' };
+    return { 
+      success: true, 
+      message: 'บันทึกข้อมูลผู้ใช้งานเรียบร้อยแล้ว',
+      finalPassword: finalPassword,
+      finalCarColor: finalCarColor,
+      finalMembers: finalMembers
+    };
   });
 
   if (result && result.success) {
     userData.profileUrl = profileUrl;
+    userData.carColor = result.finalCarColor;
+    userData.members = result.finalMembers;
     updateCachedUser(userData);
+
+    // Sync credentials to Firebase for instant client-side login
+    try {
+      const credObj = {
+        username: userData.username,
+        pin: result.finalPassword,
+        name: userData.name,
+        role: userData.role,
+        carCode: userData.carCode || '',
+        carColor: result.finalCarColor,
+        profileUrl: profileUrl,
+        bonusPoints: Number(userData.bonusPoints) || 0,
+        members: result.finalMembers || []
+      };
+      UrlFetchApp.fetch(FIREBASE_DATABASE_URL + '/live_rally_data/auth_credentials/' + encodeURIComponent(String(userData.username).toLowerCase()) + '.json', {
+        method: 'put',
+        contentType: 'application/json',
+        payload: JSON.stringify(credObj),
+        muteHttpExceptions: true
+      });
+      if (userData.carCode) {
+        UrlFetchApp.fetch(FIREBASE_DATABASE_URL + '/live_rally_data/auth_credentials/' + encodeURIComponent(String(userData.carCode).toLowerCase()) + '.json', {
+          method: 'put',
+          contentType: 'application/json',
+          payload: JSON.stringify(credObj),
+          muteHttpExceptions: true
+        });
+      }
+    } catch (e) {
+      Logger.log('Firebase auth sync error: ' + e);
+    }
   }
   return result;
 }
@@ -2369,6 +2517,12 @@ function apiDeleteUser(username, sessionToken) {
 
   if (result && result.success) {
     deleteCachedUser(username);
+    try {
+      UrlFetchApp.fetch(FIREBASE_DATABASE_URL + '/live_rally_data/auth_credentials/' + encodeURIComponent(String(username).toLowerCase()) + '.json', {
+        method: 'delete',
+        muteHttpExceptions: true
+      });
+    } catch (e) {}
   }
   return result;
 }
