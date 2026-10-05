@@ -6704,6 +6704,8 @@
 
       renderUserDashboard();
       renderUserMissionsGrid();
+      renderLeaderboard();
+      if (typeof renderUserHistoryTable === 'function') renderUserHistoryTable(submissionsData);
 
       if (isMockMode) {
         setTimeout(function() {
@@ -6748,6 +6750,8 @@
                 });
                 renderUserDashboard();
                 renderUserMissionsGrid();
+                renderLeaderboard();
+                if (typeof renderUserHistoryTable === 'function') renderUserHistoryTable(submissionsData);
               } else {
                 // If backend indicates already submitted, recover existing submission from res.existingSubmission
                 if (res.alreadySubmitted && res.existingSubmission) {
@@ -6772,6 +6776,8 @@
                 handleApiResponseError(res);
                 renderUserDashboard();
                 renderUserMissionsGrid();
+                renderLeaderboard();
+                if (typeof renderUserHistoryTable === 'function') renderUserHistoryTable(submissionsData);
               }
             })
             .withFailureHandler(function(err) {
@@ -6936,6 +6942,9 @@
         'rcScore': 'คะแนน RC',
         'baseScore': 'คะแนนฐาน',
         'quizScore': 'คะแนนเกมส์',
+        'rcSubmittedCount': 'ส่ง RC',
+        'baseGradedCount': 'ตรวจฐาน',
+        'quizSubmittedCount': 'ส่งเกมส์',
         'rcPassedCount': 'ผ่าน RC',
         'basePassedCount': 'ผ่านฐาน',
         'quizPassedCount': 'ผ่านเกมส์'
@@ -6999,8 +7008,45 @@
       var competitors = usersData.filter(function(u) { return u.role === 'User'; });
 
       var leaderboardData = competitors.map(function(comp) {
+        var uNorm = String(comp.username || '').trim().toLowerCase();
         var mySubs = getCompetitorPassedSubs(comp.username);
-        
+        var compAllSubs = (submissionsData || []).filter(function(s) {
+          return s && String(s.username || '').trim().toLowerCase() === uNorm;
+        });
+
+        // 1. RC: Distinct RC missions submitted by this car (any status)
+        var rcSubmittedActIds = {};
+        // 2. Base: Distinct Base stations graded by judges for this car
+        var baseGradedActIds = {};
+        // 3. Quiz: Distinct Quiz questions submitted by this car (any status)
+        var quizSubmittedActIds = {};
+
+        compAllSubs.forEach(function(s) {
+          var actId = String(s.activityId || '').trim();
+          if (!actId) return;
+          var cat = s.category;
+          if (!cat) {
+            var act = (activitiesData || []).find(function(a) { return a && String(a.id || '').trim() === actId; });
+            if (act) cat = act.category;
+          }
+          cat = cat || 'RC';
+
+          if (cat === 'RC') {
+            rcSubmittedActIds[actId] = true;
+          } else if (cat === 'Base') {
+            // Count base stations where judge or admin has graded / given score
+            if (s.status === 'passed' || s.status === 'failed' || s.score !== undefined || s.judgeUsername) {
+              baseGradedActIds[actId] = true;
+            }
+          } else if (cat === 'Quiz') {
+            quizSubmittedActIds[actId] = true;
+          }
+        });
+
+        var rcSubmittedCount = Object.keys(rcSubmittedActIds).length;
+        var baseGradedCount = Object.keys(baseGradedActIds).length;
+        var quizSubmittedCount = Object.keys(quizSubmittedActIds).length;
+
         var rcPassedCount = mySubs.filter(function(s) { return s.category === 'RC'; }).length;
         var basePassedCount = mySubs.filter(function(s) { return s.category === 'Base'; }).length;
         var quizPassedCount = mySubs.filter(function(s) { return s.category === 'Quiz'; }).length;
@@ -7013,6 +7059,9 @@
 
         return {
           user: comp,
+          rcSubmittedCount: rcSubmittedCount,
+          baseGradedCount: baseGradedCount,
+          quizSubmittedCount: quizSubmittedCount,
           rcPassedCount: rcPassedCount,
           basePassedCount: basePassedCount,
           quizPassedCount: quizPassedCount,
@@ -7062,9 +7111,9 @@
 
         var shouldHide = isScoresHidden && currentUser.role !== 'Admin';
 
-        var rcCountText = shouldHide ? '' : ('<span class="text-[11px] sm:text-xs text-slate-700 font-bold whitespace-nowrap leading-none mt-1">ผ่าน ' + item.rcPassedCount + '</span>');
-        var baseCountText = shouldHide ? '' : ('<span class="text-[11px] sm:text-xs text-slate-700 font-bold whitespace-nowrap leading-none mt-1">ผ่าน ' + item.basePassedCount + '</span>');
-        var quizCountText = shouldHide ? '' : ('<span class="text-[11px] sm:text-xs text-slate-700 font-bold whitespace-nowrap leading-none mt-1">ผ่าน ' + item.quizPassedCount + '</span>');
+        var rcCountText = shouldHide ? '' : ('<span class="text-[11px] sm:text-xs text-slate-700 font-bold whitespace-nowrap leading-none mt-1">ส่ง ' + item.rcSubmittedCount + '</span>');
+        var baseCountText = shouldHide ? '' : ('<span class="text-[11px] sm:text-xs text-slate-700 font-bold whitespace-nowrap leading-none mt-1">ตรวจ ' + item.baseGradedCount + '</span>');
+        var quizCountText = shouldHide ? '' : ('<span class="text-[11px] sm:text-xs text-slate-700 font-bold whitespace-nowrap leading-none mt-1">ส่ง ' + item.quizSubmittedCount + '</span>');
 
         var rcScoreBadge = shouldHide ? '<span class="text-amber-800 font-bold text-xs"><i class="fa-solid fa-lock text-[10px] mr-1"></i>ซ่อน</span>' : ('<span class="inline-flex items-center justify-center min-w-[36px] sm:min-w-[42px] px-2.5 py-0.5 rounded-full bg-sky-500 text-white font-black text-[11px] sm:text-xs shadow-sm">' + item.rcScore + '</span>');
         var baseScoreBadge = shouldHide ? '<span class="text-amber-800 font-bold text-xs"><i class="fa-solid fa-lock text-[10px] mr-1"></i>ซ่อน</span>' : ('<span class="inline-flex items-center justify-center min-w-[36px] sm:min-w-[42px] px-2.5 py-0.5 rounded-full bg-purple-500 text-white font-black text-[11px] sm:text-xs shadow-sm">' + item.baseScore + '</span>');
