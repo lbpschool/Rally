@@ -1997,6 +1997,18 @@ function updateActivitySolutionImagesInCache(activityId, currentImgs) {
     }
     setCachedSharedData(shared);
     syncToFirebase(shared);
+
+    // Explicitly sync activities node to Firebase Realtime Database
+    try {
+      UrlFetchApp.fetch(FIREBASE_DATABASE_URL + '/live_rally_data/activities.json', {
+        method: 'put',
+        contentType: 'application/json',
+        payload: JSON.stringify(shared.activities),
+        muteHttpExceptions: true
+      });
+    } catch (fbErr) {
+      Logger.log('Firebase activities sync error: ' + fbErr);
+    }
   } catch (e) {
     Logger.log('updateActivitySolutionImagesInCache error: ' + e);
   }
@@ -2141,14 +2153,12 @@ function apiClearAllSolutionImages(activityId, sessionToken) {
 
 /**
  * API: Delete a Solution Image from an Activity (Admin)
+ * Supports deleting by image URL or by numeric image index (0, 1, 2...)
+ * If imageUrl is empty, cleans up blank/null/invalid entries from the activity.
  */
 function apiDeleteSolutionImage(activityId, imageUrl, sessionToken) {
   const auth = verifyAuth(sessionToken, ['Admin']);
   if (!auth.success) return auth;
-
-  if (!imageUrl) {
-    return { success: false, message: 'ไม่พบ URL ภาพเฉลยที่ต้องการลบ' };
-  }
 
   return withLock(function() {
     const ss = getSpreadsheet();
@@ -2167,7 +2177,21 @@ function apiDeleteSolutionImage(activityId, imageUrl, sessionToken) {
       const existingRaw = actSheet.getRange(foundRow, 9).getValue();
       let currentImgs = parseSolutionImages(existingRaw);
 
-      currentImgs = currentImgs.filter(function(u) { return String(u).trim() !== String(imageUrl).trim(); });
+      const isNumericIndex = (typeof imageUrl === 'number') || (/^\d+$/.test(String(imageUrl || '').trim()) && !String(imageUrl).startsWith('http'));
+      if (isNumericIndex) {
+        const delIdx = Number(imageUrl);
+        if (delIdx >= 0 && delIdx < currentImgs.length) {
+          currentImgs.splice(delIdx, 1);
+        }
+      } else if (imageUrl && String(imageUrl).trim() !== '') {
+        const targetUrl = String(imageUrl).trim().toLowerCase();
+        currentImgs = currentImgs.filter(function(u) {
+          return String(u).trim().toLowerCase() !== targetUrl;
+        });
+      }
+
+      // Always purge empty/blank/null entries
+      currentImgs = currentImgs.filter(Boolean);
 
       const valToSave = (currentImgs.length === 0) ? '' : (currentImgs.length === 1 ? currentImgs[0] : JSON.stringify(currentImgs));
       actSheet.getRange(foundRow, 9).setValue(valToSave);

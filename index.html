@@ -8278,7 +8278,7 @@
 
     function renderQuickSolutionModalGrid(act) {
       if (!act) return;
-      var sImages = getActivitySolutionImages(act);
+      var sImages = (getActivitySolutionImages(act) || []).filter(Boolean);
       var countEl = document.getElementById('quickSolutionCurrentCount');
       if (countEl) countEl.innerText = sImages.length + ' ภาพ';
 
@@ -8315,7 +8315,7 @@
             '<button type="button" onclick="openSolutionGalleryModal(\'' + act.id + '\', ' + idx + ')" class="text-[10px] font-bold text-amber-700 hover:text-amber-900 flex items-center gap-1 cursor-pointer px-1 py-0.5 rounded hover:bg-amber-50">' +
               '<i class="fa-solid fa-eye text-amber-600"></i> ดูเต็ม' +
             '</button>' +
-            '<button type="button" onclick="handleDeleteSingleSolutionImage(\'' + act.id + '\', \'' + escapeHTML(url) + '\')" class="text-[10px] font-bold text-rose-600 hover:text-rose-800 flex items-center gap-1 px-1.5 py-0.5 rounded-lg hover:bg-rose-50 cursor-pointer transition-colors" title="ลบภาพนี้">' +
+            '<button type="button" onclick="handleDeleteSingleSolutionImage(\'' + act.id + '\', ' + idx + ')" class="text-[10px] font-bold text-rose-600 hover:text-rose-800 flex items-center gap-1 px-1.5 py-0.5 rounded-lg hover:bg-rose-50 cursor-pointer transition-colors" title="ลบภาพนี้">' +
               '<i class="fa-solid fa-trash-can"></i> ลบ' +
             '</button>' +
           '</div>' +
@@ -8578,14 +8578,37 @@
       }
     }
 
-    function handleDeleteSingleSolutionImage(actId, imgUrl) {
+    function handleDeleteSingleSolutionImage(actId, imgUrlOrIndex) {
       if (!ensureAuthenticated()) return;
       var act = (activitiesData || []).find(function(a) { return a && a.id === actId; });
       if (!act) return;
 
+      var sImages = (getActivitySolutionImages(act) || []).filter(Boolean);
+      var targetIdx = -1;
+      var imgUrl = '';
+
+      if (typeof imgUrlOrIndex === 'number') {
+        targetIdx = imgUrlOrIndex;
+        imgUrl = sImages[targetIdx] || '';
+      } else if (typeof imgUrlOrIndex === 'string') {
+        var str = imgUrlOrIndex.trim();
+        if (/^\d+$/.test(str) && !str.startsWith('http')) {
+          targetIdx = parseInt(str, 10);
+          imgUrl = sImages[targetIdx] || '';
+        } else {
+          imgUrl = str;
+          targetIdx = sImages.findIndex(function(u) { return String(u).trim().toLowerCase() === str.toLowerCase(); });
+        }
+      }
+
+      var displayLabel = (targetIdx >= 0) ? ('ภาพที่ ' + (targetIdx + 1)) : 'ภาพนี้';
+
       Swal.fire({
-        title: 'ยืนยันลบภาพเฉลยนี้?',
-        text: 'ภาพเฉลยนี้จะถูกลบออกจากภารกิจทันที',
+        title: 'ยืนยันลบ ' + displayLabel + '?',
+        html: '<div class="text-xs text-slate-600 space-y-2 text-left">' +
+          '<p>คุณต้องการลบภาพเฉลยออกจากภารกิจ <strong>' + escapeHTML(act.title) + '</strong> ใช่หรือไม่?</p>' +
+          (imgUrl ? '<div class="my-2 rounded-xl overflow-hidden border border-slate-200 h-28 bg-slate-100 flex items-center justify-center"><img src="' + escapeHTML(imgUrl) + '" class="h-full w-full object-cover"></div>' : '') +
+          '</div>',
         icon: 'warning',
         showCancelButton: true,
         confirmButtonColor: '#e11d48',
@@ -8596,7 +8619,13 @@
         if (result.isConfirmed) {
           showLoading('กำลังลบภาพเฉลย...');
           if (isMockMode) {
-            act.solutionImages = (act.solutionImages || []).filter(function(u) { return u !== imgUrl; });
+            if (targetIdx >= 0) {
+              sImages.splice(targetIdx, 1);
+              act.solutionImages = sImages;
+            } else if (imgUrl) {
+              act.solutionImages = sImages.filter(function(u) { return u !== imgUrl; });
+            }
+            act.solutionImages = (act.solutionImages || []).filter(Boolean);
             act.solutionImageUrl = act.solutionImages[0] || '';
             saveLocalAppCache();
             renderQuickSolutionModalGrid(act);
@@ -8605,12 +8634,13 @@
             hideLoading();
             Swal.fire({ icon: 'success', title: 'ลบภาพเฉลยเรียบร้อย', timer: 1200, showConfirmButton: false });
           } else {
+            var deleteParam = (targetIdx >= 0) ? targetIdx : (imgUrl || '');
             if (typeof google !== 'undefined' && google.script && google.script.run) {
               google.script.run
                 .withSuccessHandler(function(res) {
                   hideLoading();
                   if (res && res.success) {
-                    act.solutionImages = res.solutionImages || [];
+                    act.solutionImages = (res.solutionImages || []).filter(Boolean);
                     act.solutionImageUrl = res.solutionImageUrl || '';
                     saveLocalAppCache();
                     renderQuickSolutionModalGrid(act);
@@ -8634,7 +8664,7 @@
                   hideLoading();
                   Swal.fire('ข้อผิดพลาดระบบ', err.message, 'error');
                 })
-                .apiDeleteSolutionImage(actId, imgUrl, currentUser.sessionToken);
+                .apiDeleteSolutionImage(actId, deleteParam, currentUser.sessionToken);
             }
           }
         }
