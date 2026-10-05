@@ -2772,6 +2772,54 @@ function apiResetCompetitorProfiles(sessionToken) {
 }
 
 /**
+ * API: Reset ONLY Profile Photos for all Competitors (Admin)
+ */
+function apiResetCompetitorPhotos(sessionToken) {
+  const auth = verifyAuth(sessionToken, ['Admin']);
+  if (!auth.success) return auth;
+
+  const result = withLock(function() {
+    const ss = getSpreadsheet();
+    const usersSheet = getOrCreateSheet(ss, SHEET_NAMES.USERS);
+    const usersData = usersSheet.getDataRange().getValues();
+    const defaultProfileUrl = 'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&w=400&q=80';
+    let changed = false;
+    let count = 0;
+
+    for (let i = 1; i < usersData.length; i++) {
+      const role = String(usersData[i][3] || '').trim();
+      if (role === 'User') {
+        usersData[i][6] = defaultProfileUrl; // profileUrl (col 7)
+        changed = true;
+        count++;
+      }
+    }
+
+    if (changed && usersData.length > 1) {
+      usersSheet.getRange(1, 1, usersData.length, usersData[0].length).setValues(usersData);
+    }
+
+    return { 
+      success: true, 
+      message: 'รีเซ็ตรูปภาพของผู้แข่งขัน ' + count + ' คันกลับเป็นค่าเริ่มต้นเรียบร้อยแล้ว (ชื่อและรายชื่อสมาชิกยังคงเดิม)',
+      updatedCount: count
+    };
+  });
+
+  if (result && result.success) {
+    try {
+      invalidateGlobalCache();
+      const freshShared = fetchSharedDataFromSheets();
+      syncToFirebase(freshShared);
+    } catch (e) {
+      Logger.log('apiResetCompetitorPhotos cache update error: ' + e);
+    }
+  }
+
+  return result;
+}
+
+/**
  * API: Auto-assign or batch assign car colors for competitors (Admin Only)
  * Supports explicit assignments dictionary { [username]: targetColor }
  * or repeating colorSequence (e.g. ['Pink', 'Blue', 'Red', 'Green'])

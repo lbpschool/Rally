@@ -1063,8 +1063,11 @@
               <button onclick="autoAssignFixedCarColors()" title="กำหนดสีประจำรถตายตัววนซ้ำ 4 สี (ชมพู, ฟ้า, แดง, เขียว) ตามลำดับเบอร์รถ C1, C2, C3..." class="px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold shadow-md transition-all flex items-center gap-2 whitespace-nowrap cursor-pointer active:scale-95">
                 <i class="fa-solid fa-palette"></i> กำหนดสีตามลำดับเบอร์รถ
               </button>
+              <button onclick="resetCompetitorPhotosOnly()" title="รีเซ็ตเฉพาะรูปโปรไฟล์รถของผู้แข่งขันทุกคันกลับเป็นค่าเริ่มต้น (ชื่อทีมและรายชื่อสมาชิกจะไม่ถูกลบ)" class="px-3.5 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-semibold shadow-md transition-all flex items-center gap-2 whitespace-nowrap cursor-pointer active:scale-95">
+                <i class="fa-solid fa-image"></i> รีเซ็ตรูปภาพ
+              </button>
               <button onclick="resetCompetitorProfiles()" title="รีเซ็ตชื่อ รูปโปรไฟล์ และล้างรายชื่อผู้เล่นประจำรถของผู้แข่งขันทุกคันกลับเป็นค่าเริ่มต้น (Admin/Sub-Admin ไม่ถูกเปลี่ยน)" class="px-3.5 py-2 rounded-xl bg-pink-600 hover:bg-pink-700 text-white text-xs font-semibold shadow-md transition-all flex items-center gap-2 whitespace-nowrap cursor-pointer">
-                <i class="fa-solid fa-user-gear"></i> รีเซ็ตชื่อ/รูปผู้แข่งขัน
+                <i class="fa-solid fa-user-gear"></i> รีเซ็ตข้อมูลทั้งหมด
               </button>
               <button onclick="openUserModal()" class="px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 text-white text-xs font-semibold shadow-md hover:opacity-90 flex items-center gap-2 whitespace-nowrap">
                 <i class="fa-solid fa-user-plus"></i> เพิ่มผู้แข่ง/ผู้ใช้
@@ -4220,6 +4223,91 @@
       });
     }
     window.resetCompetitorProfiles = resetCompetitorProfiles;
+
+    // =========================================================================
+    // ADMIN: RESET COMPETITOR PHOTOS ONLY (รีเซ็ตเฉพาะรูปภาพผู้แข่งขัน)
+    // =========================================================================
+    function resetCompetitorPhotosOnly() {
+      if (!ensureAuthenticated()) return;
+      if (!currentUser || currentUser.role !== 'Admin') {
+        Swal.fire('ไม่มีสิทธิ์', 'เฉพาะผู้ดูแลระบบ (Admin) เท่านั้นที่สามารถรีเซ็ตรูปภาพได้', 'warning');
+        return;
+      }
+      Swal.fire({
+        title: '🖼️ รีเซ็ตรูปภาพผู้แข่งขัน?',
+        html: '<div class="text-xs text-slate-600 text-left space-y-2 mt-2">' +
+          '<p class="font-bold text-amber-600">คุณต้องการรีเซ็ตเฉพาะรูปโปรไฟล์รถของผู้แข่งขันทุกคันกลับเป็นรูปเริ่มต้นใช่หรือไม่?</p>' +
+          '<p class="text-slate-500">• <strong>ชื่อทีม / ผู้แข่งขัน:</strong> ไม่ถูกลบหรือเปลี่ยนแปลง (คงเดิม 100%)</p>' +
+          '<p class="text-slate-500">• <strong>รายชื่อสมาชิกประจำรถ:</strong> ไม่ถูกลบหรือเปลี่ยนแปลง (คงเดิม 100%)</p>' +
+          '<p class="text-slate-500">• บัญชีผู้ดูแลระบบ (Admin) และ กรรมการ: ไม่ได้รับผลกระทบ</p>' +
+          '</div>',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#f59e0b',
+        cancelButtonColor: '#64748b',
+        confirmButtonText: '<i class="fa-solid fa-image mr-1.5"></i> ยืนยันรีเซ็ตเฉพาะรูปภาพ',
+        cancelButtonText: 'ยกเลิก'
+      }).then(function(result) {
+        if (result.isConfirmed) {
+          showLoading('กำลังรีเซ็ตรูปภาพของผู้แข่งขันทุกคัน...');
+
+          var defaultProfileUrl = 'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&w=400&q=80';
+
+          (usersData || []).forEach(function(u) {
+            if (u && u.role === 'User') {
+              u.profileUrl = defaultProfileUrl;
+            }
+          });
+
+          // ถ้าผู้ใช้งานปัจจุบันคือ User ให้รีเซ็ต currentUser ด้วย
+          if (currentUser && currentUser.role === 'User') {
+            currentUser.profileUrl = defaultProfileUrl;
+            try { safeSetStorage('rally_session_user', JSON.stringify(currentUser)); } catch (e) {}
+          }
+
+          try { saveLocalAppCache(); } catch (e) {}
+
+          // INSTANT BROADCAST TO FIREBASE REALTIME DATABASE (< 0.1s update on all other devices)
+          try {
+            if (typeof firebase !== 'undefined' && firebase.apps && firebase.apps.length) {
+              firebase.database().ref('live_rally_data/users').set(usersData);
+              firebase.database().ref('live_rally_data/timestamp').set(Date.now());
+              console.log('[Firebase Realtime] Instant reset competitor photos pushed to RTDB!');
+            }
+          } catch (fbErr) {
+            console.warn('[Firebase Realtime] Push error:', fbErr);
+          }
+
+          try { renderUserDashboard(); } catch(e) {}
+          try { renderLeaderboard(); } catch(e) {}
+          try { renderAdminUsersTable(); } catch(e) {}
+          try { renderGradingList(); } catch(e) {}
+
+          setTimeout(function() {
+            hideLoading();
+            Swal.fire({
+              icon: 'success',
+              title: 'รีเซ็ตรูปภาพสำเร็จ!',
+              text: 'รีเซ็ตรูปภาพของผู้เข้าแข่งขันทุกคันกลับเป็นค่าเริ่มต้นเรียบร้อยแล้ว โดยชื่อทีมและรายชื่อสมาชิกยังคงอยู่ครบถ้วน',
+              timer: 2500,
+              showConfirmButton: false
+            });
+          }, 300);
+
+          if (!isMockMode && typeof google !== 'undefined' && google.script && google.script.run) {
+            google.script.run
+              .withSuccessHandler(function(res) {
+                if (res && res.success) console.log('Backend reset competitor photos success:', res.message);
+              })
+              .withFailureHandler(function(err) {
+                console.error('Backend reset competitor photos error:', err);
+              })
+              .apiResetCompetitorPhotos(sessionToken);
+          }
+        }
+      });
+    }
+    window.resetCompetitorPhotosOnly = resetCompetitorPhotosOnly;
 
     // Helper to extract numeric value from car code or username (e.g. C1 -> 1, C12 -> 12, car03 -> 3)
     function getCarNumericCode(str) {
