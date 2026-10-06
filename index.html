@@ -3610,62 +3610,64 @@
       showLoading('กำลังบันทึกข้อมูลโปรไฟล์ของคุณ...');
 
       var doSave = function(profileUrlToSave) {
-        if (isMockMode) {
-          setTimeout(function() {
-            hideLoading();
-            currentUser.name = newName;
-            if (profileUrlToSave) currentUser.profileUrl = profileUrlToSave;
-            var uIdx = usersData.findIndex(function(x) { return x.username === currentUser.username; });
-            if (uIdx !== -1) {
-              usersData[uIdx].name = currentUser.name;
-              usersData[uIdx].profileUrl = currentUser.profileUrl;
+        currentUser.name = newName;
+        if (profileUrlToSave) currentUser.profileUrl = profileUrlToSave;
+        var uIdx = usersData.findIndex(function(x) { return x.username === currentUser.username; });
+        if (uIdx !== -1) {
+          usersData[uIdx].name = currentUser.name;
+          usersData[uIdx].profileUrl = currentUser.profileUrl;
+        }
+
+        // Instant write to Firebase Realtime Database (< 0.05s broadcast across all devices)
+        try {
+          if (typeof firebase !== 'undefined' && firebase.apps && firebase.apps.length) {
+            var rtdb = firebase.database();
+            rtdb.ref('live_rally_data/users').set(usersData);
+            var uKey = String(currentUser.username || '').toLowerCase();
+            if (uKey) {
+              rtdb.ref('live_rally_data/auth_credentials/' + uKey + '/name').set(newName);
+              if (profileUrlToSave) {
+                rtdb.ref('live_rally_data/auth_credentials/' + uKey + '/profileUrl').set(profileUrlToSave);
+              }
             }
-            closeSelfProfileModal();
-            setupNavigation();
-            renderUserDashboard();
-            renderLeaderboard();
-            renderAdminUsersTable();
-            Swal.fire('สำเร็จ', 'อัปเดตข้อมูลโปรไฟล์เรียบร้อยแล้ว', 'success');
-          }, 400);
-        } else {
-          if (typeof google !== 'undefined' && google.script && google.script.run) {
-            google.script.run
-              .withSuccessHandler(function(res) {
-                hideLoading();
-                if (res.success) {
-                  currentUser.name = newName;
-                  if (profileUrlToSave) currentUser.profileUrl = profileUrlToSave;
-                  var uIdx = usersData.findIndex(function(x) { return x.username === currentUser.username; });
-                  if (uIdx !== -1) {
-                    usersData[uIdx].name = currentUser.name;
-                    usersData[uIdx].profileUrl = currentUser.profileUrl;
-                  }
-                  closeSelfProfileModal();
-                  setupNavigation();
-                  renderUserDashboard();
-                  renderLeaderboard();
-                  renderAdminUsersTable();
-                  Swal.fire('สำเร็จ', 'อัปเดตข้อมูลโปรไฟล์เรียบร้อยแล้ว', 'success');
-                } else {
-                  Swal.fire('ข้อผิดพลาด', res.message || 'บันทึกข้อมูลโปรไฟล์ไม่สำเร็จ', 'error');
-                }
-              })
-              .withFailureHandler(function(err) {
-                hideLoading();
-                var isTimeout = !err || err.name === 'AbortError' || err.isTimeout || String(err).includes('abort') || String(err).includes('Realtime');
-                if (isTimeout) {
-                  currentUser.name = newName;
-                  if (profileUrlToSave) currentUser.profileUrl = profileUrlToSave;
-                  closeSelfProfileModal();
-                  setupNavigation();
-                  renderUserDashboard();
-                  Swal.fire({ icon: 'info', title: 'อัปเดตโปรไฟล์สำเร็จ', text: 'ข้อมูลโปรไฟล์อัปเดตขึ้นระบบ Realtime เรียบร้อยแล้ว', timer: 2000, showConfirmButton: false });
-                } else {
-                  Swal.fire('ข้อผิดพลาดระบบ', err.message, 'error');
-                }
-              })
-              .apiUpdateSelfProfile(currentUser.username, newName, profileUrlToSave, sessionToken);
+            if (currentUser.carCode) {
+              var cKey = String(currentUser.carCode || '').toLowerCase();
+              rtdb.ref('live_rally_data/auth_credentials/' + cKey + '/name').set(newName);
+              if (profileUrlToSave) {
+                rtdb.ref('live_rally_data/auth_credentials/' + cKey + '/profileUrl').set(profileUrlToSave);
+              }
+            }
+            rtdb.ref('live_rally_data/timestamp').set(Date.now());
           }
+        } catch (fbErr) {
+          console.warn('[Firebase] Profile instant update notice:', fbErr);
+        }
+
+        saveLocalAppCache();
+        closeSelfProfileModal();
+        setupNavigation();
+        renderUserDashboard();
+        renderLeaderboard();
+        renderAdminUsersTable();
+        hideLoading();
+        Swal.fire({
+          icon: 'success',
+          title: 'สำเร็จ',
+          text: 'อัปเดตข้อมูลโปรไฟล์เรียบร้อยแล้ว',
+          timer: 2000,
+          showConfirmButton: false
+        });
+
+        // Persist to Google Sheets in background
+        if (!isMockMode && typeof google !== 'undefined' && google.script && google.script.run) {
+          google.script.run
+            .withSuccessHandler(function(res) {
+              console.log('[Backend Profile Sync] Saved to Google Sheets:', res);
+            })
+            .withFailureHandler(function(err) {
+              console.warn('[Backend Profile Sync Notice]:', err);
+            })
+            .apiUpdateSelfProfile(currentUser.username, newName, profileUrlToSave, sessionToken);
         }
       };
 
@@ -6885,14 +6887,10 @@
       // Optimistic Instant UI Feedback (เสร็จสิ้นทันทีใน 250ms โดยไม่บล็อกหน้าจอ)
       setTimeout(function() {
         hideLoading();
-        var successTitle = (status === 'passed') ? 'ผ่านภารกิจแล้ว! 🎉' : ((status === 'failed') ? 'บันทึกคำตอบแล้ว' : 'ส่งงานเรียบร้อยแล้ว');
-        var successText = (status === 'passed') ? ('ยินดีด้วย! คุณได้รับ ' + score + ' คะแนน') : ((status === 'failed') ? 'คำตอบยังไม่ถูกต้อง (0 คะแนน)' : 'ระบบบันทึกข้อมูลเรียบร้อยแล้ว');
-        var successIcon = (status === 'passed') ? 'success' : ((status === 'failed') ? 'info' : 'success');
-
         Swal.fire({
-          icon: successIcon,
-          title: successTitle,
-          text: successText,
+          icon: 'success',
+          title: 'ส่งคำตอบเรียบร้อยแล้ว',
+          text: 'ระบบได้บันทึกคำตอบของท่านเข้าสู่ระบบแล้ว',
           timer: 2000,
           showConfirmButton: false
         });

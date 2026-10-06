@@ -2694,6 +2694,47 @@ function apiUpdateSelfProfile(username, name, profileUrl, sessionToken) {
     if (rowIdx > 0) {
       if (name) sheet.getRange(rowIdx, 3).setValue(name);
       if (profileUrl) sheet.getRange(rowIdx, 7).setValue(profileUrl);
+
+      // Invalidate cache and sync to Firebase Realtime Database
+      try {
+        invalidateGlobalCache();
+        const freshShared = fetchSharedDataFromSheets();
+        setCachedSharedData(freshShared);
+        if (freshShared && freshShared.users) {
+          UrlFetchApp.fetch(FIREBASE_DATABASE_URL + '/live_rally_data/users.json', {
+            method: 'put',
+            contentType: 'application/json',
+            payload: JSON.stringify(freshShared.users),
+            muteHttpExceptions: true
+          });
+          const uKey = String(username).toLowerCase();
+          if (name) {
+            UrlFetchApp.fetch(FIREBASE_DATABASE_URL + '/live_rally_data/auth_credentials/' + encodeURIComponent(uKey) + '/name.json', {
+              method: 'put',
+              contentType: 'application/json',
+              payload: JSON.stringify(name),
+              muteHttpExceptions: true
+            });
+          }
+          if (profileUrl) {
+            UrlFetchApp.fetch(FIREBASE_DATABASE_URL + '/live_rally_data/auth_credentials/' + encodeURIComponent(uKey) + '/profileUrl.json', {
+              method: 'put',
+              contentType: 'application/json',
+              payload: JSON.stringify(profileUrl),
+              muteHttpExceptions: true
+            });
+          }
+          UrlFetchApp.fetch(FIREBASE_DATABASE_URL + '/live_rally_data/timestamp.json', {
+            method: 'put',
+            contentType: 'application/json',
+            payload: JSON.stringify(Date.now()),
+            muteHttpExceptions: true
+          });
+        }
+      } catch (syncErr) {
+        Logger.log('apiUpdateSelfProfile Firebase sync error: ' + syncErr);
+      }
+
       return { success: true, name: name, profileUrl: profileUrl };
     }
     return { success: false, message: 'ไม่พบบัญชีผู้ใช้ในระบบ' };
