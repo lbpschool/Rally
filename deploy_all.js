@@ -12,9 +12,8 @@ console.log('====================================================\n');
 // 1. Deploy to Google Apps Script
 console.log('1️⃣  [1/2] กำลัง Deploy ไปยัง Google Apps Script Backend...');
 try {
-  const nodeClasp = 'node C:/Users/godof/AppData/Roaming/npm/node_modules/@google/clasp/build/src/index.js';
   const desc = process.argv[2] || `Update ${new Date().toLocaleString('th-TH')}`;
-  execSync(`${nodeClasp} push -f`, { stdio: 'inherit', cwd: __dirname });
+  execSync('cmd.exe /c "clasp push -f"', { stdio: 'inherit', cwd: __dirname });
   console.log('✅ Push to Google Apps Script สำเร็จ!');
   try {
     execSync(`${nodeClasp} deploy -i AKfycbxWv-xYfoRrgKCjZq3mqaJL5t4yfvs93D1UUz4aMcnAxYzrJtZHopjUu3IicbUBG7hP -d "${desc}"`, { stdio: 'inherit', cwd: __dirname });
